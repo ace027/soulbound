@@ -57,7 +57,7 @@ const unique = (s: GameState) => s.skills.find((k) => k.tier === 'Unique')!;
 describe('applyWorldUpdate — mastery and usage notes', () => {
   it('applies a mastery change', () => {
     const r = applyWorldUpdate(state(), 'act', response({
-      skill_mastery_changes: [{ skill_name: 'Ledger', old_mastery: 20, new_mastery: 35, note: null }],
+      skill_mastery_changes: [{ skill_name: 'Ledger', tier: 'Unique', old_mastery: 20, new_mastery: 35, note: null }],
     }));
     expect(unique(r.state).mastery).toBe(35);
   });
@@ -66,8 +66,8 @@ describe('applyWorldUpdate — mastery and usage notes', () => {
   it('accumulates usage_notes on the Unique skill only', () => {
     const r = applyWorldUpdate(state(), 'act', response({
       skill_mastery_changes: [
-        { skill_name: 'Ledger', old_mastery: 20, new_mastery: 25, note: null },
-        { skill_name: 'Grit', old_mastery: 10, new_mastery: 15, note: null },
+        { skill_name: 'Ledger', tier: 'Unique', old_mastery: 20, new_mastery: 25, note: null },
+        { skill_name: 'Grit', tier: 'Intrinsic', old_mastery: 10, new_mastery: 15, note: null },
       ],
     }));
     expect(unique(r.state).usage_notes).toHaveLength(1);
@@ -260,7 +260,7 @@ describe('applyWorldUpdate — log entry composition', () => {
     const before = state();
     const snapshot = JSON.stringify(before);
     applyWorldUpdate(before, 'act', response({
-      skill_mastery_changes: [{ skill_name: 'Ledger', old_mastery: 20, new_mastery: 99, note: null }],
+      skill_mastery_changes: [{ skill_name: 'Ledger', tier: 'Unique', old_mastery: 20, new_mastery: 99, note: null }],
     }));
     expect(JSON.stringify(before)).toBe(snapshot);
   });
