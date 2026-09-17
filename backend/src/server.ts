@@ -89,6 +89,23 @@ async function main(): Promise<void> {
 
   app.use(errorHandler);
 
+  // Express 5 forwards rejected promises from route handlers to the error
+  // handler above, but nothing catches a crash outside the request pipeline.
+  // Node's default for an unhandled rejection is to print the raw, unredacted
+  // stack to stderr and exit — bypassing `redact()` entirely. Matters from
+  // Phase 2 onward, when async Anthropic SDK calls can reject outside a
+  // handler.
+  process.on('unhandledRejection', (reason: unknown) => {
+    const detail = reason instanceof Error ? (reason.stack ?? reason.message) : String(reason);
+    console.error('[fatal] unhandled rejection:', redact(detail));
+    process.exit(1);
+  });
+
+  process.on('uncaughtException', (err: Error) => {
+    console.error('[fatal] uncaught exception:', redact(err.stack ?? err.message));
+    process.exit(1);
+  });
+
   app.listen(PORT, () => {
     console.log(`[soulbound-backend] listening on port ${PORT}`);
   });

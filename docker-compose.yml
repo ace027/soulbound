@@ -9,8 +9,17 @@
 # The frontend runs Vite's dev server (the Dockerfile's `builder` stage) rather
 # than the static `runtime` stage, for two reasons: it keeps HMR working for
 # by-feel iteration, and the static server has no `/api` proxy, so the browser
-# would have no route to the backend. The `runtime` stage is still built and
-# is what a production deployment would serve.
+# would have no route to the backend.
+#
+# The `runtime` stage is NOT production-ready as it stands. It serves the built
+# bundle with `serve -s`, whose SPA fallback answers ANY unmatched path with
+# 200 + index.html — including /api/*. A frontend deployed that way would see
+# every API call "succeed" while receiving HTML instead of JSON, which is a
+# worse failure than a connection error because it does not look like a
+# networking problem. Before that image is deployed it needs either a reverse
+# proxy forwarding /api to the backend, or a configurable API base URL instead
+# of a same-origin /api path. Dormant today only because the frontend makes no
+# API calls yet.
 
 services:
   backend:
@@ -26,7 +35,13 @@ services:
       - PORT=3001
       - FRONTEND_ORIGIN=http://localhost:5173
     ports:
-      - "3001:3001"
+      # Loopback by default. The backend holds the API key and has no
+      # application-level auth, so binding 0.0.0.0 on a host with a public IP
+      # would expose it — and from Phase 2 that means an unmetered Anthropic
+      # proxy for anyone who finds the port. Exposing it beyond this host is an
+      # affirmative choice: change this, and put a reverse proxy and auth in
+      # front of it.
+      - "127.0.0.1:3001:3001"
     healthcheck:
       # Gates frontend startup below. Without this the frontend can come up
       # against a backend that is still booting, and the first proxied request
@@ -54,7 +69,7 @@ services:
       # the backend by compose service name.
       - BACKEND_ORIGIN=http://backend:3001
     ports:
-      - "5173:5173"
+      - "127.0.0.1:5173:5173"
     depends_on:
       backend:
         # Wait for the health check, not merely for the container to start.

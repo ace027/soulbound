@@ -195,10 +195,24 @@ export const UNIQUE_SKILL_JSON_SCHEMA = toStrictJsonSchema(
 /**
  * The nine field names CLAUDE.md constraint #4 names, as authored.
  *
- * This is the drift guard. A test asserts that walking
- * WORLD_VOICE_JSON_SCHEMA's property names reproduces exactly this list — so
- * renaming a field in a Zod schema above without updating the prompt fails
- * loudly rather than silently breaking the parser at runtime.
+ * SCOPE — read this before relying on it.
+ *
+ * Comparing this list against WORLD_VOICE_JSON_SCHEMA catches drift between
+ * the Zod schemas above and this array. Both are authored in THIS file, so
+ * that is an internal self-consistency check, nothing more.
+ *
+ * It does NOT catch the drift CLAUDE.md constraint #4 actually cares about.
+ * Nothing here reads WORLD_SYSTEM_PROMPT (backend/src/data/worldSystemPrompt.ts).
+ * Renaming a field inside the prompt's RESPONSE FORMAT block alone leaves both
+ * inputs below unchanged, so the check still reports clean while the live
+ * prompt and the parser have silently diverged.
+ *
+ * It is also inert: nothing imports these exports, and there is no test yet
+ * (tests are R16 / Phase 4). Today they run only if someone writes a script.
+ *
+ * Phase 2 is where the prompt and this schema first meet in a live code path,
+ * and is where the real check belongs: parse the RESPONSE FORMAT JSON literal
+ * out of WORLD_SYSTEM_PROMPT and assert its key set equals this list.
  */
 export const CONTRACT_FIELD_NAMES = [
   'narration',

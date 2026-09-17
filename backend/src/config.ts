@@ -60,6 +60,17 @@ class Secret {
 
 function readApiKey(): Secret {
   const raw = process.env.ANTHROPIC_API_KEY;
+  // Remove the plaintext copy from process.env immediately. Without this the
+  // key lives in two places: inside `Secret` (guarded) and in process.env
+  // (completely unguarded). That second copy is reachable by anything in the
+  // process — and Node's own diagnostic report writes the whole environment
+  // to disk in plaintext on a fatal error (`--report-on-fatalerror`,
+  // `--report-uncaught-exception`, `process.report.writeReport()`), which is
+  // exactly the "key must never appear in a stack trace" case R2 forbids.
+  // Verified by probe: process.report.getReport().environmentVariables leaked
+  // a canary key before this line existed. Nothing else reads this variable
+  // after config.ts's one-time read, so deleting it is safe.
+  delete process.env.ANTHROPIC_API_KEY;
   if (!raw || raw.trim().length === 0) {
     // Fail fast, at startup, before the app is built or the port is bound —
     // not three calls deep into gameplay.

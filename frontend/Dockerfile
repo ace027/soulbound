@@ -30,6 +30,18 @@ COPY frontend ./frontend
 RUN npm run build -w @soulbound/shared
 RUN npm run build -w @soulbound/frontend
 
+# docker-compose.yml runs THIS stage (target: builder) with Vite's dev server,
+# so the USER directive in the runtime stage below does not apply to the
+# container compose actually starts. Without this, the frontend container runs
+# as root.
+#
+# The chown is required, not cosmetic: COPY and npm ci above run as root, so
+# /app ends up root-owned, and Vite's dev server needs to write
+# node_modules/.vite-temp and its cache. Without it the container starts as
+# node and immediately dies with EACCES.
+RUN chown -R node:node /app
+USER node
+
 
 FROM node:22-slim AS runtime
 WORKDIR /app

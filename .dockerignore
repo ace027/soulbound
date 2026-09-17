@@ -1,0 +1,24 @@
+# Build context is the repo root for BOTH images (see the header comment in
+# backend/Dockerfile and frontend/Dockerfile). Docker only reads a
+# .dockerignore at the context root — a <subdir>/.dockerignore is silently
+# ignored when that subdir is not itself the context. This file is therefore
+# the only one that has any effect on either build.
+#
+# Without it, `COPY backend ./backend` / `COPY frontend ./frontend` vendor
+# whatever happens to be in the working tree — a local .env kept for host-mode
+# testing, a stale dist/, node_modules — straight into the image. Verified
+# during review: a probe file inside backend/ landed at /app/backend/ in the
+# built image.
+
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.gitignore
+legacy
+docs
+.planning
+**/*.log
+.DS_Store
