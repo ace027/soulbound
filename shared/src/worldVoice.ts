@@ -195,24 +195,18 @@ export const UNIQUE_SKILL_JSON_SCHEMA = toStrictJsonSchema(
 /**
  * The nine field names CLAUDE.md constraint #4 names, as authored.
  *
- * SCOPE — read this before relying on it.
+ * This is the reference list all three arms of the contract check agree on:
+ * the Zod schemas above, the derived JSON Schema, and the RESPONSE FORMAT
+ * block inside WORLD_SYSTEM_PROMPT.
  *
- * Comparing this list against WORLD_VOICE_JSON_SCHEMA catches drift between
- * the Zod schemas above and this array. Both are authored in THIS file, so
- * that is an internal self-consistency check, nothing more.
+ * `assertWorldVoiceContract(promptText)` compares all three and throws on any
+ * mismatch. The backend calls it at startup, so drift fails the process
+ * immediately rather than surfacing later as a confusing parse failure.
  *
- * It does NOT catch the drift CLAUDE.md constraint #4 actually cares about.
- * Nothing here reads WORLD_SYSTEM_PROMPT (backend/src/data/worldSystemPrompt.ts).
- * Renaming a field inside the prompt's RESPONSE FORMAT block alone leaves both
- * inputs below unchanged, so the check still reports clean while the live
- * prompt and the parser have silently diverged.
- *
- * It is also inert: nothing imports these exports, and there is no test yet
- * (tests are R16 / Phase 4). Today they run only if someone writes a script.
- *
- * Phase 2 is where the prompt and this schema first meet in a live code path,
- * and is where the real check belongs: parse the RESPONSE FORMAT JSON literal
- * out of WORLD_SYSTEM_PROMPT and assert its key set equals this list.
+ * The prompt arm is the one that matters. Comparing the schema against this
+ * array alone proves only that this file is self-consistent — both are
+ * authored here. Renaming a field inside the prompt is the drift CLAUDE.md
+ * constraint #4 exists to prevent, and only the prompt arm catches it.
  */
 export const CONTRACT_FIELD_NAMES = [
   'narration',
@@ -225,6 +219,142 @@ export const CONTRACT_FIELD_NAMES = [
   'narrative_memory_updates.note',
   'gm_note',
 ] as const;
+
+/**
+ * Pulls the example JSON object out of WORLD_SYSTEM_PROMPT's RESPONSE FORMAT
+ * section and returns its contract field paths.
+ *
+ * Takes the prompt as an argument rather than importing it, so this package
+ * stays free of any dependency on backend/ and there is no import cycle.
+ *
+ * Throws if the block cannot be located or parsed — that is itself a contract
+ * failure worth failing on, since it means the prompt no longer states the
+ * response shape in a form anything can check.
+ */
+export function extractPromptContractFieldPaths(promptText: string): string[] {
+  const marker = '### RESPONSE FORMAT:';
+  const markerAt = promptText.indexOf(marker);
+  if (markerAt === -1) {
+    throw new Error(
+      `World Voice contract check: "${marker}" not found in WORLD_SYSTEM_PROMPT. ` +
+        'The prompt no longer declares its response shape where the contract check can read it.',
+    );
+  }
+
+  // Brace-match forward from the first '{' after the marker. The example is a
+  // real JSON object, so a depth counter that ignores braces inside strings is
+  // enough — no JSON5 or comment handling needed.
+  const start = promptText.indexOf('{', markerAt);
+  if (start === -1) {
+    throw new Error('World Voice contract check: no JSON object follows the RESPONSE FORMAT marker.');
+  }
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  let end = -1;
+  for (let i = start; i < promptText.length; i++) {
+    const ch = promptText[i];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (ch === '\\') {
+      escaped = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) {
+        end = i;
+        break;
+      }
+    }
+  }
+  if (end === -1) {
+    throw new Error('World Voice contract check: unbalanced braces in the RESPONSE FORMAT example.');
+  }
+
+  const raw = promptText.slice(start, end + 1);
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(raw) as Record<string, unknown>;
+  } catch (err) {
+    throw new Error(
+      'World Voice contract check: the RESPONSE FORMAT example is not valid JSON. ' +
+        `Parse error: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+
+  const paths: string[] = [];
+  for (const key of Object.keys(parsed)) {
+    const value = parsed[key];
+    if (
+      (key === 'state_updates' || key === 'narrative_memory_updates') &&
+      value !== null &&
+      typeof value === 'object' &&
+      !Array.isArray(value)
+    ) {
+      for (const nested of Object.keys(value as Record<string, unknown>)) {
+        paths.push(`${key}.${nested}`);
+      }
+    } else {
+      paths.push(key);
+    }
+  }
+  return paths;
+}
+
+/**
+ * THE contract check: asserts the live prompt, the derived JSON Schema, and
+ * CONTRACT_FIELD_NAMES all name the same nine fields.
+ *
+ * This is what CLAUDE.md constraint #4 actually requires — that the prompt and
+ * the parser cannot drift apart. Comparing the schema against
+ * CONTRACT_FIELD_NAMES alone only proves this file is self-consistent; it is
+ * the prompt arm that makes the check meaningful.
+ *
+ * The backend calls this at startup, so a mismatch fails the process
+ * immediately rather than surfacing as a confusing parse error mid-game.
+ */
+export function assertWorldVoiceContract(promptText: string): void {
+  const expected: string[] = [...CONTRACT_FIELD_NAMES].sort();
+  const fromSchema = extractContractFieldPaths(WORLD_VOICE_JSON_SCHEMA).sort();
+  const fromPrompt = extractPromptContractFieldPaths(promptText).sort();
+
+  const problems: string[] = [];
+
+  const diff = (label: string, actual: string[]): void => {
+    const missing = expected.filter((f) => !actual.includes(f));
+    const extra = actual.filter((f) => !expected.includes(f));
+    if (missing.length || extra.length) {
+      problems.push(
+        `${label}: ` +
+          (missing.length ? `missing [${missing.join(', ')}] ` : '') +
+          (extra.length ? `unexpected [${extra.join(', ')}]` : ''),
+      );
+    }
+  };
+
+  diff('derived JSON Schema', fromSchema);
+  diff('WORLD_SYSTEM_PROMPT RESPONSE FORMAT block', fromPrompt);
+
+  if (problems.length) {
+    throw new Error(
+      'World Voice JSON contract drift detected (CLAUDE.md constraint #4).\n' +
+        `Expected fields: [${expected.join(', ')}]\n` +
+        problems.map((p) => `  - ${p}`).join('\n') +
+        '\nThe prompt and the parser must be changed in the same commit. ' +
+        'Fix shared/src/worldVoice.ts and backend/src/data/worldSystemPrompt.ts together.',
+    );
+  }
+}
 
 /**
  * Walks a derived JSON Schema and returns the dotted paths of the contract

@@ -6,6 +6,8 @@
  * World Voice routes; this file stays minimal on purpose.
  */
 
+import { assertWorldVoiceContract } from '@soulbound/shared';
+import { WORLD_SYSTEM_PROMPT } from './data/worldSystemPrompt.js';
 import express, {
   type ErrorRequestHandler,
   type NextFunction,
@@ -33,6 +35,18 @@ async function main(): Promise<void> {
   }
 
   const { PORT, FRONTEND_ORIGIN, redact } = config;
+
+  // CLAUDE.md constraint #4: the prompt and the parser must never drift apart.
+  // This asserts that WORLD_SYSTEM_PROMPT's RESPONSE FORMAT block, the derived
+  // JSON Schema, and CONTRACT_FIELD_NAMES all name the same nine fields.
+  // Run at startup, like the API key check, so drift fails the process
+  // immediately instead of surfacing mid-game as an unexplained parse failure.
+  try {
+    assertWorldVoiceContract(WORLD_SYSTEM_PROMPT);
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  }
 
   const app = express();
 
