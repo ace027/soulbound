@@ -6,14 +6,14 @@
  * World Voice routes; this file stays minimal on purpose.
  */
 
-import { assertWorldVoiceContract } from '@soulbound/shared';
-import { WORLD_SYSTEM_PROMPT } from './data/worldSystemPrompt.js';
 import express, {
   type ErrorRequestHandler,
   type NextFunction,
   type Request,
   type Response,
 } from 'express';
+import { assertWorldVoiceContract } from '@soulbound/shared';
+import { WORLD_SYSTEM_PROMPT } from './data/worldSystemPrompt.js';
 
 interface ApiError extends Error {
   statusCode?: number;

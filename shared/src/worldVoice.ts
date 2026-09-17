@@ -175,10 +175,10 @@ export type UniqueSkillDetermination = z.infer<
 // Messages API as `output_config: { format: { type: 'json_schema', schema } }`.
 //
 // `io: 'input'` makes z.toJSONSchema emit the pre-parse shape, which is what we
-// want: it describes what the model must produce. Zod object schemas are
-// an explicit additionalProperties:false;
-// `additionalProperties: false` and a complete `required` list — both of which
-// strict structured-output validation depends on.
+// want: it describes what the model must produce. The schemas above are built
+// with `z.strictObject`, which emits an explicit `additionalProperties: false`
+// and a complete `required` list — both of which strict structured-output
+// validation depends on.
 
 function toStrictJsonSchema(schema: z.ZodType): Record<string, unknown> {
   return z.toJSONSchema(schema, { io: 'input' }) as Record<string, unknown>;
