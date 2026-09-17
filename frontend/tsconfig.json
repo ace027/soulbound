@@ -3,10 +3,18 @@
   "compilerOptions": {
     "module": "ESNext",
     "jsx": "react-jsx",
-    "types": ["vite/client"],
+    // @testing-library/jest-dom pulls in the matcher declarations so that
+    // expect(...).toBeInTheDocument() typechecks in test files. Test files are
+    // deliberately NOT excluded from this config: `build` is `tsc --noEmit`,
+    // so nothing here can leak into dist/, and typechecking the tests is worth
+    // more than a build-time exclude would be. If one is ever needed, it must
+    // be "**/__tests__/**" — Phase 3 puts tests under src/lib/__tests__/,
+    // src/game/__tests__/, src/hooks/__tests__/, src/components/__tests__/ and
+    // src/screens/__tests__/, none of which "src/__tests__/**" matches.
+    "types": ["vite/client", "@testing-library/jest-dom"],
     "noEmit": true,
     "isolatedModules": true,
     "allowImportingTsExtensions": false
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "vite.config.ts", "vitest.config.ts"]
 }
