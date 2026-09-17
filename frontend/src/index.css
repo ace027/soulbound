@@ -1,0 +1,103 @@
+/*
+ * Global CSS relocated from legacy/souldbound-world.jsx, where it was
+ * duplicated verbatim (or near-verbatim) inside <style> tags on six
+ * different screens. This file only relocates what was global-but-duplicated
+ * — no restyling. Inline style objects port as-is in Phase 3.
+ *
+ * Several of the legacy copies had drifted slightly from each other (minor
+ * animation-timing/blur differences from copy-paste iteration). Where copies
+ * disagreed, the value used here is whichever variant appeared in the
+ * majority of the legacy occurrences:
+ *   - breathe:    0.4/0.9 opacity (2 of 4 legacy copies; the others used 0.5/1 and 0.6/1)
+ *   - glowPulse:  18px peak box-shadow (2 of 3; the third used 22px)
+ *   - etchIn:     6px blur / translateY(6px) (2 of 3; the third used 8px/3px)
+ *   - scrollbar:  4px thumb width (2 of 3; the third used 3px)
+ * fadeIn, cardHover, soulPulse, slideUp, and textarea:focus were identical
+ * (or, for cardHover, empty) across every legacy occurrence.
+ */
+
+@keyframes etchIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes soulPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 12px #d4a84322;
+  }
+  50% {
+    box-shadow: 0 0 28px #d4a84355;
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@keyframes glowPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 8px #d4a84322;
+  }
+  50% {
+    box-shadow: 0 0 18px #d4a84366;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Present in the legacy file with no keyframe rules — relocated as-is. */
+@keyframes cardHover {
+}
+
+textarea:focus {
+  outline: none;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #0d0b07;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a2e1a;
+}
+
+.save-card:hover {
+  border-color: #3a2e1a !important;
+  background: #141008 !important;
+}

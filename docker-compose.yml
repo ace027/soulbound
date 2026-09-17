@@ -1,0 +1,116 @@
+# The Soulbound Chronicles — local development stack.
+#
+#   cp .env.example .env    # then add your Anthropic API key
+#   chmod 600 .env
+#   docker compose up
+#
+# Frontend: http://localhost:5173    Backend: http://localhost:3001
+#
+# The frontend runs Vite's dev server (the Dockerfile's `builder` stage) rather
+# than the static `runtime` stage, for two reasons: it keeps HMR working for
+# by-feel iteration, and the static server has no `/api` proxy, so the browser
+# would have no route to the backend.
+#
+# The `runtime` stage is NOT production-ready as it stands. It serves the built
+# bundle with `serve -s`, whose SPA fallback answers ANY unmatched path with
+# 200 + index.html — including /api/*. A frontend deployed that way would see
+# every API call "succeed" while receiving HTML instead of JSON, which is a
+# worse failure than a connection error because it does not look like a
+# networking problem. Before that image is deployed it needs either a reverse
+# proxy forwarding /api to the backend, or a configurable API base URL instead
+# of a same-origin /api path. Dormant today only because the frontend makes no
+# API calls yet.
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      secrets:
+        - npm_ca
+    environment:
+      # The ONLY service that receives the key. It never reaches the frontend,
+      # the browser bundle, or any image layer — it arrives at run time.
+      #
+      # Sourced from SOULBOUND_ANTHROPIC_KEY, not ANTHROPIC_API_KEY, on purpose.
+      # Claude Code uses an ANTHROPIC_API_KEY found in the environment in
+      # preference to a Pro/Max subscription, so naming the host variable that
+      # would quietly move the developer's own Claude Code usage onto billed API
+      # credits. The container still receives it as ANTHROPIC_API_KEY, which is
+      # what backend/src/config.ts reads — only the host-side name differs.
+      #
+      # Falls back to ANTHROPIC_API_KEY if SOULBOUND_ANTHROPIC_KEY is unset, so
+      # a .env carrying either name works.
+      - ANTHROPIC_API_KEY=${SOULBOUND_ANTHROPIC_KEY:-${ANTHROPIC_API_KEY}}
+      - PORT=3001
+      - FRONTEND_ORIGIN=http://localhost:5173
+      # Host allow-list. MUST include the compose service name: the frontend
+      # reaches the backend through Vite's proxy with `changeOrigin: true`,
+      # which rewrites the Host header to `backend:3001`. Without this entry
+      # every /api/* call 403s while the container still reports healthy —
+      # the healthcheck curls localhost from *inside* the container, so it
+      # never exercises the proxied path. Change the published port or put a
+      # reverse proxy in front, and this list must change with it.
+      - ALLOWED_HOSTS=localhost:3001,127.0.0.1:3001,[::1]:3001,backend:3001
+    ports:
+      # Loopback by default. The backend holds the API key and has no
+      # application-level auth, so binding 0.0.0.0 on a host with a public IP
+      # would expose it — and from Phase 2 that means an unmetered Anthropic
+      # proxy for anyone who finds the port. Exposing it beyond this host is an
+      # affirmative choice: change this, and put a reverse proxy and auth in
+      # front of it.
+      - "127.0.0.1:3001:3001"
+    # Runtime hardening. The backend holds the API key and proxies paid calls, so
+    # it gets the tightest posture the service can actually run under:
+    # no privilege escalation, no capabilities, and an immutable root filesystem
+    # (the process only ever reads its own bundle and writes to stdout).
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    healthcheck:
+      # Gates frontend startup below. Without this the frontend can come up
+      # against a backend that is still booting, and the first proxied request
+      # fails for no visible reason.
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3001/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 3s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: builder
+      secrets:
+        - npm_ca
+    command: npm run dev -w @soulbound/frontend
+    environment:
+      # Containers cannot reach each other on localhost. Vite's proxy targets
+      # the backend by compose service name.
+      - BACKEND_ORIGIN=http://backend:3001
+    ports:
+      - "127.0.0.1:5173:5173"
+    depends_on:
+      backend:
+        # Wait for the health check, not merely for the container to start.
+        condition: service_healthy
+    volumes:
+      # Source bind-mounts so HMR reflects edits without a rebuild.
+      - ./frontend/src:/app/frontend/src
+      - ./frontend/index.html:/app/frontend/index.html
+
+secrets:
+  # Optional CA for build environments behind a TLS-intercepting proxy.
+  # Defaults to /dev/null, which exists everywhere and is empty — the
+  # Dockerfiles test `[ -s /run/secrets/npm_ca ]`, so an empty file makes the
+  # instruction a no-op. Set NPM_CA_FILE only if your build host intercepts
+  # TLS. TLS verification is never disabled either way.
+  npm_ca:
+    file: ${NPM_CA_FILE:-/dev/null}

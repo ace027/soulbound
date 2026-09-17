@@ -1,0 +1,32 @@
+name: CI
+
+# The test suite is the net that holds CLAUDE.md's hard constraints in place
+# (max_tokens floor, the no-system-key path, the World Voice field contract).
+# Before this workflow it ran only when someone remembered to run it.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build (all workspaces)
+        run: npm run build
+
+      # Runs with ANTHROPIC_API_KEY deliberately unset: the suite must pass
+      # without a key, and no test may reach the real API. A test that starts
+      # needing a key has stopped being a unit test.
+      - name: Test
+        run: npm test

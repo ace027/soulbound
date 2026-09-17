@@ -1,0 +1,25 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    // The backend runs as plain Node ESM (`type: module`, `node dist/server.js`),
+    // which requires explicit .js extensions on relative imports. The base
+    // config's `bundler` resolution does not enforce that, so tsc could pass on
+    // code Node then rejects with ERR_MODULE_NOT_FOUND. frontend/ and shared/
+    // stay on `bundler` since their output is bundled.
+    "moduleResolution": "node16",
+    "module": "node16",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "types": ["node"]
+  },
+  "include": ["src/**/*"],
+  // Test files are compiled and run in place by Vitest (vitest.config.ts),
+  // never through this config. Without this exclude, `tsc -p tsconfig.json`
+  // (the `build` script) was emitting src/__tests__/*.test.ts into
+  // dist/__tests__/*.test.js — shipping test code into the same dist/ that
+  // `node dist/server.js` runs from, and Vitest's default file glob was then
+  // picking up that compiled copy alongside the source test, silently
+  // doubling every test run (discovered running this plan's verification:
+  // 12 tests / 2 files instead of the expected 6 / 1).
+  "exclude": ["src/__tests__/**"]
+}

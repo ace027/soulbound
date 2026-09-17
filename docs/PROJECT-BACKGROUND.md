@@ -24,6 +24,8 @@ The core game was functional as a single-file Claude.ai React artifact (`soulbou
 - A persistent `narrativeMemory` system (a known-entity ledger + rolling story notes) to fix NPC name drift and history loss outside the model's small action window
 - A static `WORLD_LORE` block (full authored world reference: cosmology, kingdoms, races, timeline, the six Sanctum Sovereigns) injected fresh per call alongside `WORLD_SYSTEM_PROMPT`, with prompt caching via `cache_control: ephemeral`, through a shared `buildSystemBlocks()` helper
 - API model `claude-sonnet-5` used uniformly across all three call functions: `determineUniqueSkill`, `callWorldEngine`, `generateIntroScene`
+  - ⚠️ **Historical — true of the artifact only.** The migrated app (Phase 2, 2026-09-17) splits this:
+    Sonnet 5 on unique-skill, Opus 5 on world-engine + intro-scene. See `CLAUDE.md` § Model & API pattern.
 
 A friend has served as a playtester and provided UI/UX feedback throughout.
 
@@ -57,7 +59,7 @@ These are the hard-won conclusions driving architecture decisions — see `desig
 
 **Current (artifact phase):**
 - Frontend: React/JSX, single file (`soulbound-world.jsx`)
-- AI: Anthropic Messages API (`claude-sonnet-5`), prompt caching on the lore block
+- AI: Anthropic Messages API (`claude-sonnet-5`), prompt caching on the lore block — *artifact phase; the migrated backend splits Sonnet 5 / Opus 5, see `CLAUDE.md`*
 - Storage: `localStorage` for saves; session-only in-memory storage for the API key
 
 **Planned (post-migration / multiplayer phase):**

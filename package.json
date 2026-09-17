@@ -1,0 +1,16 @@
+{
+  "name": "soulbound-chronicles",
+  "private": true,
+  "type": "module",
+  "version": "0.0.1",
+  "workspaces": [
+    "shared",
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces --if-present"
+  }
+}
