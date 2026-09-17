@@ -1,9 +1,9 @@
 # Project State
 
 ## Current Position
-- **Phase**: 1 of 4 (shipped)
-- **Status**: Phase 1 shipped 2026-09-17 — all gates passed (tests N/A until R16)
-- **Last Activity**: Phase 1 shipped (2026-09-17)
+- **Phase**: 2 of 4 (planned)
+- **Status**: Phase 2 planned — 5 plans across 4 waves, plan critique applied
+- **Last Activity**: Phase 2 planning (2026-09-17)
 
 ## Progress
 ```
@@ -22,7 +22,11 @@
 - **Cost profile**: Balanced — Opus 5 for the contract and the `App.tsx` game-logic port, Sonnet 5 for backend routes and UI extraction, Haiku 4.5 for verbatim data copying
 
 ## Next Action
-Run `/legion:plan 2` to plan Phase 2: Backend & World Voice
+Run `/legion:build` to execute Phase 2: Backend & World Voice
+
+⚠️ **Plan 02-05 needs a real `ANTHROPIC_API_KEY` in `.env`.** Waves 1–3 run without one. Wave 4 reports BLOCKED if absent rather than fabricating a pass.
+
+**Auth decision (2026-09-17)**: a Claude Max subscription does not include API access — Anthropic bills the API separately via Console credits. The artifact worked only because claude.ai injected auth tied to the viewer. Proceeding on Console credits with the Opus 5 split intact (~$0.04/turn, ~$2.10 per 50-turn session, assuming caching engages). A proxy converting API-key requests into OAuth calls against a Max subscription was raised and declined.
 
 ## Phase 1 Plans
 | Plan | Wave | Deliverable | Agent | Model | Status |

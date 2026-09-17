@@ -33,7 +33,7 @@
 - `cache_creation_input_tokens` / `cache_read_input_tokens` logged per call, and a second world-engine call demonstrably reads cache
 - Non-2xx responses produce diagnosable structured errors, replacing the legacy "no `response.ok` check" pattern
 - API key absent from every log line, error response, and stack trace — checked, not assumed
-**Plans**: 3
+**Plans**: 5 (planned 2026-09-17 — revised up from 3: tests pulled forward from Phase 4 per retro action item 1, and live verification is its own plan because it is the only one requiring a real API key)
 
 ### Phase 3: Frontend Port
 **Goal**: The game is playable. UI ported from the artifact with behavior intact, wired to the backend rather than to Anthropic directly.
@@ -68,7 +68,7 @@
 | Phase | Plans | Completed | Status |
 |-------|-------|-----------|--------|
 | 1. Foundation & Contract | 6 | 6 | **Shipped** 2026-09-17 — review passed (2 cycles) |
-| 2. Backend & World Voice | 3 | 0 | Not started |
+| 2. Backend & World Voice | 5 | 0 | **Planned** — 4 waves, critique applied |
 | 3. Frontend Port | 4 | 0 | Not started |
 | 4. Parity & Verification | 3 | 0 | Not started |
-| **Total** | **16** | **6** | 38% |
+| **Total** | **18** | **6** | 33% |

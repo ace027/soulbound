@@ -88,5 +88,22 @@ That is why all three routes live in **one plan** (02-03) sharing **one call hel
 
 **Plan 02-05 cannot run without a real key.** `cache_read_input_tokens > 0` — the single thing the artifact could never verify — requires real calls. If no key is present when the build reaches wave 4, that plan reports **BLOCKED** rather than fabricating a pass. Estimated cost of the verification itself: well under a dollar.
 
+## Plan Critique — findings applied 2026-09-17
+
+Two read-only critics reviewed these plans before any code was written. Pre-mortem returned **REWORK**, assumption-hunt returned **CAUTION**. Both findings sets were verified against the installed SDK and the real code, then applied. The plans below are the revised versions.
+
+| # | Finding | Severity | Applied to |
+|---|---|---|---|
+| 1 | **Client must be lazy.** `config.ts` throws synchronously at import with no key — verified. A module-load client would make `anthropic.ts` un-importable without a key, breaking this phase's own premise and plan 02-04's "npm test with the key unset must pass". `server.ts` already works around this with a dynamic import. | CRITICAL | 02-01, 02-04 |
+| 2 | **Use `zodOutputFormat`, not raw `z.toJSONSchema`.** Measured: ours emits `$schema` and 4 `enum` occurrences; the SDK's own normalizer strips both. Anthropic ships `transformJSONSchema` because raw Zod output is not safe to send. Would have failed on the first paid call, on all three routes at once. | CRITICAL | 02-01, 02-03, 02-04 |
+| 3 | **`output_config.effort` never set.** Confirmed real: `'low'\|'medium'\|'high'\|'xhigh'\|'max'`. Opus 5 runs adaptive thinking by default and it consumes the same `max_tokens` raised to 16000 to prevent truncation. Also unstated in the cost estimate. | HIGH | 02-01, 02-03, 02-04, 02-05 |
+| 4 | **Cache TTL is 5 minutes** (`ttl?: '5m'\|'1h'`, defaulting to `5m`). Plan 02-05 said only "within the TTL" and ordered a write-up between the two calls. A lapse yields `cache_read_input_tokens === 0` — indistinguishable from broken caching, which the plan instructs be reported as a real finding. | HIGH | 02-05 |
+| 5 | **Rendered-string diffs, not source diffs.** Phase 1's retro credits exactly this for catching the CRLF/LF case, and 02-03's setup is worse — the ported prompt sits inside a handler with validation, so source differs structurally by necessity. The lesson was in RETRO.md and not carried forward. | MEDIUM | 02-03 |
+| 6 | **Show the no-system branch's source**, not just the boolean. `'system' in req === false` passes for a correct conditional spread and fails for an `undefined` ternary — but the report format didn't force the distinction to be visible. | MEDIUM | 02-01, 02-04 |
+| 7 | **Opus 5 vs the MUST NOT list is untested.** The list is balance-load-bearing (CLAUDE.md #6) and was stress-tested on **Sonnet 5**; the design log says that resilience is partly a property of the model, not the wording. Both routes carrying it now run Opus 5 with the prompt unchanged, and no phase tests rule-adherence. Costs nothing to partially address. | MEDIUM | 02-05 |
+| 8 | **Cache namespace depends on `output_config` too**, not just system blocks. A future change to one route's schema or effort silently strands the other's cache warmth — same shape as the original `generateIntroScene` bug. | LOW | 02-01, 02-03 |
+
+Two findings were accepted without change: prefill/`budget_tokens` 400 behaviour will surface on the first live call rather than silently (so no separate check is needed), and the cache-economics stakes are already handled correctly by 02-05's refusal to fabricate a pass.
+
 ## Harness
 **read-before-write → evidence-before-action → minimal diff → verify-before-report.** No plan reports success without running its verify commands and pasting real output. An agent that cannot verify reports BLOCKED.
