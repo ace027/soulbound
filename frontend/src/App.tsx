@@ -47,16 +47,28 @@
  *     questionnaire flow. `game/applyWorldUpdate.ts` deliberately excludes it —
  *     a pure function that calls `Math.random()` is not one.
  *
- * ── Known type-level deviation, flagged for plan 03-10 ──
+ * ── Deviations from a literal port, all of them type-level ──
  *
- * `phase` is a `Phase` union here, where legacy has a bare string. That is a
- * compile-time improvement with no runtime difference — it makes a typo in the
- * render dispatch an error instead of a blank screen. The cost is the one cast
- * at `SimulationScreen`'s `setPhase` prop, which plan 03-06 typed
- * `(phase: string) => void` because no `Phase` union existed anywhere in the
- * repo at the time. Its only call site passes `"title"`. Tightening that prop
- * to `Phase` belongs to whoever next owns `SimulationScreen.tsx`; it is not
- * this plan's file.
+ *  a. `phase` is a `Phase` union, where legacy has a bare string. No runtime
+ *     difference; it makes a typo in the render dispatch a compile error rather
+ *     than a silently blank screen. `Phase` is exported and `SimulationScreen`
+ *     and `SoulCodexContents` now take `(phase: Phase) => void`, so the seam is
+ *     checked end to end. It briefly went through an `as Phase` cast, which
+ *     review correctly flagged as leaving the typo hole open one level down.
+ *
+ *  b. Two early-return guards have no legacy analogue and are inert at runtime:
+ *     `|| !gameState` in `handleAction` (legacy 916 has no such check) and
+ *     `if (!selectedRace) return;` in `handleQuestionnaireComplete` (legacy
+ *     866). Both are forced by `strict: true` — `callWorldEngine` requires a
+ *     non-null `GameState` and `Character.race` a non-null `Race`, which
+ *     untyped JS never had to satisfy. Neither is reachable: `ActionBar` only
+ *     mounts once `gameState` is set, and `RaceScreen`'s own button guard
+ *     blocks reaching the questionnaire without a race. Listed here because a
+ *     file claiming a statement-for-statement port owes a list of every place
+ *     it is not one.
+ *
+ *  c. `errMessage()` wraps what legacy writes as a bare `e.message`, because a
+ *     caught value is `unknown` under TS. The rendered string is identical.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -82,7 +94,7 @@ import QuestionnaireScreen from './screens/QuestionnaireScreen';
 import LoadingScreen from './screens/LoadingScreen';
 import SimulationScreen from './screens/SimulationScreen';
 
-type Phase = 'title' | 'race' | 'questionnaire' | 'loading' | 'simulation' | 'saves';
+export type Phase = 'title' | 'race' | 'questionnaire' | 'loading' | 'simulation' | 'saves';
 
 /**
  * Legacy is untyped JS and writes `e.message` directly. Under TS a caught value
@@ -340,8 +352,7 @@ export default function App() {
         newSkillIds={newSkillIds}
         savingStatus={savingStatus}
         handleManualSave={handleManualSave}
-        // See the type-level deviation note at the top of this file.
-        setPhase={(p) => setPhase(p as Phase)}
+        setPhase={setPhase}
         mobileTab={mobileTab}
         setMobileTab={setMobileTab}
         input={input}

@@ -1,5 +1,5 @@
 import { SAVE_SCHEMA_VERSION, type GameState, type LogEntry, type SaveSlot } from '@soulbound/shared';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { deleteSave, fmtDate, listSaves, loadSave, newSlotId, writeSave } from '../saves.js';
 
@@ -293,5 +293,45 @@ describe('fmtDate', () => {
 
     expect(formatted).toContain(' · ');
     expect(formatted.length).toBeGreaterThan(5);
+  });
+});
+
+describe('writeSave — the storage-failure path', () => {
+  /**
+   * Added in phase review. `writeSave`'s catch (quota exceeded, or Safari
+   * private mode, where setItem throws) returns false rather than throwing into
+   * a render path — but nothing exercised it, so the whole branch could have
+   * been deleted with the suite green.
+   */
+  it('returns false and does not throw when setItem throws', () => {
+    const err = new DOMException('quota', 'QuotaExceededError');
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw err;
+    });
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    expect(() => writeSave('sbc_quota', makeSaveSlot())).not.toThrow();
+    expect(writeSave('sbc_quota', makeSaveSlot())).toBe(false);
+
+    spy.mockRestore();
+    quiet.mockRestore();
+  });
+
+  it('leaves the index untouched when the slot write fails', () => {
+    writeSave('sbc_ok', makeSaveSlot());
+    const before = listSaves();
+
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota', 'QuotaExceededError');
+    });
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(writeSave('sbc_doomed', makeSaveSlot())).toBe(false);
+    spy.mockRestore();
+    quiet.mockRestore();
+
+    // The slot write throws first, so the index never reaches setItem — no
+    // phantom entry pointing at a slot that was never written.
+    expect(listSaves()).toEqual(before);
+    expect(listSaves().some((e) => e.id === 'sbc_doomed')).toBe(false);
   });
 });

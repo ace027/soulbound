@@ -5,6 +5,7 @@ import ActionBar from '../components/ActionBar';
 import SoulCodexContents from '../components/SoulCodexContents';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { sharedBg } from './sharedBg';
+import type { Phase } from '../App';
 
 /**
  * The live simulation screen — mobile two-tab layout and desktop sidebar
@@ -68,7 +69,7 @@ export interface SimulationScreenProps {
   newSkillIds: Set<string>;
   savingStatus: '' | 'saving' | 'saved';
   handleManualSave: () => void;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: Phase) => void;
   mobileTab: 'World' | 'Codex';
   setMobileTab: (tab: 'World' | 'Codex') => void;
   input: string;

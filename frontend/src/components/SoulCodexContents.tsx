@@ -1,5 +1,6 @@
 import type { GameState, Skill } from '@soulbound/shared';
 import SkillCard from './SkillCard';
+import type { Phase } from '../App';
 
 /**
  * Soul Codex — the sidebar (desktop) / Codex tab (mobile) contents.
@@ -24,7 +25,7 @@ export interface SoulCodexContentsProps {
   /** Legacy `useState("")`, values `"" | "saving" | "saved"` (legacy 800). */
   savingStatus: '' | 'saving' | 'saved';
   handleManualSave: () => void;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: Phase) => void;
 }
 
 export default function SoulCodexContents({

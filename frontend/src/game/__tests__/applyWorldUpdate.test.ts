@@ -159,6 +159,31 @@ describe('applyWorldUpdate — evolutions and Soul Rewrite', () => {
     expect(r.state.skills.some((s) => s.name === 'Emberwake')).toBe(true);
     expect(r.state.skills.some((s) => s.name === 'Ember')).toBe(false);
   });
+
+  // MUTANT: `newNames.add(ev.new_name)` anywhere in the evolution loop.
+  // Found by an independent mutation sweep during phase review: the rule
+  // "setNewSkillIds receives only newly-GRANTED names, never evolved ones"
+  // (legacy 1011, restated in three docstrings) had zero coverage at either
+  // this layer or the wiring layer, so marking evolved skills as new would
+  // have shipped silently. The grant-then-evolve case above is the sharp one:
+  // 'Ember' IS granted this turn and IS evolved this turn, so newSkillIds must
+  // carry the granted name and not the evolved one.
+  it('newSkillIds carries granted names only — never evolved ones', () => {
+    const r = applyWorldUpdate(state(), 'act', response({
+      new_skills_granted: [{ skill_name: 'Ember', tier: 'Common', mastery: 5, description: 'd', soul_etching_text: 'e' }],
+      skill_evolutions: [{ old_name: 'Ember', new_name: 'Emberwake', old_tier: 'Common', new_tier: 'Extra', description: 'd2', rewrite_narrative: null }],
+    }));
+    expect([...r.newSkillIds]).toEqual(['Ember']);
+    expect(r.newSkillIds.has('Emberwake')).toBe(false);
+  });
+
+  // MUTANT: same, for an evolution with no grant at all — newSkillIds must stay empty.
+  it('an evolution alone adds nothing to newSkillIds', () => {
+    const r = applyWorldUpdate(withHistory(), 'act', response({
+      skill_evolutions: [{ old_name: 'Ledger', new_name: 'Ledger Ascendant', old_tier: 'Unique', new_tier: 'Ultimate', description: 'd', rewrite_narrative: null }],
+    }));
+    expect(r.newSkillIds.size).toBe(0);
+  });
 });
 
 describe('applyWorldUpdate — sub-ability emergence', () => {

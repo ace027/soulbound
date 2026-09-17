@@ -1,13 +1,13 @@
 # Project State
 
 ## Current Position
-- **Phase**: 3 of 4 (planned)
-- **Status**: Phase 3 planned and critiqued — 10 plans across 6 waves. Critique returned REWORK; all findings applied.
-- **Last Activity**: Phase 3 planning (2026-09-17)
+- **Phase**: 3 of 4 (complete)
+- **Status**: Phase 3 complete — all 10 plans executed, review passed in 1 cycle (3-reviewer panel).
+- **Last Activity**: Phase 3 review (2026-09-17)
 
 ## Progress
 ```
-[█████████░░░░░░░░░░░] 46% — 11/24 plans complete (Phase 3 is 10 plans, not 4)
+[██████████████████░░] 88% — 21/24 plans complete
 ```
 
 ## Ship record
@@ -34,7 +34,45 @@
 
 ## Next Action
 
-**Phase 3 is planned.** Run `/legion:build` to execute it — but see the critique note below first.
+**Phase 3 is complete.** Run `/legion:plan 4` to plan Parity & Verification.
+
+### Phase 3 execution record
+| Plan | Wave | Commit |
+|---|---|---|
+| 01 | 0 | `2a0786f` test harness |
+| 02, 04, 05 | 1 | `9f7f6a0` saves, game logic, viewport hook |
+| 03, 07 | 1 | `2ee1faa` API client, creation screens |
+| 06 | 2 | `1b8e8f5` presentational components + shared LogEntry |
+| 08 | 3 | `bca8dd0` loading/simulation screens, CLAUDE.md #3 fixes |
+| 09 | 4 | `963513c` App.tsx wiring |
+| 10 | 5 | `61fbb07` integration test + cross-plan re-verification |
+| review | — | fix cycle: 4 surviving mutants closed, 127 tests |
+
+### ⚠️ Carried into Phase 4 from the Phase 3 review
+1. **Inherited closure race, NOT fixed — developer call needed.** `handleAction`
+   closes over `currentSlotId`. Clicking "+ Slot" (`handleManualSave`, which has no
+   `isThinking` guard) while a world-engine call is in flight lands that turn's
+   autosave on the OLD slot; the new slot stays one turn stale. Reproduced live
+   during review. Present identically in legacy 913-1031, so the port did not
+   introduce it — flagged rather than changed, per CLAUDE.md's working-style rule.
+   Minimal fix if wanted: mirror `currentSlotId` in a `useRef` and read that inside
+   the `setLog` updater.
+2. **No repeatable visual regression guard.** jsdom performs no layout, so the
+   suite asserts declared style properties only. Plan 03-08's screenshot harness was
+   deleted after use. Nothing automated would catch a future collapsed panel.
+3. **Nothing has touched a live backend.** Every frontend test mocks `fetch`.
+   The API wiring's "PASS" has never reached a real Express server — that is R14.
+4. **`runtime` Docker image still non-deployable** (`/api/*` answers 200 + HTML).
+   Known and deferred; it becomes real the moment the frontend is served from it.
+
+### Process finding from the review — worth not repeating
+Three reviewers ran in parallel against one working tree, one of which mutates
+source files by design. All three independently observed a "flaky" test and
+attributed it to Vitest pool flakiness. It was not flaky: the failures were other
+reviewers' live mutations. `|| 5` → `?? 5` produced `expected +0 to be 5`, and
+`response.ok` → `if (false)` produced the 9-test api failure. On a clean tree the
+suite is 8/8 green. **A mutating reviewer needs its own worktree, or must run
+serially.**
 
 ### Phase 3 Plans (post-critique)
 | Plan | Wave | Deliverable | Agent | Model |

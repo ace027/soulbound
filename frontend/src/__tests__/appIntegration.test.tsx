@@ -26,7 +26,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   MAX_LOG_SAVED,
   SAVE_INDEX_KEY,
@@ -179,6 +179,17 @@ function submitAction(action: string) {
   fireEvent.click(screen.getByRole('button', { name: /act/i }));
 }
 
+/**
+ * Submits without going through the Act button's `disabled` attribute — used to
+ * prove `handleAction`'s own `isThinking` guard refuses the call, which is a
+ * different claim from "the button is disabled".
+ */
+function submitActionIgnoringDisabled(action: string) {
+  const box = screen.getByPlaceholderText('What do you do?');
+  fireEvent.change(box, { target: { value: action } });
+  fireEvent.keyDown(box, { key: 'Enter', shiftKey: false });
+}
+
 beforeEach(() => {
   localStorage.clear();
   vi.useRealTimers();
@@ -245,6 +256,129 @@ describe('App — a full turn, end to end', () => {
     // The pre-existing skill is NOT treated as new — proves the assertion
     // above is reading isNew and not something every card has.
     expect(cardRoot('Scale Armor')).toHaveStyle({ animation: 'none' });
+  });
+});
+
+describe('App — the error path of a live turn', () => {
+  /**
+   * Added in phase review. An independent mutation sweep replaced this catch
+   * body with `void e;` — deleting the player-visible "The World Voice fell
+   * silent" entry entirely — and the whole suite stayed green with tsc clean.
+   * R12 exists to make failures diagnosable; the one path that renders that
+   * diagnosis to the player had no coverage at any layer.
+   */
+  it('renders an error entry, clears isThinking, and does NOT autosave', async () => {
+    seedSave([{ type: 'narration', text: 'You arrive at the verge.' }]);
+    const before = readPersisted();
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch'); }));
+
+    await loadIntoSimulation();
+    submitAction('press into the embers');
+
+    // The catch branch's user-facing string, with the real cause appended —
+    // never `undefined`, and never a raw error object.
+    const entry = await screen.findByText(/The World Voice fell silent\./);
+    expect(entry.textContent).toMatch(/Failed to fetch/);
+    expect(entry.textContent).not.toMatch(/undefined/);
+
+    // isThinking resets, so the player can act again rather than being wedged.
+    // Type first: handleAction also clears `input`, and ActionBar disables on
+    // `isThinking || !input.trim()` — asserting on the bare button would pass
+    // for the wrong reason (empty box), not because isThinking went false.
+    fireEvent.change(screen.getByPlaceholderText('What do you do?'), {
+      target: { value: 'try again' },
+    });
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /act/i })).not.toBeDisabled(),
+    );
+
+    // No partial write: a failed turn must not overwrite the save with a
+    // half-applied state. autoSave lives inside the setLog updater of the TRY
+    // branch only, so the catch branch reaches no save at all.
+    const after = readPersisted();
+    expect(after.log).toEqual(before.log);
+    expect(after.gameState).toEqual(before.gameState);
+  });
+
+  it('a non-2xx backend response takes the same path', async () => {
+    seedSave([{ type: 'narration', text: 'You arrive at the verge.' }]);
+    vi.stubGlobal('fetch', vi.fn(async () =>
+      new Response(JSON.stringify({ error: { code: 'UPSTREAM_ERROR', message: 'the aether is quiet' } }), {
+        status: 502,
+        headers: { 'content-type': 'application/json' },
+      }),
+    ));
+
+    await loadIntoSimulation();
+    submitAction('press into the embers');
+
+    const entry = await screen.findByText(/The World Voice fell silent\./);
+    // api.ts surfaces the backend's structured envelope rather than a parse error.
+    expect(entry.textContent).toMatch(/UPSTREAM_ERROR/);
+    expect(entry.textContent).toMatch(/502/);
+  });
+});
+
+describe('App — the two newSkillIds clear timeouts', () => {
+  /**
+   * 2500ms after an action (legacy 1012), 2000ms after the questionnaire
+   * (legacy 905). Three separate docstrings say "do not unify them", yet no
+   * test observed either duration — a review sweep widened 2500 to 9999 and the
+   * whole suite stayed green.
+   *
+   * This spies on the scheduled delay rather than driving fake timers. Fake
+   * timers fight `waitFor` and the pending fetch promise, and `shouldAdvanceTime`
+   * would auto-advance past a 2500ms boundary non-deterministically. The
+   * constant is what is load-bearing, so the constant is what is asserted.
+   */
+  it('schedules the action-path glow clear at exactly 2500ms', async () => {
+    seedSave([{ type: 'narration', text: 'You arrive at the verge.' }]);
+    mockFetchOnce(makeTurnResponse());
+    const spy = vi.spyOn(globalThis, 'setTimeout');
+
+    await loadIntoSimulation();
+    submitAction('press into the embers');
+    await waitFor(() => expect(screen.getByText('27/100')).toBeInTheDocument());
+
+    const delays = spy.mock.calls.map((c) => c[1]);
+    // The action path schedules 2500. Widening or shortening it fails here.
+    expect(delays).toContain(2500);
+    // And it is NOT the questionnaire path's 2000 — unifying the two on either
+    // value fails one of these two assertions. (autoSave's own savingStatus
+    // reset is also 2000ms, so 2000 does legitimately appear; what must not
+    // happen is the glow clear moving onto it, which the 2500 assertion pins.)
+    expect(delays.filter((d) => d === 2500)).toHaveLength(1);
+  });
+});
+
+describe('App — guards on the turn itself', () => {
+  /**
+   * Also from the review sweep: removing `isThinking` from handleAction's
+   * early-return left the suite green. components.test.tsx asserts the Act
+   * button carries `disabled`, which is a presentational prop — it does not
+   * prove the handler itself refuses a second call.
+   */
+  it('a second submit while a turn is in flight is ignored', async () => {
+    seedSave([{ type: 'narration', text: 'You arrive at the verge.' }]);
+    let release!: (v: Response) => void;
+    const pending = new Promise<Response>((res) => { release = res; });
+    const f = vi.fn(async () => pending);
+    vi.stubGlobal('fetch', f);
+
+    await loadIntoSimulation();
+    submitAction('press into the embers');
+    // The turn is now in flight. Call the handler again directly, bypassing the
+    // button's `disabled` attribute — that attribute is not the guard under test.
+    submitActionIgnoringDisabled('press again');
+
+    expect(f).toHaveBeenCalledTimes(1);
+
+    release(new Response(JSON.stringify(makeTurnResponse()), {
+      status: 200, headers: { 'content-type': 'application/json' },
+    }));
+    await waitFor(() => expect(screen.getByText('27/100')).toBeInTheDocument());
+    const persisted = readPersisted();
+    expect(persisted.log.filter((e) => e.type === 'action')).toHaveLength(1);
   });
 });
 
