@@ -47,7 +47,7 @@
 - Mobile two-tab layout works below 700px and now responds to resize (legacy line 1348 bug fixed)
 - Google Fonts loaded once via `index.html`, not re-injected per render in six places
 - No `window.confirm`/`alert`/`prompt` anywhere; `min-height: 0` present on every flex ancestor of a scroll region
-**Plans**: 9 (planned 2026-09-17 — revised up from 4. Two reasons found only by reading the code:
+**Plans**: 10 (planned 2026-09-17 — revised up from 4. Two reasons found only by reading the code:
 `frontend/package.json` has no test runner at all, so a blocking wave-0 plan is needed before the
 retro's "tests alongside build" is even possible; and the 3-task-per-plan cap plus the dependency
 structure don't permit fewer. Architecture chosen from three competing proposals — see 03-CONTEXT.md.)
@@ -72,6 +72,6 @@ structure don't permit fewer. Architecture chosen from three competing proposals
 |-------|-------|-----------|--------|
 | 1. Foundation & Contract | 6 | 6 | **Shipped** 2026-09-17 — review passed (2 cycles) · [PR #1](https://github.com/DeanItServices/soulbound/pull/1) |
 | 2. Backend & World Voice | 5 | 5 | **Shipped** 2026-09-17 — review passed (3 cycles) · [PR #1](https://github.com/DeanItServices/soulbound/pull/1) |
-| 3. Frontend Port | 9 | 0 | **Planned** 2026-09-17 — 9 plans, 5 waves |
+| 3. Frontend Port | 10 | 0 | **Planned** 2026-09-17 — 10 plans, 6 waves (critique: REWORK applied) |
 | 4. Parity & Verification | 3 | 0 | Not started |
-| **Total** | **23** | **11** | 48% |
+| **Total** | **24** | **11** | 46% |

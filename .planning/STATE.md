@@ -2,12 +2,12 @@
 
 ## Current Position
 - **Phase**: 3 of 4 (planned)
-- **Status**: Phase 3 planned — 9 plans across 5 waves. Architecture selected from 3 competing proposals.
+- **Status**: Phase 3 planned and critiqued — 10 plans across 6 waves. Critique returned REWORK; all findings applied.
 - **Last Activity**: Phase 3 planning (2026-09-17)
 
 ## Progress
 ```
-[█████████░░░░░░░░░░░] 48% — 11/23 plans complete (total rose: Phase 3 is 9 plans, not 4)
+[█████████░░░░░░░░░░░] 46% — 11/24 plans complete (Phase 3 is 10 plans, not 4)
 ```
 
 ## Ship record
@@ -36,20 +36,48 @@
 
 **Phase 3 is planned.** Run `/legion:build` to execute it — but see the critique note below first.
 
-### Phase 3 Plans
+### Phase 3 Plans (post-critique)
 | Plan | Wave | Deliverable | Agent | Model |
 |---|---|---|---|---|
-| 01 | 0 | Frontend test harness (vitest + jsdom + RTL) | Frontend Developer | Sonnet 5 |
-| 02 | 1 | `lib/saves.ts` + tests (R11) | Frontend Developer | Sonnet 5 |
-| 03 | 1 | `lib/api.ts` + tests (R9, R12) | Frontend Developer | Sonnet 5 |
-| 04 | 1 | `game/applyWorldUpdate.ts` + mutation-verified tests (R10) | orchestrator | Opus 5 |
-| 05 | 1 | `tierStyle` + `useIsMobile` + tests (R12) | Frontend Developer | Sonnet 5 |
-| 06 | 2 | Four presentational components (R9) | Frontend Developer | Sonnet 5 |
-| 07 | 3 | Title / Race / Questionnaire screens (R9) | Frontend Developer | Sonnet 5 |
-| 08 | 3 | Loading / Simulation screens + CLAUDE.md #3 fixes | UX Architect | Sonnet 5 |
-| 09 | 4 | `App.tsx` wiring + integration test | orchestrator | Opus 5 |
+| 01 | 0 | Test harness — jest-dom wiring, scrollIntoView stub, configs frozen | Frontend Dev | Sonnet 5 |
+| 02 | 1 | `lib/saves.ts` + tests (R11) | Frontend Dev | Sonnet 5 |
+| 03 | 1 | `lib/api.ts` + content-type guard + zero-cost stub (R9, R12) | Frontend Dev | Sonnet 5 |
+| 04 | 1 | `game/applyWorldUpdate.ts` (925-1021) + 10 mutants (R10) | orchestrator | Opus 5 |
+| 05 | 1 | `hooks/useIsMobile.ts` + tests (R12) | Frontend Dev | Sonnet 5 |
+| 07 | 1 | Title / Race / Questionnaire screens (R9) | Frontend Dev | Sonnet 5 |
+| 06 | 2 | Four components + `shared` LogEntry extension (R9) | Frontend Dev | Sonnet 5 |
+| 08 | 3 | Loading / Simulation screens + CLAUDE.md #3 fixes + screenshots | UX Architect | Sonnet 5 |
+| 09 | 4 | `App.tsx` wiring (seeded-save path, zero cost) | orchestrator | Opus 5 |
+| 10 | 5 | Integration test + phase-close cross-plan re-verification | orchestrator | Opus 5 |
 
-Waves 1 and 3 are file-disjoint (verified) and dispatch in parallel. Wave 0 blocks everything.
+Wave 1 runs **five** plans in parallel (file-disjointness verified).
+
+### ⚠️ Plan critique ran and returned REWORK — findings applied
+Carried forward unaddressed through two retros, it caught five execution-blocking defects:
+
+1. **Four factual errors in the plans**: "17 `useState`" (legacy has 16 + 1 `useRef`) — which would
+   have made a *correct* port fail its own verify gate; every component port range off by one at the
+   start; "`writeSave` already slices the log" (it has zero slices — the cap is in `autoSave`); and
+   a new `game/tierStyle.ts` duplicating a `TIER_STYLE` **already exported by `shared`**.
+2. **A fix-induced defect in the prescribed fix**: the CLAUDE.md #3 replacement div omitted `flex: 1`,
+   which collapses the mobile layout — and **jsdom does no layout**, so every test would have passed
+   on a visibly broken page. Third consecutive phase where a fix introduces the defect.
+3. **Wave 0 could not run waves 2-4's tests**: `@testing-library/jest-dom` installed but never
+   registered, the exclude glob matching none of this phase's test directories, and no
+   `scrollIntoView` stub (jsdom lacks it; legacy 812 calls it on every log change).
+4. **Three vacuous verifications**: the `<style>` grep pointed at `components/`, which contains none
+   of the six blocks; "17 `useState`" was unsatisfiable; "compare programmatically" is not executable
+   against JSX with conditionals and template interpolation.
+5. **Three orphaned seams**: the 80-entry cap, the `logEntry` composition (range said 1008, it is
+   built at 1014), and `actionHistory` growing past the backend's `max(2000)`.
+
+Also applied: `shared/src/gameState.ts` gained an owner (plan 06) for the missing `LogEntry.etchingSkill`
+and `unknown[]` `newSkills`; plan 09 was split so the integration test cannot be absorbed into the
+wiring; and the **cross-plan re-verification** the context claimed to apply — but no plan contained —
+is now plan 10.
+
+**Rule adopted for this phase: derive every count and range, report the derivation, never restate a
+number from prose.** Four of the five blocking defects were that failure.
 
 ### Architecture: Pragmatic, chosen from three proposals
 Three read-only proposals were generated. **Pragmatic** won: split the five screens into

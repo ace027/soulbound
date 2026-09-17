@@ -26,33 +26,122 @@ Rejected and why:
 
 ## Verified facts this phase is planned against
 
-Each was confirmed by reading the code, not assumed:
+**Every number below was derived programmatically, not asserted.** A first draft of this document
+carried four factual errors that plan critique caught — including a `17 useState` count that would
+have made a *correct* port fail its own verify gate. Rule for this phase: **derive the count or the
+range, report both the derivation and the value; never restate a number from prose.**
 
-- **`shared/src/gameState.ts` already exports** `SAVE_INDEX_KEY`, `SAVE_PREFIX`, `MAX_LOG_SAVED = 80`
-  and `SAVE_SCHEMA_VERSION = 1` (lines 136-141). `lib/saves.ts` **imports** these. Redeclaring them
-  creates a second source of truth for the save keys — the exact drift class this project keeps
-  getting bitten by.
-- **The 25/60/100 sub-ability thresholds are model-side, not client-side.** They live in
-  `WORLD_SYSTEM_PROMPT` (lines 40, 55, 93, 139). The client only *applies*
-  `unique_sub_ability_unlocked` when the API returns it. **Do not write a frontend test asserting
-  the thresholds, and do not add a client-side guard that rejects an unlock outside them** — that
-  would duplicate the prompt's source of truth and silently swallow legitimate unlocks when a
-  mastery jump overshoots.
-- **Legacy violates CLAUDE.md #3 in two places on the same scroll chain**, and a literal verbatim
-  port would carry both forward:
-  1. `WorldLog` root (line 659) is `{ flex: 1, overflow: "auto" }` with **no `minHeight: 0`**.
-  2. Line 1388: a `<div style={{flex:1, overflow:"hidden", display:"flex", flexDirection:"column"}}>`
-     — also missing `minHeight: 0` — whose child is a **Fragment `<>`** wrapping `WorldLog` +
-     `ActionBar`. CLAUDE.md #3 forbids a Fragment as a flex/scroll container.
-  Both are fixed during the port. The Fragments at lines 1102 and 1125 are button groups in the
-  confirm-delete row, **not** flex containers — leave those alone.
-- **`frontend/package.json` has no test script and no vitest.** Wave 0 exists because of this.
-- **`autoSave` runs inside a `setLog` updater** (lines 1022-1027), reading `newState` and
-  `currentSlotId` from closure. A pure-reducer test is blind to a stale-closure or dropped-autosave
-  regression. That is why the Wave 4 integration test is not optional.
-- **The Google Fonts bug (R12) is already closed** — Phase 1 put the `<link>` in `frontend/index.html`
-  and extracted all 7 keyframes to `index.css`. The Phase 3 job is a *don't*: do not re-introduce the
-  six `<style>` blocks (lines 1051, 1338, 1354, 1410, …) when porting screens.
+### Exact port ranges (derived by locating each declaration and its closing brace)
+
+| Target | Range | Notes |
+|---|---|---|
+| `SkillCard` | **534-565** | |
+| `SoulCodexContents` | **568-654** | |
+| `WorldLog` | **657-741** | |
+| `ActionBar` | **744-783** | |
+| `App()` | **786-1440** | **16 `useState` (787-802) + 1 `useRef` (803)** — not 17 |
+| title screen | from **1046** | |
+| race screen | from **1186** | |
+| questionnaire screen | from **1257** | |
+| loading screen | from **1335** | |
+| simulation screen | from **1346** | |
+| pure turn logic | **925-1021** | ends *after* `newLogEntry` (1014-1021), not at 1008 |
+
+`setGameState` is at 1010, `newLogEntry` at 1014, the `setLog`+`autoSave` closure at 1022.
+
+### Constants that already exist in `shared/src/gameState.ts` — import, never redeclare
+- `SAVE_INDEX_KEY`, `SAVE_PREFIX`, `MAX_LOG_SAVED` (80), `SAVE_SCHEMA_VERSION` (1) — lines 136-141
+- **`MAX_NARRATIVE_NOTES` (40)** — line 99
+- **`TIER_STYLE`** — line 168, already commented "copied verbatim from legacy lines 525-531"
+
+There is **no** `frontend/src/game/tierStyle.ts` in this phase. Creating one would manufacture the
+exact drift this document prevents for the save keys. Phase-level check:
+`grep -rn 'TIER_STYLE *[:=]' shared/src frontend/src` must show exactly **one** definition.
+
+### `shared/src/gameState.ts` must be extended — plan 03-06 owns it
+`LogEntry` (lines 121-127) has `type`, `text`, `newSkills?: unknown[]`, `soulRewrites?`,
+`subAbilityUnlock?`, `gmNote?`. But `WorldLog` renders **`entry.etchingSkill.skill_name`** — the
+skill-etching reveal, the game's most distinctive moment — and reads `ns.soul_etching_text`,
+`ns.skill_name`, `ns.tier`, `ns.mastery`, `ns.description` off `newSkills`.
+
+Two collisions under `strict: true`: `etchingSkill` does not exist, and `unknown[]` cannot be
+dereferenced. Without an owner, an agent reaches for `as any` or silently drops the etching block and
+no test notices. **Plan 03-06 lists `shared/src/gameState.ts` in `files_modified`** and must run
+`npm run build -w @soulbound/shared` before the frontend typechecks (`@soulbound/shared` resolves
+via `dist/`).
+
+### The 25/60/100 thresholds are model-side, not client-side
+They live in `WORLD_SYSTEM_PROMPT` (lines 40, 55, 93, 139). The client only *applies*
+`unique_sub_ability_unlocked`. **Do not write a frontend test asserting the thresholds, and do not
+add a client-side guard rejecting an unlock outside them** — that would duplicate the prompt's source
+of truth and silently swallow legitimate unlocks when a mastery jump overshoots.
+
+### Legacy violates CLAUDE.md #3 twice on one scroll chain
+1. `WorldLog`'s root (line 658) is `{ flex: 1, overflow: "auto", padding: ... }` — **no `minHeight: 0`**.
+2. Line 1386 is `<div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>`
+   — also missing `minHeight: 0` — whose child is a **Fragment `<>`** (1388) wrapping `WorldLog` +
+   `ActionBar`.
+
+**The replacement div must carry `{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }`.**
+Note the `flex: 1` — the parent at 1386 has it, and a replacement that omits it shrink-wraps, leaving
+`WorldLog`'s `flex: 1` no height to fill and collapsing the mobile World tab. **jsdom performs no
+layout**, so every test in this phase would pass on a visually broken page. This is why plan 03-08
+requires screenshots.
+
+The Fragments at 1102 and 1125 are button groups in the confirm-delete row, **not** flex containers.
+Leave them.
+
+### All six `<style>` blocks are in screens — none in components
+Derived line numbers: **1051, 1189, 1263, 1338, 1354, 1410**. Plans 03-07 and 03-08 own all six.
+A `<style>` grep scoped to `components/` cannot fail and is not a check. The phase-level assertion is
+`grep -rn '<style' frontend/src/` must be **0**.
+
+### Other verified inputs
+- **`frontend/package.json` has no test runner** — hence wave 0.
+- **`autoSave` runs inside a `setLog` updater** (1022-1027), reading `newState` and `currentSlotId`
+  from closure. A pure-reducer test is blind to a stale-closure or dropped-autosave regression.
+- **The 80-entry cap is in `autoSave` (line 820), NOT in `writeSave`** (23-42, which has zero slices).
+  `autoSave` is `App.tsx` territory, so the cap belongs to the App wiring plan, not the saves plan.
+- **`RACES` has 9 entries and `QUESTIONS` 5** — derived from the ported `frontend/src/data/` files.
+- **jsdom does not implement `Element.prototype.scrollIntoView`.** Legacy 812 calls it in an effect
+  keyed on `[log]`, with the ref at 738 inside `WorldLog`. Once simulation renders the ref is
+  non-null, so the optional chain does not save you — it throws on mount and on every log change.
+  Wave 0 must stub it.
+
+### How to diff inline styles — specified, because "programmatically" is not a method
+There are **148** `style={{ ... }}` objects: 118 purely static, 21 spanning multiple lines, 18
+containing conditionals or template interpolation (`isMobile ? "16px" : "20px"`,
+`` `1px solid ${ts.color}44` ``). A regex cannot extract these — `[^}]*` truncates at the first
+nested brace, silently. The method is:
+
+1. `sed -n 'START,ENDp' legacy/souldbound-world.jsx > /tmp/before.jsx` using the **derived** range.
+2. Strip CRLF and leading whitespace from both sides.
+3. `diff` against the ported JSX body stripped the same way.
+4. **Enumerate the expected deltas up front** (`.tsx` typing, `minHeight: 0`, dropped `<style>`,
+   import changes) and paste the raw diff showing only those.
+
+If the diff is unusably noisy, say so and fall back to "read line by line, deltas enumerated" — but
+do not report "verified by diff" without a diff.
+
+## Client bound the backend enforces — knowingly shipped
+`actionHistory` grows unbounded client-side (legacy 999) and ships in full on every
+`/api/world-engine` call. Phase 2's backend caps it at `max(2000)` entries and a 512kb body. A long
+by-feel playthrough will eventually trip this and surface as
+`"The World Voice fell silent. INVALID_REQUEST..."` on a save the player cannot recover.
+
+**Decision: Phase 3 ships the legacy behaviour unchanged and records the trip point here.** Capping
+it is a deliberate gameplay change (it changes what the World Voice sees) and belongs to a phase that
+can weigh it, not to a port. Phase 4 should decide.
+
+## Production `runtime` image — decision recorded, not deferred a third time
+Phase 1 found that the `runtime` frontend image answers `/api/*` with 200 + `index.html`, "dormant
+only because the frontend makes no API calls yet." **Phase 3 is what ends that dormancy.** A 200
+passes `response.ok`, so R12's fix does not catch it; the Zod parse throws and the operator sees a
+healthy container.
+
+**Decision: the `runtime` image remains non-deployable for this milestone**, and plan 03-03 adds a
+`content-type` check so the failure is diagnosable rather than a schema-shaped mystery. Closing it
+properly (reverse proxy or configurable API base URL) is a Phase 4 criterion.
 
 ## Behavior tuned by feel — port exactly, do not tidy
 
