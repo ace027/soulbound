@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { QuestionnaireAnswers } from '@soulbound/shared';
 import { QUESTIONS } from '../data/questions';
+import { sharedBg } from './sharedBg';
 
 /**
  * Soul questionnaire — five open-ended free-text questions.
@@ -18,14 +19,6 @@ import { QUESTIONS } from '../data/questions';
  * `if (!canAdvance) return;`. On the last question it calls the completion
  * handler with the accumulated answers rather than advancing.
  */
-
-/** Legacy lines 1038-1043, the `sharedBg` const inside App(). See TitleScreen. */
-const sharedBg = {
-  minHeight: '100vh',
-  background: 'linear-gradient(160deg, #0d0b07 0%, #120e08 60%, #0a0f14 100%)',
-  color: '#c9b48a',
-  fontFamily: "'EB Garamond', serif",
-} as const;
 
 export interface QuestionnaireScreenProps {
   qIndex: number;

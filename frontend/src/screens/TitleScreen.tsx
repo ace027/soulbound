@@ -1,4 +1,5 @@
 import type { SaveIndexEntry } from '@soulbound/shared';
+import { sharedBg } from './sharedBg';
 
 /**
  * Title screen with its inline save browser.
@@ -17,19 +18,6 @@ import type { SaveIndexEntry } from '@soulbound/shared';
  * (confirm/alert/prompt) — those silently failed to render in the artifact's
  * sandboxed iframe, which is why the project standardised on this pattern.
  */
-
-/**
- * Legacy lines 1038-1043, the `sharedBg` const inside App(). Duplicated in
- * each screen file because the screens are separate modules now; a single
- * `screens/sharedBg.ts` would be the place to hoist it once plans 03-08/03-09
- * land and all five screens exist.
- */
-const sharedBg = {
-  minHeight: '100vh',
-  background: 'linear-gradient(160deg, #0d0b07 0%, #120e08 60%, #0a0f14 100%)',
-  color: '#c9b48a',
-  fontFamily: "'EB Garamond', serif",
-} as const;
 
 /** Legacy lines 56-61, verbatim. */
 function fmtDate(ts: number): string {

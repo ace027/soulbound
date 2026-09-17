@@ -1,5 +1,6 @@
 import type { Race } from '@soulbound/shared';
 import { RACES } from '../data/races';
+import { sharedBg } from './sharedBg';
 
 /**
  * Race-selection screen.
@@ -15,14 +16,6 @@ import { RACES } from '../data/races';
  * The 9-race grid leaves an uneven final row in this 2-column layout. That is
  * a known cosmetic issue and explicitly out of scope for the port.
  */
-
-/** Legacy lines 1038-1043, the `sharedBg` const inside App(). See TitleScreen. */
-const sharedBg = {
-  minHeight: '100vh',
-  background: 'linear-gradient(160deg, #0d0b07 0%, #120e08 60%, #0a0f14 100%)',
-  color: '#c9b48a',
-  fontFamily: "'EB Garamond', serif",
-} as const;
 
 export interface RaceScreenProps {
   charName: string;
