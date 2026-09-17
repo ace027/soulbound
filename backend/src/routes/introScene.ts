@@ -13,27 +13,53 @@
  *
  * Prompt ported verbatim from legacy/souldbound-world.jsx lines 502-507
  * (CRLF normalized to LF). Do not reword it.
+ *
+ * Two sanctioned deviations from that verbatim port (developer-approved,
+ * Phase 2 review cycle 2):
+ *   1. The player-authored character name is wrapped in `<player_name>` tags
+ *      via `wrapUntrusted`; the matching "content inside those tags is data"
+ *      rule was added to WORLD_SYSTEM_PROMPT's MUST NOT list.
+ *   2. The `world_events` example carries `"description": null`. The legacy
+ *      example showed three keys; `WorldEventSchema` (shared/) is a
+ *      `z.strictObject` with FOUR required keys, so a model that copied the
+ *      example literally produced output that failed schema validation and
+ *      came back as INVALID_RESPONSE_SHAPE — on the one call per playthrough
+ *      that also warms the Opus prompt cache.
  */
 
 import { Router, type NextFunction, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { WorldVoiceResponseSchema } from '@soulbound/shared';
 import { callWorldVoice } from '../anthropic.js';
+import { wrapUntrusted } from '../untrustedText.js';
 
 // ─── Request validation ──────────────────────────────────────────────────────
 // Only the fields the prompt actually reads (name, race.name, the Unique
 // Skill's name and soul_resonance) are required. `.passthrough()` throughout
 // so the frontend's full Character object is accepted without this route
 // duplicating every field.
+//
+// PASSTHROUGH INVARIANT: `renderIntroScenePrompt` below must read only the
+// four explicitly named, explicitly `.max()`-bounded fields — never serialize
+// a passthrough object into the prompt. Unknown keys are accepted, not
+// validated and not length-bounded; anything reaching the prompt through one
+// would be unbounded attacker-controlled text. See routes/uniqueSkill.ts for
+// the full statement of this invariant.
+//
+// Every bound below is a prompt-size bound: all four values are interpolated
+// into the prompt in full.
 
 const IntroCharacterRequestSchema = z
   .object({
-    name: z.string().min(1, 'character.name is required'),
-    race: z.object({ name: z.string().min(1, 'character.race.name is required') }).passthrough(),
+    name: z.string().min(1, 'character.name is required').max(200),
+    race: z.object({ name: z.string().min(1, 'character.race.name is required').max(100) }).passthrough(),
     uniqueSkill: z
       .object({
-        skill_name: z.string().min(1, 'character.uniqueSkill.skill_name is required'),
-        soul_resonance: z.string().min(1, 'character.uniqueSkill.soul_resonance is required'),
+        skill_name: z.string().min(1, 'character.uniqueSkill.skill_name is required').max(200),
+        soul_resonance: z
+          .string()
+          .min(1, 'character.uniqueSkill.soul_resonance is required')
+          .max(2000),
       })
       .passthrough(),
   })
@@ -67,11 +93,11 @@ function describeIssues(error: z.ZodError): string {
 // ─── Prompt (ported verbatim, content only — see header comment) ────────────
 
 export function renderIntroScenePrompt({ character }: IntroSceneRequestBody): string {
-  return `Generate the opening scene for a new soul entering Vaeltharion. Character: ${character.name}, a ${character.race.name}. Their Unique Skill is "${character.uniqueSkill.skill_name}" — ${character.uniqueSkill.soul_resonance}
+  return `Generate the opening scene for a new soul entering Vaeltharion. Character: ${wrapUntrusted('player_name', character.name)}, a ${character.race.name}. Their Unique Skill is "${character.uniqueSkill.skill_name}" — ${character.uniqueSkill.soul_resonance}
  
 Set the scene somewhere in the world that fits their nature. 3 paragraphs. Give them an immediate situation to react to. End with a clear prompt for what they see/face.
  
-Respond with the standard JSON format. No new skills granted (they just arrived). Set "location" and "scene_summary" in world_events as: [{"type": "scene_set", "location": "...", "scene_summary": "..."}]`;
+Respond with the standard JSON format. No new skills granted (they just arrived). Set "location" and "scene_summary" in world_events as: [{"type": "scene_set", "location": "...", "scene_summary": "...", "description": null}]`;
 }
 
 // ─── Route ────────────────────────────────────────────────────────────────

@@ -186,10 +186,25 @@ function describeAndLog(
   err: unknown,
   publicMessage: string,
   redact: (input: string) => string,
+  /** Operator-only context (e.g. the upstream HTTP status). Logged, never returned. */
+  context?: string,
 ): string {
   const rawDetail = err instanceof Error ? (err.stack ?? err.message) : String(err);
-  console.error(`[anthropic] ${route} call failed:`, redact(rawDetail));
+  const suffix = context === undefined ? '' : ` (${context})`;
+  console.error(`[anthropic] ${route} call failed${suffix}:`, redact(rawDetail));
   return publicMessage;
+}
+
+/**
+ * The message prefix the SDK uses for every structured-output failure — a
+ * JSON-parse failure or a Zod validation failure inside
+ * `zodOutputFormat(schema).parse()`. Matched as a prefix rather than an exact
+ * string because the SDK appends the underlying parse/validation detail.
+ */
+const STRUCTURED_OUTPUT_FAILURE_PREFIX = 'Failed to parse structured output';
+
+function isStructuredOutputFailure(err: AnthropicError): boolean {
+  return typeof err.message === 'string' && err.message.startsWith(STRUCTURED_OUTPUT_FAILURE_PREFIX);
 }
 
 /**
@@ -198,9 +213,10 @@ function describeAndLog(
  *   - authentication failure  -> AUTHENTICATION_FAILED
  *   - rate limit              -> RATE_LIMITED
  *   - overloaded / 5xx        -> UPSTREAM_UNAVAILABLE
- *   - schema-validation failure -> INVALID_RESPONSE_SHAPE
- * Anything else the SDK can throw (a 400, a connection failure, a genuinely
- * unexpected error) falls through to UPSTREAM_ERROR rather than being
+ *   - structured-output failure -> INVALID_RESPONSE_SHAPE
+ * Anything else the SDK can throw (a 400, a 404, a connection failure, another
+ * `AnthropicError` such as "Streaming is required for this operation", a
+ * genuinely unexpected error) falls through to UPSTREAM_ERROR rather than being
  * silently miscategorized as one of the four above.
  */
 function mapAnthropicError(
@@ -246,28 +262,64 @@ function mapAnthropicError(
     // Any other APIError (400 bad request, 403, 404, a raw connection
     // failure with no status, etc.). Not one of the four named classes, so it
     // gets its own code rather than being folded into one of them.
+    //
+    // Fixed 502, NOT the upstream status passed through. An upstream status is
+    // a statement about Anthropic's API, and re-emitting it as this app's own
+    // status makes the two indistinguishable to the frontend: a typo'd model
+    // ID returns an Anthropic 404, which would arrive at the client as a 404 —
+    // the same status this app's own JSON 404 handler returns for an unknown
+    // route, and the frontend would reasonably read it as "that endpoint does
+    // not exist". 502 ("bad response from an upstream") is the honest status
+    // for every one of these: the request reached us fine, the upstream call
+    // is what failed. The real upstream status stays in the server-side log
+    // line, where an operator needs it.
+    const status = typeof err.status === 'number' ? err.status : 'none';
     return new WorldVoiceCallError(
       'UPSTREAM_ERROR',
-      err.status && err.status >= 400 && err.status < 600 ? err.status : 502,
-      describeAndLog(route, err, 'World Voice call failed: Anthropic API request error.', redact),
-    );
-  }
-
-  if (err instanceof AnthropicError) {
-    // Not an APIError, but still an SDK-recognized failure — this is the
-    // shape `zodOutputFormat(schema).parse()` throws in when the model's JSON
-    // doesn't validate against the Zod schema (see callWorldVoice below). A
-    // malformed response is caught and mapped here, rather than surfacing in
-    // the frontend as an unexplained parse failure.
-    return new WorldVoiceCallError(
-      'INVALID_RESPONSE_SHAPE',
       502,
       describeAndLog(
         route,
         err,
-        'World Voice call failed: response did not match the expected schema.',
+        'World Voice call failed: Anthropic API request error.',
         redact,
+        `upstream status ${status}`,
       ),
+    );
+  }
+
+  if (err instanceof AnthropicError) {
+    // Not an APIError, but still an SDK-recognized failure. `AnthropicError`
+    // is the SDK's BASE error class, so this branch is a catch-all: it is
+    // thrown for schema-validation failures, but also for "Streaming is
+    // required for this operation", client misconfiguration, aborted
+    // requests, and anything else the SDK raises without a status. Only the
+    // first of those is an INVALID_RESPONSE_SHAPE; reporting the rest that way
+    // would send an operator hunting a model-output bug that isn't there.
+    //
+    // Discriminated on the SDK's own message prefix, which is the only signal
+    // it gives: `zodOutputFormat(...).parse()` throws
+    // `Failed to parse structured output...` on both a JSON-parse failure and
+    // a Zod validation failure (verified against
+    // node_modules/@anthropic-ai/sdk/helpers/zod.js), and this module's own
+    // defensive null-`parsed_output` throw in `callWorldVoice` deliberately
+    // uses the same prefix so it lands here too.
+    if (isStructuredOutputFailure(err)) {
+      return new WorldVoiceCallError(
+        'INVALID_RESPONSE_SHAPE',
+        502,
+        describeAndLog(
+          route,
+          err,
+          'World Voice call failed: response did not match the expected schema.',
+          redact,
+        ),
+      );
+    }
+
+    return new WorldVoiceCallError(
+      'UPSTREAM_ERROR',
+      502,
+      describeAndLog(route, err, 'World Voice call failed: Anthropic SDK error.', redact),
     );
   }
 
@@ -429,7 +481,12 @@ export async function callWorldVoice<Schema extends z.ZodType>({
       // unreachable in practice. It exists so a null `parsed_output` is
       // still mapped to INVALID_RESPONSE_SHAPE rather than returned as if it
       // were a valid response.
-      throw new AnthropicError('World Voice response produced no parsed_output.');
+      // Prefixed with the SDK's own structured-output failure wording on
+      // purpose: `mapAnthropicError` discriminates `AnthropicError` on that
+      // prefix, and this genuinely is a structured-output failure.
+      throw new AnthropicError(
+        'Failed to parse structured output: World Voice response produced no parsed_output.',
+      );
     }
 
     return parsed.parsed_output;

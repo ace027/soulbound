@@ -5,14 +5,15 @@
  * handlers and `callWorldVoice` are never mocked; only the network-facing
  * SDK method is.
  *
- * The test app below is NOT `server.ts` imported directly: `server.ts`'s
- * `main()` runs at module load (`main();` at the file's end) and calls
- * `process.exit(1)` on a startup failure, which would kill the test worker
- * rather than fail a test. Instead this file builds the same pipeline
- * `main()` builds — `express.json()`, the three real route routers, the
- * JSON 404 handler, and the same sanitizing error handler shape — directly
- * from the real router modules, so the routes under test are exactly the
- * ones `server.ts` mounts.
+ * The app under test IS `server.ts`'s own `buildApp()`. It used to be a
+ * hand-rebuilt copy of that pipeline — which meant `server.ts` was executed by
+ * no test at all, and three separate mutations of it (unregistering all three
+ * routers, replacing the error handler's client message with the raw stack,
+ * deleting the startup contract guard) left this suite fully green. `main()`
+ * still owns the parts a test must not run (`process.exit`, binding the real
+ * port), and `server.ts` boots only when it is the process entrypoint, so
+ * importing it here is inert. The startup half of `main()` is covered
+ * separately in server.test.ts.
  *
  * The app is driven over the loopback interface with Node's built-in
  * `node:http`, never with `fetch` — `fetch` is reserved in this file as a
@@ -27,56 +28,31 @@
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import express, { type ErrorRequestHandler, type NextFunction, type Request, type Response } from 'express';
+import type express from 'express';
 import Anthropic, { AuthenticationError } from '@anthropic-ai/sdk';
 import type { Message } from '@anthropic-ai/sdk/resources/messages';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import introSceneRouter from '../routes/introScene.js';
-import uniqueSkillRouter from '../routes/uniqueSkill.js';
-import worldEngineRouter from '../routes/worldEngine.js';
 
 // Fake key, set before anything in this file lazily imports config.js (both
-// the routes themselves and, below, this file's own error handler). Never
-// valid, never sent anywhere — every `create` call is intercepted by the
-// spy before it would reach `fetch`. See anthropic.test.ts's identical note.
-process.env.ANTHROPIC_API_KEY = 'sk-ant-test-fake-key-never-sent-mocked-only';
-const { redact } = await import('../config.js');
+// the routes themselves and the error handler inside buildApp). Never valid,
+// never sent anywhere — every `create` call is intercepted by the spy before
+// it would reach `fetch`. See anthropic.test.ts's identical note.
+const FAKE_KEY = 'sk-ant-test-fake-key-never-sent-mocked-only';
+process.env.ANTHROPIC_API_KEY = FAKE_KEY;
+// The server binds an ephemeral port here, so the Host header carries a port
+// this file cannot know in advance. A hostname-only allow-list entry matches
+// any port on that hostname — and exercising the ALLOWED_HOSTS env override is
+// itself part of what this file covers. config.ts's PORT-derived default is
+// asserted in server.test.ts.
+process.env.ALLOWED_HOSTS = '127.0.0.1';
+const config = await import('../config.js');
+const { buildApp } = await import('../server.js');
 
-interface ApiError extends Error {
-  statusCode?: number;
-  code?: string;
-}
-
-/**
- * Mirrors server.ts's pipeline (json body parsing, the three real routers,
- * JSON 404, sanitizing error handler) — see file header for why this can't
- * just be `import` of server.ts itself.
- */
+/** The real pipeline from server.ts — see file header. */
 function buildTestApp() {
-  const app = express();
-  app.use(express.json());
-
-  app.use(uniqueSkillRouter);
-  app.use(worldEngineRouter);
-  app.use(introSceneRouter);
-
-  app.use((_req: Request, res: Response) => {
-    res.status(404).json({ error: { message: 'Not found', code: 'NOT_FOUND' } });
-  });
-
-  const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
-    const apiErr = err as ApiError;
-    const statusCode = apiErr.statusCode ?? 500;
-    const code = apiErr.code ?? (statusCode === 500 ? 'INTERNAL_ERROR' : 'ERROR');
-    const rawMessage = err instanceof Error ? err.message : String(err);
-    const clientMessage = statusCode === 500 ? 'Internal server error' : redact(rawMessage);
-    res.status(statusCode).json({ error: { message: clientMessage, code } });
-  };
-  app.use(errorHandler);
-
-  return app;
+  return buildApp(config);
 }
 
 function startServer(app: express.Express): Promise<{ server: http.Server; port: number }> {
@@ -98,7 +74,7 @@ interface HttpResult {
 /** Drives the test server over loopback with node:http — see file header for why not fetch. */
 function httpRequest(
   port: number,
-  options: { method: string; path: string; body?: string },
+  options: { method: string; path: string; body?: string; headers?: Record<string, string> },
 ): Promise<HttpResult> {
   return new Promise((resolve, reject) => {
     const req = http.request(
@@ -110,6 +86,7 @@ function httpRequest(
         headers: {
           'content-type': 'application/json',
           ...(options.body !== undefined ? { 'content-length': Buffer.byteLength(options.body) } : {}),
+          ...(options.headers ?? {}),
         },
       },
       (res) => {
@@ -169,11 +146,14 @@ const uniqueSkillRequestBody = {
   },
 };
 
+// `gameState.skills` must contain the soul-bound Unique slot: one Unique-tier
+// skill is a law of this world, and the render function's whole soul-profile
+// block is skipped without one (see worldEngine.ts's refine()).
 const worldEngineRequestBody = {
   action: 'look around the square',
   gameState: {
     character: { name: 'Test Character', race: { name: 'Human' } },
-    skills: [],
+    skills: [{ name: 'Testing Resolve', tier: 'Unique', mastery: 0 }],
     location: 'Test Town Square',
     currentScene: 'A quiet cobblestone square at dusk.',
     actionHistory: [],
@@ -389,8 +369,163 @@ describe('World Voice routes (mocked SDK boundary)', () => {
       expect(res.headers['content-type']).toMatch(/application\/json/);
       expect(res.bodyText.startsWith('<')).toBe(false);
       expect(res.bodyJson).toBeDefined();
-      expect((res.bodyJson as { error: { code: string } }).error.code).toBeTruthy();
+      // Specifically INVALID_REQUEST, not the generic `code: "ERROR"` a
+      // body-parser failure produced before server.ts mapped `err.type`.
+      // A frontend cannot branch on "ERROR".
+      expect(res.bodyJson).toMatchObject({ error: { code: 'INVALID_REQUEST' } });
+      expect(res.status).toBe(400);
       expect(createSpy).not.toHaveBeenCalled();
+    });
+
+    it('a body over the configured JSON limit returns 413 PAYLOAD_TOO_LARGE, never reaching the SDK', async () => {
+      // Comfortably past server.ts's JSON_BODY_LIMIT (512kb). The point is
+      // that the limit is explicit and enforced before any route handler
+      // runs — not that this particular size is special.
+      const oversized = JSON.stringify({
+        ...uniqueSkillRequestBody,
+        padding: 'x'.repeat(700_000),
+      });
+      const res = await httpRequest(port, {
+        method: 'POST',
+        path: '/api/unique-skill',
+        body: oversized,
+      });
+
+      expect(res.status).toBe(413);
+      expect(res.bodyJson).toMatchObject({ error: { code: 'PAYLOAD_TOO_LARGE' } });
+      expect(createSpy).not.toHaveBeenCalled();
+    });
+
+    it('an over-long field inside an otherwise valid body is rejected by the route schema, never reaching the SDK', async () => {
+      const res = await httpRequest(port, {
+        method: 'POST',
+        path: '/api/unique-skill',
+        body: JSON.stringify({
+          ...uniqueSkillRequestBody,
+          answers: { ...uniqueSkillRequestBody.answers, nature: 'y'.repeat(50_000) },
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      expect(res.bodyJson).toMatchObject({ error: { code: 'INVALID_REQUEST' } });
+      expect(createSpy).not.toHaveBeenCalled();
+    });
+
+    it('a world-engine request with no Unique-tier skill is rejected, never reaching the SDK', async () => {
+      const res = await httpRequest(port, {
+        method: 'POST',
+        path: '/api/world-engine',
+        body: JSON.stringify({
+          ...worldEngineRequestBody,
+          gameState: { ...worldEngineRequestBody.gameState, skills: [] },
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      expect(res.bodyJson).toMatchObject({ error: { code: 'INVALID_REQUEST' } });
+      expect(createSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Host allow-list (DNS rebinding)', () => {
+    // Binding to loopback is not a boundary on its own: a page on the public
+    // internet can resolve a hostname it controls to 127.0.0.1 and have the
+    // victim's own browser POST here, spending the configured API key. The
+    // browser sends its own hostname in `Host`, which is the only part of
+    // such a request this server can reject BEFORE the money is spent — CORS
+    // headers are read only after the response.
+    it('rejects a rebound Host with 403 FORBIDDEN before the route (and before the SDK) runs', async () => {
+      const res = await httpRequest(port, {
+        method: 'POST',
+        path: '/api/unique-skill',
+        body: JSON.stringify(uniqueSkillRequestBody),
+        headers: { host: 'evil.example' },
+      });
+
+      expect(res.status).toBe(403);
+      expect(res.bodyJson).toEqual({ error: { message: 'Forbidden', code: 'FORBIDDEN' } });
+      expect(createSpy).not.toHaveBeenCalled();
+    });
+
+    it('rejects a rebound Host that merely carries the right port', async () => {
+      const res = await httpRequest(port, {
+        method: 'POST',
+        path: '/api/unique-skill',
+        body: JSON.stringify(uniqueSkillRequestBody),
+        headers: { host: `evil.example:${port}` },
+      });
+
+      expect(res.status).toBe(403);
+      expect(createSpy).not.toHaveBeenCalled();
+    });
+
+    it('rejects a rebound Host on a GET to the health check too (the guard is not route-specific)', async () => {
+      const blocked = await httpRequest(port, {
+        method: 'GET',
+        path: '/api/health',
+        headers: { host: 'evil.example' },
+      });
+      expect(blocked.status).toBe(403);
+
+      const allowed = await httpRequest(port, { method: 'GET', path: '/api/health' });
+      expect(allowed.status).toBe(200);
+      expect(allowed.bodyJson).toEqual({ status: 'ok' });
+    });
+
+    it('runs BEFORE the CORS middleware — a rejected Host gets no Access-Control-Allow-Origin header', async () => {
+      const res = await httpRequest(port, {
+        method: 'GET',
+        path: '/api/health',
+        headers: { host: 'evil.example' },
+      });
+
+      expect(res.status).toBe(403);
+      expect(res.headers['access-control-allow-origin']).toBeUndefined();
+    });
+  });
+
+  describe('error handler', () => {
+    it('a 500 returns a fixed generic message — never the stack, never the underlying detail', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      try {
+        // A plain Error maps to UPSTREAM_ERROR/500 in anthropic.ts, which is
+        // the branch where the handler must substitute a generic message.
+        createSpy.mockRejectedValueOnce(new Error('BOOM-SECRET-UPSTREAM-DETAIL'));
+        const res = await httpRequest(port, {
+          method: 'POST',
+          path: '/api/unique-skill',
+          body: JSON.stringify(uniqueSkillRequestBody),
+        });
+
+        expect(res.status).toBe(500);
+        expect(res.bodyJson).toEqual({
+          error: { message: 'Internal server error', code: 'UPSTREAM_ERROR' },
+        });
+        expect(res.bodyText).not.toMatch(/\n\s+at /); // no V8 stack frames
+        expect(res.bodyText).not.toContain('BOOM-SECRET-UPSTREAM-DETAIL');
+        expect(res.bodyText).not.toContain('server.ts');
+        expect(res.bodyText).not.toContain(FAKE_KEY);
+      } finally {
+        consoleErrorSpy.mockRestore();
+      }
+    });
+
+    it('logs the failure server-side (redacted) even though the client sees none of it', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      try {
+        createSpy.mockRejectedValueOnce(new Error(`upstream echoed the key: ${FAKE_KEY}`));
+        await httpRequest(port, {
+          method: 'POST',
+          path: '/api/unique-skill',
+          body: JSON.stringify(uniqueSkillRequestBody),
+        });
+
+        const logged = consoleErrorSpy.mock.calls.map((call) => call.join(' ')).join('\n');
+        expect(logged).toContain('[error] POST /api/unique-skill');
+        expect(logged).not.toContain(FAKE_KEY);
+      } finally {
+        consoleErrorSpy.mockRestore();
+      }
     });
   });
 

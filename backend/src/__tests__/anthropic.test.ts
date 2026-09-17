@@ -41,6 +41,13 @@ import {
   WorldVoiceCallError,
   type WorldVoiceRoute,
 } from '../anthropic.js';
+// Imported from the data modules, NOT re-derived from buildSystemBlocks():
+// asserting a request against the same function that built it is a tautology
+// that passes even if both block texts are replaced with junk. These two
+// imports are the only thing anchoring the system blocks to the real prompt
+// and the real lore.
+import { WORLD_LORE } from '../data/worldLore.js';
+import { WORLD_SYSTEM_PROMPT } from '../data/worldSystemPrompt.js';
 
 // Reaching this point at all — this file's own top-level
 // `import { buildSystemBlocks, callWorldVoice, ... } from '../anthropic.js'`
@@ -121,6 +128,36 @@ describe('buildSystemBlocks', () => {
     // reordering) silently destroys prompt caching — see anthropic.ts's own
     // doc comment on this function.
     expect(JSON.stringify(second)).toBe(JSON.stringify(first));
+  });
+
+  it('carries the real WORLD_SYSTEM_PROMPT and WORLD_LORE, in that order', () => {
+    const blocks = buildSystemBlocks();
+
+    // Anchored to the imported constants. Without this, replacing both block
+    // texts with junk strings still passes every other assertion in this file.
+    expect(blocks[0]).toEqual({ type: 'text', text: WORLD_SYSTEM_PROMPT });
+    expect(blocks[1]).toEqual({
+      type: 'text',
+      text: WORLD_LORE,
+      cache_control: { type: 'ephemeral' },
+    });
+
+    // ORDER, explicitly: a swap keeps both texts present and every
+    // "contains the prompt" style assertion green, while changing the cached
+    // prefix and stranding the existing cache. The cache breakpoint covers
+    // everything up to and including its own block, so it belongs on the
+    // SECOND one.
+    expect(blocks[0]!.text).not.toBe(WORLD_LORE);
+    expect(blocks[1]!.text).not.toBe(WORLD_SYSTEM_PROMPT);
+    expect(blocks[0]).not.toHaveProperty('cache_control');
+  });
+
+  it('the two texts are actually distinct, non-trivial strings', () => {
+    // Sanity, so the order assertions above cannot be satisfied by two empty
+    // or identical constants.
+    expect(WORLD_SYSTEM_PROMPT).not.toBe(WORLD_LORE);
+    expect(WORLD_SYSTEM_PROMPT.length).toBeGreaterThan(1000);
+    expect(WORLD_LORE.length).toBeGreaterThan(1000);
   });
 });
 
@@ -267,7 +304,16 @@ describe('callWorldVoice request construction', () => {
     };
     const request = await callAndCapture(true, WorldVoiceResponseSchema, validPayload);
     expect('system' in request).toBe(true);
-    expect(request.system).toEqual(buildSystemBlocks());
+
+    // Anchored to the real constants rather than to buildSystemBlocks() —
+    // comparing the request to the same function that built it is a tautology
+    // that survives both block texts being replaced with junk.
+    const system = request.system as Array<{ text: string; cache_control?: unknown }>;
+    expect(system).toHaveLength(2);
+    expect(system[0]!.text).toBe(WORLD_SYSTEM_PROMPT);
+    expect(system[1]!.text).toBe(WORLD_LORE);
+    expect(system[0]).not.toHaveProperty('cache_control');
+    expect(system[1]!.cache_control).toEqual({ type: 'ephemeral' });
   });
 
   it('passes model through verbatim', async () => {
@@ -281,6 +327,108 @@ describe('callWorldVoice request construction', () => {
     });
     const request = createSpy.mock.calls[0]![0] as Record<string, unknown>;
     expect(request.model).toBe('claude-opus-5');
+  });
+});
+
+// ─── callWorldVoice: usage logging ────────────────────────────────────────
+
+describe('callWorldVoice usage logging', () => {
+  let createSpy: ReturnType<typeof vi.spyOn>;
+  let consoleLogSpy: ReturnType<typeof vi.spyOn>;
+  let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeAll(() => {
+    process.env.ANTHROPIC_API_KEY = FAKE_KEY;
+  });
+
+  beforeEach(() => {
+    createSpy = vi.spyOn(Anthropic.Messages.prototype, 'create');
+    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    createSpy.mockRestore();
+    consoleLogSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
+  });
+
+  async function callWith(overrides: Partial<Message>): Promise<void> {
+    createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5', { answer: 'x' }, overrides));
+    await callWorldVoice({
+      route: 'worldEngine',
+      model: 'claude-opus-5',
+      content: 'hi',
+      useSystem: false,
+      schema: TestSchema,
+    });
+  }
+
+  /** The single `[anthropic:usage...]` line, parsed back out of the spy. */
+  function loggedLine(spy: ReturnType<typeof vi.spyOn>): { tag: string; body: Record<string, unknown> } {
+    expect(spy).toHaveBeenCalledTimes(1);
+    const call = spy.mock.calls[0]! as unknown as [string, string];
+    return { tag: call[0], body: JSON.parse(call[1]) as Record<string, unknown> };
+  }
+
+  it('emits one [anthropic:usage] line carrying BOTH prompt-cache fields', async () => {
+    // These two fields are the entire point of the line: plan 02-05 reads them
+    // as the evidence that caching is engaging at all (cache_read > 0 on a
+    // second call), which was never verifiable from inside the artifact.
+    await callWith({
+      usage: {
+        input_tokens: 812,
+        output_tokens: 431,
+        cache_creation_input_tokens: 15_132,
+        cache_read_input_tokens: 0,
+        cache_creation: null,
+        server_tool_use: null,
+        service_tier: null,
+      } as Message['usage'],
+    });
+
+    const { tag, body } = loggedLine(consoleLogSpy);
+    expect(tag).toBe('[anthropic:usage]');
+    expect(body.route).toBe('worldEngine');
+    expect(body.model).toBe('claude-opus-5');
+    expect(body.input_tokens).toBe(812);
+    expect(body.output_tokens).toBe(431);
+    expect(body.cache_creation_input_tokens).toBe(15_132);
+    expect(body.cache_read_input_tokens).toBe(0);
+    expect(body.stop_reason).toBe('end_turn');
+    expect(consoleWarnSpy).not.toHaveBeenCalled();
+  });
+
+  it('reports a cache READ on a warm call', async () => {
+    await callWith({
+      usage: {
+        input_tokens: 798,
+        output_tokens: 402,
+        cache_creation_input_tokens: 0,
+        cache_read_input_tokens: 15_132,
+        cache_creation: null,
+        server_tool_use: null,
+        service_tier: null,
+      } as Message['usage'],
+    });
+
+    const { body } = loggedLine(consoleLogSpy);
+    expect(body.cache_read_input_tokens).toBe(15_132);
+    expect(body.cache_creation_input_tokens).toBe(0);
+  });
+
+  it('a truncated response is tagged [anthropic:usage:truncated] on console.warn, not buried in the normal line', async () => {
+    // stop_reason 'max_tokens' is the silent failure CLAUDE.md #5 raised
+    // max_tokens to 16000 to prevent. A recurrence has to be visible
+    // immediately, with its own greppable tag — not left to be noticed by
+    // reading a JSON blob.
+    await callWith({ stop_reason: 'max_tokens' } as Partial<Message>);
+
+    expect(consoleLogSpy).not.toHaveBeenCalled();
+    const { tag, body } = loggedLine(consoleWarnSpy);
+    expect(tag).toBe('[anthropic:usage:truncated]');
+    expect(body.stop_reason).toBe('max_tokens');
+    expect(body.route).toBe('worldEngine');
   });
 });
 
@@ -371,13 +519,37 @@ describe('callWorldVoice error mapping', () => {
     expect(err.message).toContain('overloaded');
   });
 
-  it('a generic APIError (400) -> UPSTREAM_ERROR, status passed through', async () => {
+  it('a generic APIError (400) -> UPSTREAM_ERROR, fixed 502 — the upstream status is NOT passed through', async () => {
     createSpy.mockRejectedValueOnce(
       new APIError(400, { type: 'invalid_request_error', message: 'bad request' }, 'bad request', undefined, 'invalid_request_error'),
     );
     const err = await captureThrown();
     expect(err.code).toBe('UPSTREAM_ERROR');
-    expect(err.statusCode).toBe(400);
+    expect(err.statusCode).toBe(502);
+    // The operator still gets the real upstream status, in the log line.
+    // The operator still gets the real upstream status — in the LOG LINE, not
+    // in the message the client is handed.
+    const logged = consoleErrorSpy.mock.calls.map((call) => call.join(' ')).join('\n');
+    expect(logged).toContain('[anthropic] uniqueSkill call failed (upstream status 400)');
+    expect(err.message).not.toContain('400');
+  });
+
+  it('an upstream 404 (e.g. a typo\'d model ID) does NOT surface as an app-level 404', async () => {
+    // This is the collision the fixed 502 exists to prevent: the app's own
+    // JSON 404 handler returns 404 for an unknown ROUTE. If an upstream 404
+    // were passed through, the frontend would see the two as the same thing
+    // and could reasonably conclude the endpoint does not exist.
+    createSpy.mockRejectedValueOnce(
+      new APIError(404, { type: 'not_found_error', message: 'model not found' }, 'model not found', undefined, 'not_found_error'),
+    );
+    const err = await captureThrown();
+    expect(err.statusCode).not.toBe(404);
+    expect(err.statusCode).toBe(502);
+    expect(err.code).toBe('UPSTREAM_ERROR');
+    expect(err.code).not.toBe('NOT_FOUND');
+    const logged = consoleErrorSpy.mock.calls.map((call) => call.join(' ')).join('\n');
+    expect(logged).toContain('(upstream status 404)');
+    expect(err.message).not.toContain('404');
   });
 
   it('a schema-violating mocked response -> INVALID_RESPONSE_SHAPE, 502 (via the real zodOutputFormat.parse path, not a hand-thrown error)', async () => {
@@ -387,6 +559,32 @@ describe('callWorldVoice error mapping', () => {
     // callWorldVoice's real catch path — a genuine end-to-end proof, not a
     // synthetic case that only tests the switch statement.
     createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5', { wrong_field: true }));
+    const err = await captureThrown();
+    expect(err.code).toBe('INVALID_RESPONSE_SHAPE');
+    expect(err.statusCode).toBe(502);
+  });
+
+  it('a non-schema AnthropicError ("Streaming is required...") -> UPSTREAM_ERROR, NOT INVALID_RESPONSE_SHAPE', async () => {
+    // `AnthropicError` is the SDK's BASE class, so this branch is a catch-all:
+    // streaming requirements, client misconfiguration and aborted requests all
+    // arrive as bare AnthropicErrors. Reporting those as INVALID_RESPONSE_SHAPE
+    // sends an operator hunting a model-output bug that does not exist.
+    createSpy.mockRejectedValueOnce(
+      new AnthropicError('Streaming is required for this operation'),
+    );
+    const err = await captureThrown();
+    expect(err.code).not.toBe('INVALID_RESPONSE_SHAPE');
+    expect(err.code).toBe('UPSTREAM_ERROR');
+    expect(err.statusCode).toBe(502);
+  });
+
+  it('an AnthropicError carrying the SDK\'s structured-output wording DOES map to INVALID_RESPONSE_SHAPE', async () => {
+    // The exact prefix zodOutputFormat(...).parse() throws with (verified
+    // against node_modules/@anthropic-ai/sdk/helpers/zod.js) — the other half
+    // of the discrimination above.
+    createSpy.mockRejectedValueOnce(
+      new AnthropicError('Failed to parse structured output: invalid_type at narration'),
+    );
     const err = await captureThrown();
     expect(err.code).toBe('INVALID_RESPONSE_SHAPE');
     expect(err.statusCode).toBe(502);
