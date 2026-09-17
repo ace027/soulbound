@@ -1,9 +1,9 @@
 # Project State
 
 ## Current Position
-- **Phase**: 1 of 4 (complete)
-- **Status**: Phase 1 complete — review passed (2 cycles, 11 findings resolved)
-- **Last Activity**: Phase 1 review passed (2026-09-17)
+- **Phase**: 1 of 4 (shipped)
+- **Status**: Phase 1 shipped 2026-09-17 — all gates passed (tests N/A until R16)
+- **Last Activity**: Phase 1 shipped (2026-09-17)
 
 ## Progress
 ```
