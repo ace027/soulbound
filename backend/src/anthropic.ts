@@ -349,8 +349,12 @@ export interface CallWorldVoiceArgs<Schema extends z.ZodType> {
  * `$schema` key and renders enums as JSON Schema `enum` arrays. Measured
  * against the installed SDK's own `transformJSONSchema` (what `zodOutputFormat`
  * calls internally): the raw export keeps `$schema` and 4 `enum` occurrences;
- * the SDK's normalizer strips `$schema` entirely and rewrites each enum into
- * its `description` text instead, while preserving the `additionalProperties:
+ * the SDK's normalizer removes both as JSON Schema *keywords*, folding their
+ * values into prose `description` text instead (a schema-root
+ * `"description": "{$schema: ...}"`, and `"description": "{enum: [...]}"` on
+ * each enum field). So the literal `"$schema":` and `"enum":` keys are gone
+ * while the information survives as annotation — check for the key, not the
+ * substring. It preserves the `additionalProperties:
  * false` / full `required` list that `z.strictObject` already produces. The
  * SDK ships that normalizer because raw Zod output is not safe to send as
  * `output_config.format` — so this helper builds the format from the **Zod

@@ -14,6 +14,14 @@ import express, {
 } from 'express';
 import { assertWorldVoiceContract } from '@soulbound/shared';
 import { WORLD_SYSTEM_PROMPT } from './data/worldSystemPrompt.js';
+// These three route modules never import config.ts at their own top level
+// (see each file's "Lazy import" comment) — they only reach for it inside
+// their async handlers — so importing them here, statically, at server.ts's
+// own top level, does not reproduce the "throws with no key present" hazard
+// anthropic.ts's lazy-config comment documents.
+import introSceneRouter from './routes/introScene.js';
+import uniqueSkillRouter from './routes/uniqueSkill.js';
+import worldEngineRouter from './routes/worldEngine.js';
 
 interface ApiError extends Error {
   statusCode?: number;
@@ -68,6 +76,14 @@ async function main(): Promise<void> {
   app.get('/api/health', (_req: Request, res: Response) => {
     res.status(200).json({ status: 'ok' });
   });
+
+  // The three World Voice routes (plan 02-03). Each goes through the single
+  // `callWorldVoice` helper in anthropic.ts — none builds its own request.
+  // Registered ahead of the JSON 404 handler and the error handler below so
+  // both still apply to them.
+  app.use(uniqueSkillRouter);
+  app.use(worldEngineRouter);
+  app.use(introSceneRouter);
 
   // Unmatched routes. Without this, Express answers with its default HTML
   // error page, which a JSON client cannot parse — the frontend's fetch
