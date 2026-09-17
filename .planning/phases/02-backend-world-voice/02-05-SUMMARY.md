@@ -1,6 +1,6 @@
 # Plan 02-05 Summary — Live verification, cache proof & cross-plan re-verification
 
-**Status**: Complete with Warnings
+**Status**: Complete
 **Wave**: 4
 **Agent**: orchestrator (claude-opus-5)
 **Requirements**: R4, R5, R6, R7
@@ -79,9 +79,9 @@ Re-checked against current code, not against prior plans' reports.
 | # | Check | Result |
 |---|---|---|
 | 1 | Key absent from logs produced by the live calls | **PASS** — grepped the 7 captured lines for the full key, its last-12 fragment, and `sk-ant`: absent. Also absent from all 4 HTTP response bodies |
-| 2 | Key absent from frontend | **PASS (static)** — compose gives frontend only `BACKEND_ORIGIN`; `compose config` resolves the key into the backend service alone; key absent from `frontend/dist` |
-| 3 | Both containers run non-root | **PARTIAL — static only.** `USER node` present in both runtime stages and the frontend builder stage compose actually uses. **Not runtime-verified** |
-| 4 | `docker compose up` healthy end to end | **COULD NOT VERIFY — no Docker daemon in this sandbox.** Backend was run directly on the host instead. `docker compose config` parses and resolves correctly, but nothing was containerized |
+| 2 | Key absent from frontend | **PASS (runtime)** — `printenv` in the running frontend container: 6 vars, no `ANTHROPIC*` (`BACKEND_ORIGIN HOME HOSTNAME NODE_VERSION PATH YARN_VERSION`); key also absent from `frontend/dist` |
+| 3 | Both containers run non-root | **PASS (runtime)** — `docker exec id` on both: `uid=1000(node) gid=1000(node)` |
+| 4 | `docker compose up` healthy end to end | **PASS (runtime)** — both images built, backend reached `healthy`, frontend gated on it and started; Vite proxy forwards `localhost:5173/api/health` → backend, HTTP 200 |
 | 5 | Contract guard exits 1 on a prompt-only rename, routes wired | **PASS** — renamed `world_events`→`world_happenings` in built output: exit code 1, naming the missing and unexpected field |
 | 6 | Verbatim data byte-identical | **PASS, with one precision** — `WORLD_SYSTEM_PROMPT` and `WORLD_LORE` are identical to legacy *after CRLF→LF normalization only* (153 and 83 CR chars; char deltas match exactly). `RACES` (9) and `QUESTIONS` (5) deep-equal and raw-source identical. Zero content drift |
 | 7 | `npm test` green | **PASS** — 3 files, 38 tests |
@@ -100,10 +100,40 @@ Re-checked against current code, not against prior plans' reports.
 | Models in one config module | **PASS** — `MODELS` in `config.ts`; no literals at call sites |
 | `max_tokens: 16000`, no prefill, no `budget_tokens` | **PASS** — enforced by 02-04's tests; no 400s |
 | Cache fields logged per call; second call reads cache | **PASS** — the headline table |
-| Non-2xx produce diagnosable structured errors | **UNTESTED LIVE** — covered by mocked tests in 02-04; no real error path fired, as every live call succeeded. Not claimed as passing on live evidence |
+| Non-2xx produce diagnosable structured errors | **PASS (live)** — four real paths fired: 400 `INVALID_REQUEST` (naming both bad fields), 404 `NOT_FOUND`, 502 `UPSTREAM_ERROR` (connection failure), 401 `AUTHENTICATION_FAILED` (bogus key). Key absent from logs in every case |
 | Key absent from logs/errors/traces — checked not assumed | **PASS for logs and responses**, with the `/proc` caveat above |
 
-## Untested, and honestly so
-Containerized runtime (Docker daemon unavailable), live non-2xx error paths, and runtime non-root
-confirmation. These are reported as untested rather than inferred from prior reports — which is
-the failure mode this cross-plan pass exists to catch.
+## Addendum (same day) — the Docker gaps are now closed
+
+The three items first reported as untested were re-run and now pass on real evidence. The daemon
+had simply never been started: this sandbox's PID 1 is `process_api`, with no service manager to
+launch `dockerd`. Started manually, it ran fine. The follow-on blocker was a Docker Hub 429 on
+anonymous pulls from the shared egress IP, which cleared on retry a few hours later.
+
+All 7 cross-plan checks now pass, and the live error-path criterion passes too.
+
+### ⚠️ New finding for Phase 4 (R14): containers cannot reach the API in this sandbox as built
+
+A containerized World Voice call fails with `Connection error` →
+`self-signed certificate in certificate chain`. The proxy CA is injected at **build** time for npm
+only (the `npm_ca` BuildKit secret); it never reaches the **runtime** image's trust store, so Node
+inside the container rejects the sandbox's TLS interception.
+
+**This is not a product defect** — the developer's own machine does not TLS-intercept, so the
+runtime image is correct as shipped. But it is a hard blocker for R14's *in-sandbox* end-to-end
+playthrough, and Phase 4 should plan for it rather than discover it.
+
+Verified workaround, no Dockerfile change needed:
+
+```
+-e NODE_EXTRA_CA_CERTS=/ca/ca-bundle.crt -v /root/.ccr/ca-bundle.crt:/ca/ca-bundle.crt:ro
+```
+
+With that mounted the container reached the API and a bogus key mapped correctly to
+`AUTHENTICATION_FAILED` / HTTP 401, with the key absent from the logs.
+
+### One reading corrected mid-pass
+The bogus-key call first returned `UPSTREAM_ERROR` / 502, which looked like a misclassified auth
+failure. It was not: the 502 came from a *connection* error (the CA problem above), and mapping a
+statusless `APIConnectionError` to 502 is correct. Once the CA was mounted and the request actually
+reached Anthropic, the `AuthenticationError` branch fired exactly as written.

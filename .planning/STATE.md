@@ -46,14 +46,33 @@
   Ten such pauses take a session to ~$3.52. If cost bites, tune `effort` before touching the model
   split, and consider `cache_control: {ttl: '1h'}`.
 
-### Still untested after Phase 2 — do not record these as passing
-- **Containerized runtime**: no Docker daemon in the build sandbox. 02-05 ran the backend directly
-  on the host. `docker compose config` resolves correctly and `USER node` is present in both
-  Dockerfiles, but nothing was actually containerized, and non-root was not runtime-confirmed.
-- **Live non-2xx error paths**: every live call succeeded, so the structured-error path is still
-  only covered by 02-04's mocked tests.
-- `/proc/<pid>/environ` retains the key for the process lifetime (the kernel does not update that
-  region on `unsetenv`). Outside R2 as written, but `config.ts`'s comment does not mention the limit.
+### Docker checks — closed later the same day
+All 7 cross-plan checks now pass, plus the live error-path criterion. Docker was never broken:
+this sandbox's PID 1 is `process_api` with no service manager, so `dockerd` had simply never been
+started. Started by hand it works; a Docker Hub 429 on anonymous pulls then cleared on retry.
+
+Verified in containers: `docker compose up` healthy end to end, Vite proxy forwarding
+`:5173/api` → backend, both containers `uid=1000(node)`, frontend env carrying no `ANTHROPIC*`,
+and four live non-2xx paths (400 / 404 / 502 / 401) all structured with the key absent from logs.
+
+**If you need Docker again in a fresh session, start it yourself:**
+```bash
+setsid nohup dockerd > /tmp/dockerd.log 2>&1 < /dev/null &
+# if it dies with "timeout waiting for containerd": pkill -9 -x dockerd containerd
+#   && rm -f /var/run/docker.sock /run/containerd/containerd.sock, then retry
+export NPM_CA_FILE=/root/.ccr/ca-bundle.crt   # required for builds here
+```
+
+### ⚠️ Blocker to plan for in Phase 4 (R14)
+A containerized World Voice call fails in this sandbox: `self-signed certificate in certificate
+chain`. The proxy CA is injected at **build** time for npm only and never reaches the runtime
+image's trust store. **Not a product defect** — the developer's machine does not TLS-intercept —
+but R14's in-sandbox end-to-end playthrough cannot run without this, no Dockerfile change needed:
+```
+-e NODE_EXTRA_CA_CERTS=/ca/ca-bundle.crt -v /root/.ccr/ca-bundle.crt:/ca/ca-bundle.crt:ro
+```
+With it mounted, the container reached the API and a bogus key mapped correctly to
+`AUTHENTICATION_FAILED` / 401.
 
 ## Auth decision (2026-09-17) — settled, do not re-litigate
 A Claude Max subscription does **not** include API access; Anthropic bills the API separately via Console credits. The artifact only worked because claude.ai injected auth tied to whoever opened it — `docs/design-decisions-log.md` records this as "a crude form of bring your own Claude account". Proceeding on Console credits with the Opus 5 split intact (originally estimated ~$0.04/turn, ~$2.10 per 50-turn session assuming caching engages; **measured 2026-09-17: $0.0499/turn, ~$2.65/session** — caching does engage, but output tokens run higher than the estimate assumed). A proxy converting API-key requests into OAuth calls against a Max subscription was raised and declined — that is the separation Anthropic's terms draw between the two products.
