@@ -84,7 +84,7 @@ Re-checked against current code, not against prior plans' reports.
 | 4 | `docker compose up` healthy end to end | **PASS (runtime)** — both images built, backend reached `healthy`, frontend gated on it and started; Vite proxy forwards `localhost:5173/api/health` → backend, HTTP 200 |
 | 5 | Contract guard exits 1 on a prompt-only rename, routes wired | **PASS** — renamed `world_events`→`world_happenings` in built output: exit code 1, naming the missing and unexpected field |
 | 6 | Verbatim data byte-identical | **PASS, with one precision** — `WORLD_SYSTEM_PROMPT` and `WORLD_LORE` are identical to legacy *after CRLF→LF normalization only* (153 and 83 CR chars; char deltas match exactly). `RACES` (9) and `QUESTIONS` (5) deep-equal and raw-source identical. Zero content drift |
-| 7 | `npm test` green | **PASS** — 3 files, 38 tests |
+| 7 | `npm test` green | **PASS** — at the time: 3 files, 38 tests. After review cycles 2–3: **7 files, 108 tests** |
 
 ### Two claims corrected during this pass
 - **`config.ts`'s key scrub is sound.** An early probe appeared to show the key surviving in `process.report`. It was a test artifact: the host also exports the same value as `SOULBOUND_ANTHROPIC_KEY`, which config.ts neither reads nor owns. Re-run with only `ANTHROPIC_API_KEY` set (the container's actual shape), the scrub is complete. A canary confirmed the mechanism independently.
@@ -137,3 +137,30 @@ The bogus-key call first returned `UPSTREAM_ERROR` / 502, which looked like a mi
 failure. It was not: the 502 came from a *connection* error (the CA problem above), and mapping a
 statusless `APIConnectionError` to 502 is correct. Once the CA was mounted and the request actually
 reached Anthropic, the `AuthenticationError` branch fired exactly as written.
+
+---
+
+## Not covered by automated tests (as of review cycle 3)
+
+Kept as one list on purpose. Cycle 1's Finding 6 was that the untested items were
+scattered and incomplete, so this is the single place to look before trusting the net.
+
+- **`/proc/<pid>/environ` retains the key** for the process lifetime — the kernel does not
+  update that region on `unsetenv`. Outside R2 as written, and `config.ts`'s comment still
+  does not mention the limit.
+- **`effort: 'high'` efficacy is unmeasured.** Carried forward from 02-01, still open. One
+  adversarial sample at `'high'` does not isolate the variable; nothing compares it against
+  `'medium'` or the default.
+- **The cached-prefix token figure is stale.** Cycle 2 added two lines to `WORLD_SYSTEM_PROMPT`,
+  so the measured 15,132 no longer holds. Re-derive with `count_tokens` (free); only
+  re-proving cache *engagement* costs money.
+- **Prompt-injection resistance is structural, not behavioural.** `untrustedText.test.ts`
+  proves a player cannot forge or escape the delimiters, and the MUST NOT list tells the model
+  to treat tag contents as data. Whether Opus 5 actually *obeys* that under a determined
+  in-tag attack is untested — it needs live adversarial calls.
+- **Containerized World Voice calls cannot run in this sandbox** without mounting the proxy CA
+  (`NODE_EXTRA_CA_CERTS` + a bind mount). Not a product defect; blocks R14's in-sandbox
+  end-to-end playthrough. See STATE.md.
+- **Undelimited model-authored text.** `location` and `currentScene` (the largest single
+  channel at 20,000 chars) are now run through `stripDelimiters()` so they cannot forge a tag,
+  but they are not themselves wrapped. The server cannot verify they are model-authored.

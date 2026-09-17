@@ -31,7 +31,7 @@ import { Router, type NextFunction, type Request, type Response } from 'express'
 import { z } from 'zod';
 import { WorldVoiceResponseSchema } from '@soulbound/shared';
 import { callWorldVoice } from '../anthropic.js';
-import { wrapUntrusted } from '../untrustedText.js';
+import { stripDelimiters, wrapUntrusted } from '../untrustedText.js';
 
 // ─── Request validation ──────────────────────────────────────────────────────
 // Only the fields the prompt actually reads (name, race.name, the Unique
@@ -93,7 +93,7 @@ function describeIssues(error: z.ZodError): string {
 // ─── Prompt (ported verbatim, content only — see header comment) ────────────
 
 export function renderIntroScenePrompt({ character }: IntroSceneRequestBody): string {
-  return `Generate the opening scene for a new soul entering Vaeltharion. Character: ${wrapUntrusted('player_name', character.name)}, a ${character.race.name}. Their Unique Skill is "${character.uniqueSkill.skill_name}" — ${character.uniqueSkill.soul_resonance}
+  return `Generate the opening scene for a new soul entering Vaeltharion. Character: ${wrapUntrusted('player_name', character.name)}, a ${stripDelimiters(character.race.name)}. Their Unique Skill is "${stripDelimiters(character.uniqueSkill.skill_name)}" — ${stripDelimiters(character.uniqueSkill.soul_resonance)}
  
 Set the scene somewhere in the world that fits their nature. 3 paragraphs. Give them an immediate situation to react to. End with a clear prompt for what they see/face.
  

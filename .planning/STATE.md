@@ -1,9 +1,9 @@
 # Project State
 
 ## Current Position
-- **Phase**: 2 of 4 (executed, pending review)
-- **Status**: Phase 2 complete — all 5 plans executed. Prompt caching verified against real API responses.
-- **Last Activity**: Phase 2 wave 4 executed — plan 02-05 live verification (2026-09-17)
+- **Phase**: 2 of 4 (complete)
+- **Status**: Phase 2 complete — review passed after 3 cycles. Suite grew 38 → 108 tests.
+- **Last Activity**: Phase 2 review passed (2026-09-17)
 
 ## Progress
 ```
@@ -23,28 +23,34 @@
 
 ## Next Action
 
-**Phase 2 is done — 5/5 plans complete.** Plan 02-05 ran live against the real API on
-2026-09-17 and spent about $0.26.
+**Phase 2 is complete and review-passed.** Run `/legion:plan 3` for the frontend port.
 
-1. `/legion:review` for Phase 2
-2. then `/legion:plan 3` — the frontend port, which is the real regression risk (run plan
-   critique before it; Phase 1 skipped it deliberately and Phase 3 should not)
+Run **plan critique** before Phase 3 — Phase 1 skipped it deliberately as a mechanical scaffold,
+and Phase 3's `App.tsx` game-logic port is where the real regression risk lives.
 
-### What 02-05 proved (see 02-05-SUMMARY.md for evidence)
-- **Caching engages.** world-engine wrote 15,132 cached tokens; the next call read all 15,132 back.
-- **The two Opus routes genuinely share a cache namespace** — `intro-scene` read the cache
-  `world-engine` wrote. The Opus 5 intro-scene decision is now validated on measurement, not argument.
-- `unique-skill` shows zero cache activity, as CLAUDE.md #8 requires.
-- **Opus 5 holds the MUST NOT list.** An adversarial turn demanding an Ultimate Skill, a Soul
-  Rewrite, Plundering and Ithren's true nature was refused on every count.
+### What review changed (see 02-REVIEW.md)
+Two blockers, ten warnings, nine suggestions — all resolved. The panel's shared conclusion was
+that the code was right but the net around it wasn't: a 22-mutation sweep found 11 survivors,
+including unregistering every route and replacing the whole cached prefix with junk, suite green.
 
-### ⚠️ Carry into Phase 3/4 planning — the cost estimate was low
-- System blocks are **15,132 tokens, not ~9,600** (58% larger than the figure the estimate used).
-- A cached world-engine turn costs **$0.0499**, not $0.04. A 50-turn session is **~$2.65, not $2.10** (26% over).
-- **Output tokens dominate** (~77% of a cached turn) at `effort: 'high'` — caching is working; the gap is output spend.
-- The 5-minute cache TTL means a >5-min pause between turns costs **+$0.087** on the next call.
-  Ten such pauses take a session to ~$3.52. If cost bites, tune `effort` before touching the model
-  split, and consider `cache_control: {ttl: '1h'}`.
+- `server.ts` is now exercised by tests (`buildApp()` extracted).
+- The cycle-2 security fix itself introduced a blocker: the Host allow-list 403'd every API call
+  under Compose while the container still reported **healthy** — the healthcheck curls localhost
+  from inside the container and never touches the proxied path. Worth remembering as a pattern:
+  **a passing healthcheck does not mean the app is reachable the way users reach it.**
+- The prompt-injection guard was bypassable two ways (single-pass regex splicing, and
+  `actionHistory` echoing player text back undelimited a turn later). Both closed and pinned.
+
+### ⚠️ Carry into Phase 3/4 planning
+- **Cost**: a cached world-engine turn is **$0.0499**, not $0.04; a 50-turn session **~$2.65**,
+  not $2.10. Output tokens dominate (~77%). A >5-min pause costs **+$0.087** on the next call.
+- **The 15,132-token figure is stale** — cycle 2 added two lines to `WORLD_SYSTEM_PROMPT`.
+  Re-derive with `count_tokens` (free). Only re-proving cache engagement costs money.
+- **`WORLD_SYSTEM_PROMPT` is no longer byte-identical to the legacy artifact** (two deliberate,
+  approved additions). Phase 4's parity audit must compare against the *current* file, not assume
+  byte-equality with legacy.
+- Phase 3 must not add middleware to `server.ts` without a test asserting what it emits — the
+  CORS header value was the one security property that could silently degrade without erroring.
 
 ### Docker checks — closed later the same day
 All 7 cross-plan checks now pass, plus the live error-path criterion. Docker was never broken:

@@ -582,3 +582,46 @@ describe('World Voice routes (mocked SDK boundary)', () => {
     });
   });
 });
+
+// ─── buildApp middleware that no test previously executed ────────────────────
+// Both cases below survived a cycle-3 mutation sweep: hardcoding the CORS
+// origin to '*' (or adding Allow-Credentials alongside it), and deleting the
+// JSON 404 handler outright, each left the suite fully green. config.test.ts
+// proves FRONTEND_ORIGIN='*' is rejected at config load, but that guards the
+// INPUT — nothing asserted what the middleware actually emits, which is the
+// same shape of gap as this phase's original blocker, narrowed to one header.
+
+describe('buildApp middleware', () => {
+  it('echoes the configured FRONTEND_ORIGIN and never a wildcard or credentials', async () => {
+    const app = buildApp({ ...config, FRONTEND_ORIGIN: 'http://example.test' });
+    const { server, port } = await startServer(app);
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/api/health`);
+      expect(res.status).toBe(200);
+      expect(res.headers.get('access-control-allow-origin')).toBe('http://example.test');
+      // A wildcard here would make the unauthenticated, paid backend callable
+      // AND readable by any website that the operator happens to visit.
+      expect(res.headers.get('access-control-allow-origin')).not.toBe('*');
+      // Wildcard + credentials is the classic credentialed-CORS hole.
+      expect(res.headers.get('access-control-allow-credentials')).toBeNull();
+    } finally {
+      server.close();
+    }
+  });
+
+  it('answers an unmatched route with JSON, not Express\'s default HTML error page', async () => {
+    const app = buildTestApp();
+    const { server, port } = await startServer(app);
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/api/nope`, { method: 'POST' });
+      expect(res.status).toBe(404);
+      // The point of the handler: a JSON client must be able to parse the body.
+      expect(res.headers.get('content-type')).toMatch(/application\/json/);
+      await expect(res.json()).resolves.toEqual({
+        error: { message: 'Not found', code: 'NOT_FOUND' },
+      });
+    } finally {
+      server.close();
+    }
+  });
+});

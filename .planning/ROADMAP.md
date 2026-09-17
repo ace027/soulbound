@@ -3,7 +3,7 @@
 ## Phases
 
 - [x] **Phase 1: Foundation & Contract** — scaffold, Docker, and the shared World Voice contract
-- [ ] **Phase 2: Backend & World Voice** — three routes on the official SDK, structured outputs, caching verified
+- [x] **Phase 2: Backend & World Voice** — three routes on the official SDK, structured outputs, caching verified
 - [ ] **Phase 3: Frontend Port** — components, screens, game logic, saves
 - [ ] **Phase 4: Parity & Verification** — end-to-end playthrough, constraint audit, doc updates
 
@@ -68,7 +68,7 @@
 | Phase | Plans | Completed | Status |
 |-------|-------|-----------|--------|
 | 1. Foundation & Contract | 6 | 6 | **Shipped** 2026-09-17 — review passed (2 cycles) |
-| 2. Backend & World Voice | 5 | 5 | **Complete** 2026-09-17 — caching verified live; pending review |
+| 2. Backend & World Voice | 5 | 5 | **Shipped** 2026-09-17 — review passed (3 cycles) |
 | 3. Frontend Port | 4 | 0 | Not started |
 | 4. Parity & Verification | 3 | 0 | Not started |
 | **Total** | **18** | **11** | 61% |

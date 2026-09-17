@@ -44,6 +44,14 @@ services:
       - ANTHROPIC_API_KEY=${SOULBOUND_ANTHROPIC_KEY:-${ANTHROPIC_API_KEY}}
       - PORT=3001
       - FRONTEND_ORIGIN=http://localhost:5173
+      # Host allow-list. MUST include the compose service name: the frontend
+      # reaches the backend through Vite's proxy with `changeOrigin: true`,
+      # which rewrites the Host header to `backend:3001`. Without this entry
+      # every /api/* call 403s while the container still reports healthy —
+      # the healthcheck curls localhost from *inside* the container, so it
+      # never exercises the proxied path. Change the published port or put a
+      # reverse proxy in front, and this list must change with it.
+      - ALLOWED_HOSTS=localhost:3001,127.0.0.1:3001,[::1]:3001,backend:3001
     ports:
       # Loopback by default. The backend holds the API key and has no
       # application-level auth, so binding 0.0.0.0 on a host with a public IP

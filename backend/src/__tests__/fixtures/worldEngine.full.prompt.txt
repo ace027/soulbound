@@ -30,9 +30,9 @@ STORY SO FAR (standing notes on things that happened outside the last 5 actions 
 Ilse promised Harl she would not bring trouble through the front door.
  
 ACTION HISTORY (last 5):
-Enter the inn.
-Order nothing.
-Watch the stairs.
+<player_action>Enter the inn.</player_action>
+<player_action>Order nothing.</player_action>
+<player_action>Watch the stairs.</player_action>
  
 PLAYER ACTION:
 <player_action>Ask the innkeeper who paid for the room before mine.</player_action>

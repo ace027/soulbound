@@ -62,11 +62,25 @@ export interface AppConfig {
  *    500-turn run is roughly 500 actions x ~250 chars (~125 KB) plus ~300
  *    usage notes (~45 KB) plus the entity ledger and standing notes (~55 KB) —
  *    about 230 KB, already over the 100kb default.
- *  - An oversized body must not become an oversized prompt. That is NOT what
- *    this limit is for: the render functions read only bounded slices (the
- *    last 5 actions, the last 8 usage notes), and every remaining
- *    prompt-reaching field carries its own `.max()` in the route schemas. This
- *    limit is the memory/DoS backstop behind those bounds.
+ *  - An oversized body must not become an oversized prompt. Read this part
+ *    carefully before changing the number, because an earlier version of this
+ *    comment got it wrong: it is NOT true that the schemas alone bound the
+ *    prompt. Only the SCALAR fields are individually capped. Three collections
+ *    are interpolated IN FULL, not sliced, and their per-item `.max()` bounds
+ *    MULTIPLY:
+ *      skills    200 items x (name 200 + 50 sub-abilities x 200)  ~ 2.0M chars
+ *      entities  500 items x ~2.2K                                 ~ 1.1M chars
+ *      notes     500 items x 2K                                    ~ 1.0M chars
+ *    Schema-only worst case is therefore ~4.2M chars (~1M+ tokens). What
+ *    actually stops that is THIS CONSTANT — so for those three fields the body
+ *    limit is the operative token guard, not a mere memory backstop. At 512kb
+ *    the worst case is still a ~125K-token Opus prompt (single-digit dollars
+ *    for one request), which is self-inflicted and local-only under this
+ *    project's single-tenant threat model.
+ *    Consequence: raising this value raises the worst-case prompt cost
+ *    proportionally, with no schema change to notice. A future "saves got
+ *    bigger, bump it to 2mb" would quietly 8x it. Cap the three collections
+ *    with slices in the render function if you need a bigger body.
  */
 const JSON_BODY_LIMIT = '512kb';
 
