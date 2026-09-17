@@ -1,13 +1,13 @@
 # Project State
 
 ## Current Position
-- **Phase**: 2 of 4 (**shipped** 2026-09-17)
-- **Status**: Phases 1–2 shipped in [PR #1](https://github.com/DeanItServices/soulbound/pull/1) — 31 commits, 91 files. Awaiting review/merge.
-- **Last Activity**: Phase 2 shipped (2026-09-17)
+- **Phase**: 3 of 4 (planned)
+- **Status**: Phase 3 planned — 9 plans across 5 waves. Architecture selected from 3 competing proposals.
+- **Last Activity**: Phase 3 planning (2026-09-17)
 
 ## Progress
 ```
-[████████████░░░░░░░░] 61% — 11/18 plans complete
+[█████████░░░░░░░░░░░] 48% — 11/23 plans complete (total rose: Phase 3 is 9 plans, not 4)
 ```
 
 ## Ship record
@@ -34,10 +34,50 @@
 
 ## Next Action
 
-**Phases 1–2 are shipped** (PR #1). Next: `/legion:plan 3` — the frontend port.
+**Phase 3 is planned.** Run `/legion:build` to execute it — but see the critique note below first.
 
-Run **plan critique** before Phase 3. Phase 1 skipped it deliberately as a mechanical scaffold,
-and Phase 3's `App.tsx` game-logic port is where the real regression risk lives.
+### Phase 3 Plans
+| Plan | Wave | Deliverable | Agent | Model |
+|---|---|---|---|---|
+| 01 | 0 | Frontend test harness (vitest + jsdom + RTL) | Frontend Developer | Sonnet 5 |
+| 02 | 1 | `lib/saves.ts` + tests (R11) | Frontend Developer | Sonnet 5 |
+| 03 | 1 | `lib/api.ts` + tests (R9, R12) | Frontend Developer | Sonnet 5 |
+| 04 | 1 | `game/applyWorldUpdate.ts` + mutation-verified tests (R10) | orchestrator | Opus 5 |
+| 05 | 1 | `tierStyle` + `useIsMobile` + tests (R12) | Frontend Developer | Sonnet 5 |
+| 06 | 2 | Four presentational components (R9) | Frontend Developer | Sonnet 5 |
+| 07 | 3 | Title / Race / Questionnaire screens (R9) | Frontend Developer | Sonnet 5 |
+| 08 | 3 | Loading / Simulation screens + CLAUDE.md #3 fixes | UX Architect | Sonnet 5 |
+| 09 | 4 | `App.tsx` wiring + integration test | orchestrator | Opus 5 |
+
+Waves 1 and 3 are file-disjoint (verified) and dispatch in parallel. Wave 0 blocks everything.
+
+### Architecture: Pragmatic, chosen from three proposals
+Three read-only proposals were generated. **Pragmatic** won: split the five screens into
+`screens/*.tsx`, but leave the state graph alone — `App.tsx` keeps all 17 `useState` and the
+`autoSave`-inside-`setLog` closure exactly as legacy has them. Clean's `useGameSession` hook was
+rejected because it rewrites the state graph, which is the most behaviour-load-bearing and
+least-tested part of the port. Minimal's single 700-line `App.tsx` was rejected because its own
+author called it "unreviewable by diff, with the tests covering none of it".
+
+The one deviation from verbatim is `game/applyWorldUpdate.ts` — extracted purely so R10's rules
+become testable.
+
+### Four things verified while planning that changed the plans
+1. **`shared/src/gameState.ts` already exports the save keys** (`SAVE_INDEX_KEY`, `SAVE_PREFIX`,
+   `MAX_LOG_SAVED`, `SAVE_SCHEMA_VERSION`). `lib/saves.ts` imports them; redeclaring would create a
+   second source of truth for the one thing that must stay byte-identical.
+2. **The 25/60/100 thresholds are model-side, not client-side** (`WORLD_SYSTEM_PROMPT` 40/55/93/139).
+   A frontend test asserting them would have been untestable fiction, and a client-side guard would
+   silently swallow legitimate unlocks on an overshooting mastery jump. Plans forbid both.
+3. **Legacy violates CLAUDE.md #3 twice on one scroll chain** — `WorldLog`'s root (L659) lacks
+   `minHeight: 0`, and a Fragment at L1388 acts as the mobile flex/scroll container with its parent
+   also missing it. A literal verbatim port would carry both forward. Plans 06 and 08 fix them.
+4. **`frontend/package.json` has no test runner**, which is why wave 0 exists and why the plan count
+   went 4 → 9.
+
+### ⚠️ Plan critique is still outstanding (retro AI-2/AI-5, carried twice)
+Phase 1's retro asked for plan critique before Phase 3, and Phase 2's retro carried it forward. It has
+not run yet. Run it before `/legion:build` — this is the phase it was requested for.
 
 ### What review changed (see 02-REVIEW.md)
 Two blockers, ten warnings, nine suggestions — all resolved. The panel's shared conclusion was
