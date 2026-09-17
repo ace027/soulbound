@@ -1,13 +1,13 @@
 # Project State
 
 ## Current Position
-- **Phase**: 0 of 4 (not started)
-- **Status**: Initialized — ready for `/legion:plan 1`
-- **Last Activity**: Project initialization (2026-09-17)
+- **Phase**: 1 of 4 (planned)
+- **Status**: Phase 1 planned — 6 plans across 3 waves
+- **Last Activity**: Phase 1 planning (2026-09-17)
 
 ## Progress
 ```
-[░░░░░░░░░░░░░░░░░░░░] 0% — 0/13 plans complete
+[░░░░░░░░░░░░░░░░░░░░] 0% — 0/16 plans complete
 ```
 
 ## Recent Decisions
@@ -22,4 +22,16 @@
 - **Cost profile**: Balanced — Opus 5 for the contract and the `App.tsx` game-logic port, Sonnet 5 for backend routes and UI extraction, Haiku 4.5 for verbatim data copying
 
 ## Next Action
-Run `/legion:plan 1` to begin Phase 1: Foundation & Contract
+Run `/legion:build` to execute Phase 1: Foundation & Contract
+
+## Phase 1 Plans
+| Plan | Wave | Deliverable | Agent | Model |
+|---|---|---|---|---|
+| 01 | 1 | Repository reorganization & workspace root | Infrastructure & DevOps | Haiku 4.5 |
+| 02 | 2 | Shared contract package | orchestrator | Opus 5 |
+| 03 | 2 | Backend service skeleton | Backend Architect | Sonnet 5 |
+| 04 | 2 | Frontend service skeleton | Frontend Developer | Sonnet 5 |
+| 05 | 3 | Verbatim static-data extraction | general | Haiku 4.5 |
+| 06 | 3 | Compose wiring & end-to-end verification | Infrastructure & DevOps | Sonnet 5 |
+
+Planning-gate notes: architecture proposals and the spec pipeline were skipped — the committed exploration doc already carries the competing-approach analysis and serves as the spec. Plan critique was skipped for this phase (mechanical scaffold); run it before Phase 3, where the `App.tsx` game-logic port is the real regression risk. GitHub issue creation skipped — no `gh` CLI in this environment.

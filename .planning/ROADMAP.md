@@ -20,7 +20,7 @@
 - `shared/worldVoice.ts` defines every contract field exactly as `CLAUDE.md` constraint #4 names them, and a JSON Schema is derived from it
 - `WORLD_SYSTEM_PROMPT`, `WORLD_LORE`, `RACES`, `QUESTIONS` extracted byte-identical to the legacy file (verified by diff, not by eye)
 - Docs moved into `docs/` so `CLAUDE.md`'s existing references resolve; legacy artifact moved to `legacy/`
-**Plans**: 3
+**Plans**: 6 (planned 2026-09-17 — revised up from the initial estimate of 3; the 3-task-per-plan cap and the dependency structure don't permit fewer)
 
 ### Phase 2: Backend & World Voice
 **Goal**: All three API routes live, callable, and returning schema-valid JSON — with prompt caching finally verified against real responses, which was never possible from inside the artifact.
@@ -67,8 +67,8 @@
 
 | Phase | Plans | Completed | Status |
 |-------|-------|-----------|--------|
-| 1. Foundation & Contract | 3 | 0 | Not started |
+| 1. Foundation & Contract | 6 | 0 | **Planned** — 3 waves |
 | 2. Backend & World Voice | 3 | 0 | Not started |
 | 3. Frontend Port | 4 | 0 | Not started |
 | 4. Parity & Verification | 3 | 0 | Not started |
-| **Total** | **13** | **0** | — |
+| **Total** | **16** | **0** | — |
