@@ -1,13 +1,13 @@
 # Project State
 
 ## Current Position
-- **Phase**: 2 of 4 (planned)
-- **Status**: Phase 2 planned — 5 plans across 4 waves, plan critique applied
-- **Last Activity**: Phase 2 planning (2026-09-17)
+- **Phase**: 2 of 4 (waves 1–3 executed; wave 4 blocked on an API key)
+- **Status**: Phase 2 — 4 of 5 plans complete. Only 02-05 (live verification) remains, and it needs a real API key.
+- **Last Activity**: Phase 2 waves 1–3 executed (2026-09-17)
 
 ## Progress
 ```
-[███████░░░░░░░░░░░░░] 38% — 6/16 plans complete
+[███████████░░░░░░░░░] 56% — 10/18 plans complete
 ```
 
 ## Recent Decisions
@@ -21,12 +21,60 @@
 - **Planning depth**: Standard — deep analysis already lives in the exploration doc
 - **Cost profile**: Balanced — Opus 5 for the contract and the `App.tsx` game-logic port, Sonnet 5 for backend routes and UI extraction, Haiku 4.5 for verbatim data copying
 
-## Next Action
-Run `/legion:build` to execute Phase 2: Backend & World Voice
+## Next Action — READ THIS FIRST IF YOU ARE A FRESH SESSION
 
-⚠️ **Plan 02-05 needs a real `ANTHROPIC_API_KEY` in `.env`.** Waves 1–3 run without one. Wave 4 reports BLOCKED if absent rather than fabricating a pass.
+**Phase 2 is 4/5 done.** Plans 02-01 through 02-04 are complete, committed, pushed, and independently verified. **Only plan 02-05 remains**, and it is the one plan that requires a real Anthropic API key.
+
+### Step 1 — confirm the key is actually reaching the backend, BEFORE spending anything
+```bash
+# Is it in the environment under either name?
+env | grep -c 'SOULBOUND_ANTHROPIC_KEY\|ANTHROPIC_API_KEY'
+
+# Does compose resolve it into the container?
+printf 'SOULBOUND_ANTHROPIC_KEY=%s\n' "$SOULBOUND_ANTHROPIC_KEY" > .env
+docker compose config | grep 'ANTHROPIC_API_KEY'   # must show a real sk-ant-... value
+```
+If neither name is set, **stop**: plan 02-05 reports BLOCKED. That is the designed behaviour, not a failure. Do not stub it, do not mark it passed, and do not reason that the mocked tests are equivalent — they cannot prove `cache_read_input_tokens > 0`, which is the entire point of that plan.
+
+### Step 2 — run it
+```bash
+/legion:build     # reads this file, sees 02-01..02-04 have summaries, runs 02-05 alone
+```
+
+### Step 3 — then
+`/legion:review` for Phase 2, then `/legion:plan 3`.
+
+---
+
+## ⚠️ Key naming — do NOT use `ANTHROPIC_API_KEY` as a host/cloud env var
+
+Claude Code uses an `ANTHROPIC_API_KEY` found in the environment **in preference to a Pro/Max subscription**. Naming the host variable that would quietly move the developer's own Claude Code usage onto billed API credits — the exact outcome they are trying to avoid.
+
+Use **`SOULBOUND_ANTHROPIC_KEY`**. `docker-compose.yml` maps it into the container as `ANTHROPIC_API_KEY` (which is what `backend/src/config.ts` reads), with a fallback to `ANTHROPIC_API_KEY` if only that is set. Both paths verified working.
+
+## What plan 02-05 will spend
+Roughly 6 calls: three route exercises, a second world-engine call for the cache proof, one adversarial sample. Well under a dollar. The plan forbids exploratory looping and re-running passing checks. A workspace spend limit is a sensible hard stop.
+
+## Auth decision (2026-09-17) — settled, do not re-litigate
+A Claude Max subscription does **not** include API access; Anthropic bills the API separately via Console credits. The artifact only worked because claude.ai injected auth tied to whoever opened it — `docs/design-decisions-log.md` records this as "a crude form of bring your own Claude account". Proceeding on Console credits with the Opus 5 split intact (~$0.04/turn, ~$2.10 per 50-turn session, assuming caching engages). A proxy converting API-key requests into OAuth calls against a Max subscription was raised and declined — that is the separation Anthropic's terms draw between the two products.
+
+## ⚠️ Unresolved, and a fresh session will not otherwise know to ask
+**Five commits use `acedean27@gmail.com` as committer instead of `noreply@anthropic.com`** and show as Unverified on GitHub: `7ec3ba2`, `1821b18`, `224460a`, `fbccbc6`, `5a4089d`. Everything from `5d6e323` onward is correct. All five are pushed, so fixing them means a rebase plus force-push-with-lease. Orchestrator recommendation was to **leave them** — content and authorship are correct, only the verification badge differs — unless branch protection requires verified commits. Two attempts to fix were denied by the permission classifier. **Ask the user before acting.**
 
 **Auth decision (2026-09-17)**: a Claude Max subscription does not include API access — Anthropic bills the API separately via Console credits. The artifact worked only because claude.ai injected auth tied to the viewer. Proceeding on Console credits with the Opus 5 split intact (~$0.04/turn, ~$2.10 per 50-turn session, assuming caching engages). A proxy converting API-key requests into OAuth calls against a Max subscription was raised and declined.
+
+## Phase 2 Plans
+| Plan | Wave | Deliverable | Agent | Model | Status |
+|---|---|---|---|---|---|
+| 01 | 1 | Anthropic client module | Backend Architect | Sonnet 5 | ✅ `2b0f82d` |
+| 02 | 1 | Vitest + contract-guard test | QA Verification | Sonnet 5 | ✅ `ca566fc` |
+| 03 | 2 | Three World Voice routes | AI Engineer | Sonnet 5 | ✅ `0909109` |
+| 04 | 3 | Route tests vs mocked SDK | QA Verification | Sonnet 5 | ✅ `b0b9c50` |
+| 05 | 4 | Live verification & cache proof | orchestrator | Opus 5 | ⏸ **BLOCKED — needs API key** |
+
+**Verified so far without a key**: 38 tests green; three routes built on one shared helper; `unique-skill` omits `system` entirely; the two Opus routes send byte-identical system blocks *and* `output_config`, so they share a cache namespace; all three carry `max_tokens: 16000`, `effort: 'high'`, no prefill, no `budget_tokens`; prompts byte-identical to the artifact by rendered-string diff.
+
+**Not yet verified, and only 02-05 can**: that the API accepts the derived schema; that `cache_read_input_tokens > 0`; that Opus 5 honours the MUST NOT list the way Sonnet 5 did.
 
 ## Phase 1 Plans
 | Plan | Wave | Deliverable | Agent | Model | Status |

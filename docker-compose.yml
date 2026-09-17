@@ -31,7 +31,17 @@ services:
     environment:
       # The ONLY service that receives the key. It never reaches the frontend,
       # the browser bundle, or any image layer — it arrives at run time.
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      #
+      # Sourced from SOULBOUND_ANTHROPIC_KEY, not ANTHROPIC_API_KEY, on purpose.
+      # Claude Code uses an ANTHROPIC_API_KEY found in the environment in
+      # preference to a Pro/Max subscription, so naming the host variable that
+      # would quietly move the developer's own Claude Code usage onto billed API
+      # credits. The container still receives it as ANTHROPIC_API_KEY, which is
+      # what backend/src/config.ts reads — only the host-side name differs.
+      #
+      # Falls back to ANTHROPIC_API_KEY if SOULBOUND_ANTHROPIC_KEY is unset, so
+      # a .env carrying either name works.
+      - ANTHROPIC_API_KEY=${SOULBOUND_ANTHROPIC_KEY:-${ANTHROPIC_API_KEY}}
       - PORT=3001
       - FRONTEND_ORIGIN=http://localhost:5173
     ports:
