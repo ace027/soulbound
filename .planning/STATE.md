@@ -1,13 +1,13 @@
 # Project State
 
 ## Current Position
-- **Phase**: 1 of 4 (planned)
-- **Status**: Phase 1 planned — 6 plans across 3 waves
-- **Last Activity**: Phase 1 planning (2026-09-17)
+- **Phase**: 1 of 4 (executed, pending review)
+- **Status**: Phase 1 complete — 6/6 plans passed, all exit criteria audited
+- **Last Activity**: Phase 1 execution (2026-09-17)
 
 ## Progress
 ```
-[░░░░░░░░░░░░░░░░░░░░] 0% — 0/16 plans complete
+[███████░░░░░░░░░░░░░] 38% — 6/16 plans complete
 ```
 
 ## Recent Decisions
@@ -22,16 +22,23 @@
 - **Cost profile**: Balanced — Opus 5 for the contract and the `App.tsx` game-logic port, Sonnet 5 for backend routes and UI extraction, Haiku 4.5 for verbatim data copying
 
 ## Next Action
-Run `/legion:build` to execute Phase 1: Foundation & Contract
+Run `/legion:review` to verify Phase 1, or `/legion:plan 2` to plan Phase 2: Backend & World Voice
 
 ## Phase 1 Plans
-| Plan | Wave | Deliverable | Agent | Model |
-|---|---|---|---|---|
-| 01 | 1 | Repository reorganization & workspace root | Infrastructure & DevOps | Haiku 4.5 |
-| 02 | 2 | Shared contract package | orchestrator | Opus 5 |
-| 03 | 2 | Backend service skeleton | Backend Architect | Sonnet 5 |
-| 04 | 2 | Frontend service skeleton | Frontend Developer | Sonnet 5 |
-| 05 | 3 | Verbatim static-data extraction | general | Haiku 4.5 |
-| 06 | 3 | Compose wiring & end-to-end verification | Infrastructure & DevOps | Sonnet 5 |
+| Plan | Wave | Deliverable | Agent | Model | Status |
+|---|---|---|---|---|---|
+| 01 | 1 | Repository reorganization & workspace root | Infrastructure & DevOps | Haiku 4.5 | ✅ |
+| 02 | 2 | Shared contract package | orchestrator | Opus 5 | ✅ |
+| 03 | 2 | Backend service skeleton | Backend Architect | Sonnet 5 | ✅ |
+| 04 | 2 | Frontend service skeleton | Frontend Developer | Sonnet 5 | ✅ |
+| 05 | 3 | Verbatim static-data extraction | general | Haiku 4.5 | ✅ |
+| 06 | 3 | Compose wiring & end-to-end verification | orchestrator | Opus 5 | ✅ |
 
 Planning-gate notes: architecture proposals and the spec pipeline were skipped — the committed exploration doc already carries the competing-approach analysis and serves as the spec. Plan critique was skipped for this phase (mechanical scaffold); run it before Phase 3, where the `App.tsx` game-logic port is the real regression risk. GitHub issue creation skipped — no `gh` CLI in this environment.
+
+
+## Phase 1 findings carried into later phases
+- **Legacy CSS drift** — the six duplicated `<style>` blocks were not identical. `breathe`, `glowPulse`, `etchIn` and the scrollbar thumb width differ between copies; each was resolved by plurality among existing legacy values. During the Phase 3 UI port, if a screen looks subtly off against the artifact, these four rules are the first place to look. There is no single "correct" original to diff against.
+- **Seven keyframes, not six** — `cardHover` exists in legacy (as an empty block) and was missed by the plan's prose. Caught by diffing extracted lists.
+- **Backend dev watch loop and frontend `dev` script are unexercised** — no plan's verify block covered them. Check manually when dev-loop iteration starts.
+- **Docker builds need a trusted CA in this sandbox** — outbound HTTPS is TLS-intercepted. Handled via an optional BuildKit secret that no-ops elsewhere; set `NPM_CA_FILE` when building here.
