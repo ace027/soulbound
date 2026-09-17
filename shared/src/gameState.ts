@@ -14,7 +14,12 @@
  * and the save layer agree.
  */
 
-import type { SkillTier, UniqueSubAbility } from './worldVoice.js';
+import type {
+  NewSkillGranted,
+  SkillTier,
+  UniqueSkillDetermination,
+  UniqueSubAbility,
+} from './worldVoice.js';
 
 // ─── Races ──────────────────────────────────────────────────────────────────
 // Nine races, each with exactly two intrinsics. Mycelium was added as a full
@@ -121,10 +126,32 @@ export interface SoulRewriteEntry {
 export interface LogEntry {
   type: 'action' | 'narration' | 'error';
   text: string;
-  newSkills?: unknown[];
+  /**
+   * `state_updates.new_skills_granted` for this turn, verbatim. WorldLog
+   * reads `ns.soul_etching_text`, `ns.skill_name`, `ns.tier`, `ns.mastery`
+   * and `ns.description` straight off these (legacy 712-718) — the same
+   * field names the World Voice contract defines in shared/src/worldVoice.ts,
+   * so no separate shape is declared here.
+   */
+  newSkills?: NewSkillGranted[];
   soulRewrites?: SoulRewriteEntry[];
   subAbilityUnlock?: (UniqueSubAbility & { skillName: string }) | null;
   gmNote?: string | null;
+  /**
+   * Set only on the log's first entry, right after character creation
+   * (legacy 902: `{ type: "narration", text: intro.narration, etchingSkill:
+   * uniqueSkill }`, where `uniqueSkill` is `determineUniqueSkill()`'s raw
+   * result). WorldLog renders it as the "Soul Etching — Unique Skill
+   * Recognized" callout, reading `.skill_name`, `.etching_text` and
+   * `.soul_resonance` (legacy 675-677).
+   *
+   * `name` is kept optional to match legacy's defensive
+   * `etchingSkill.skill_name || etchingSkill.name` (legacy 675) — a fallback
+   * for a field `UniqueSkillDetermination` never actually carries. It is
+   * dead in practice but preserved rather than dropped, since dropping it
+   * would be a silent behavioural change disguised as a type fix.
+   */
+  etchingSkill?: (UniqueSkillDetermination & { name?: string }) | null;
 }
 
 // ─── Saves ──────────────────────────────────────────────────────────────────
