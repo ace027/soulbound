@@ -310,11 +310,16 @@ describe('writeSave — the storage-failure path', () => {
     });
     const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    expect(() => writeSave('sbc_quota', makeSaveSlot())).not.toThrow();
-    expect(writeSave('sbc_quota', makeSaveSlot())).toBe(false);
-
-    spy.mockRestore();
-    quiet.mockRestore();
+    // finally, not a trailing call: if an assertion below fails, a bare
+    // mockRestore() never runs and the stubbed setItem leaks into the NEXT
+    // test, which then fails with a stack trace pointing at the wrong place.
+    try {
+      expect(() => writeSave('sbc_quota', makeSaveSlot())).not.toThrow();
+      expect(writeSave('sbc_quota', makeSaveSlot())).toBe(false);
+    } finally {
+      spy.mockRestore();
+      quiet.mockRestore();
+    }
   });
 
   it('leaves the index untouched when the slot write fails', () => {
@@ -325,13 +330,55 @@ describe('writeSave — the storage-failure path', () => {
       throw new DOMException('quota', 'QuotaExceededError');
     });
     const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
-    expect(writeSave('sbc_doomed', makeSaveSlot())).toBe(false);
-    spy.mockRestore();
-    quiet.mockRestore();
+    try {
+      expect(writeSave('sbc_doomed', makeSaveSlot())).toBe(false);
+    } finally {
+      spy.mockRestore();
+      quiet.mockRestore();
+    }
 
     // The slot write throws first, so the index never reaches setItem — no
     // phantom entry pointing at a slot that was never written.
     expect(listSaves()).toEqual(before);
     expect(listSaves().some((e) => e.id === 'sbc_doomed')).toBe(false);
+  });
+});
+
+describe('deleteSave — the storage-failure path', () => {
+  /**
+   * Found in review cycle 2. `deleteSave`'s try/catch could be deleted outright
+   * with all 127 tests green — the same uncovered-catch shape as `writeSave`,
+   * on the sibling function, and it matters more here than the symmetry
+   * suggests: `App.tsx#handleDeleteSave` calls this from a synchronous onClick
+   * with no error boundary anywhere in the app, on the tap-to-arm → Confirm
+   * flow that CLAUDE.md constraint #1 governs. A throw out of that handler is a
+   * dead delete button with nothing rendered to say why.
+   */
+  it('does not throw when removeItem throws', () => {
+    writeSave('sbc_del', makeSaveSlot());
+    const spy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new DOMException('denied', 'SecurityError');
+    });
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      expect(() => deleteSave('sbc_del')).not.toThrow();
+    } finally {
+      spy.mockRestore();
+      quiet.mockRestore();
+    }
+  });
+
+  it('does not throw when the index rewrite throws', () => {
+    writeSave('sbc_del2', makeSaveSlot());
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota', 'QuotaExceededError');
+    });
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      expect(() => deleteSave('sbc_del2')).not.toThrow();
+    } finally {
+      spy.mockRestore();
+      quiet.mockRestore();
+    }
   });
 });

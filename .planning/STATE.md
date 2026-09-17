@@ -2,7 +2,7 @@
 
 ## Current Position
 - **Phase**: 3 of 4 (complete)
-- **Status**: Phase 3 complete — all 10 plans executed, review passed in 1 cycle (3-reviewer panel).
+- **Status**: Phase 3 complete — all 10 plans executed, review passed in 2 cycles (3-reviewer panel, then a scoped re-review of the fix commit).
 - **Last Activity**: Phase 3 review (2026-09-17)
 
 ## Progress
@@ -46,7 +46,7 @@
 | 08 | 3 | `bca8dd0` loading/simulation screens, CLAUDE.md #3 fixes |
 | 09 | 4 | `963513c` App.tsx wiring |
 | 10 | 5 | `61fbb07` integration test + cross-plan re-verification |
-| review | — | fix cycle: 4 surviving mutants closed, 127 tests |
+| review | — | cycle 1: 4 surviving mutants closed. cycle 2: `deleteSave` gap closed, 129 tests |
 
 ### ⚠️ Carried into Phase 4 from the Phase 3 review
 1. **Inherited closure race, NOT fixed — developer call needed.** `handleAction`
@@ -72,7 +72,9 @@ attributed it to Vitest pool flakiness. It was not flaky: the failures were othe
 reviewers' live mutations. `|| 5` → `?? 5` produced `expected +0 to be 5`, and
 `response.ok` → `if (false)` produced the 9-test api failure. On a clean tree the
 suite is 8/8 green. **A mutating reviewer needs its own worktree, or must run
-serially.**
+serially.** Cycle 2 ran serially and was clean. A second vector surfaced there: a stop
+hook prompted a commit mid-sweep, and the reviewer saw HEAD move under it. Same rule
+covers both — **while a reviewer holds the tree, do not write to it.**
 
 ### Phase 3 Plans (post-critique)
 | Plan | Wave | Deliverable | Agent | Model |

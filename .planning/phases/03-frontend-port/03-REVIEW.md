@@ -1,6 +1,6 @@
 # Phase 3: Frontend Port — Review Summary
 
-## Result: PASSED (1 cycle)
+## Result: PASSED (2 cycles)
 
 Reviewed 2026-09-17 at HEAD `61fbb07`. Dynamic three-reviewer panel, non-overlapping rubrics:
 
@@ -89,6 +89,60 @@ Similarly, `applyWorldUpdate.test.ts`'s annotations resolve to 13 named mutants 
 lines, one of which names two), not the "eleven" the phase-close commit states. Rather than
 publish a fourth number, the durable form is `grep -c 'MUTANT' <file>` at the time of
 reading. Counts in prose go stale; the derivation does not.
+
+## Cycle 2 — re-review of the fix commit
+
+Cycle 1's fixes were applied and then declared PASS without re-entering the review
+loop. That was a gap: eight fixes across six files, including production code, verified
+only by the orchestrator re-running the four mutants it had written the fixes against.
+Cycle 2 re-reviewed the fix commit properly.
+
+**Run serially this time**, with the mutating reviewer alone on the tree — the direct fix
+for cycle 1's contamination. It was also told explicitly that the "flake" it had reported
+was another reviewer's live mutation, so it would not spend the cycle re-investigating a
+phantom or soften a real finding by attributing it to imagined flakiness.
+
+**Verdict: PASS.** All four cycle-1 findings independently re-verified as closed — not
+taken on the orchestrator's word. Two results worth recording:
+
+- **The 2500 ms fix survives its sharpest variant.** The reviewer mutated 2500 → **2000**,
+  not just → 9999. That is the collision case: `autoSave`'s own status reset is also
+  2000 ms, so 2000 legitimately appears in the spy's call list. The assertion still fails,
+  so the test distinguishes the two constants rather than merely seeing a familiar number.
+- **The `Phase` narrowing is real, not cosmetic.** Mutating `setPhase("title")` to
+  `setPhase("titel")` in `SoulCodexContents.tsx` now produces a `tsc` error. Before the
+  cast was removed it would have compiled and silently blank-screened.
+
+### New finding, found and fixed in cycle 2
+
+**`deleteSave`'s try/catch was uncovered.** Removing it entirely left all 127 tests green
+— the same shape as the `writeSave` gap cycle 1 found, on the sibling function. It matters
+more than the symmetry suggests: `App.tsx#handleDeleteSave` calls it from a synchronous
+onClick with no error boundary anywhere in the app, on the tap-to-arm → Confirm flow that
+CLAUDE.md constraint #1 governs. A throw there is a dead delete button with nothing
+rendered to explain it. Confirmed independently, then closed with two tests; the mutation
+now kills both. `listSaves` and `loadSave` were checked the same way and are already
+covered — this was specific to `deleteSave`.
+
+Also fixed: the new `writeSave` failure tests restored their `Storage.prototype` spies
+with a trailing call rather than a `finally`. The reviewer demonstrated the leak is real,
+not theoretical — a failing assertion skips the restore and poisons the *next* test with a
+misattributed stack trace. Now in `try/finally`.
+
+Confirmed clean by a whole-project `tsc --noUnusedLocals --noUnusedParameters`: the dead
+`act` import (found by hand, since `noUnusedLocals` is not set in `frontend/tsconfig.json`)
+was the only one.
+
+**129 tests across 9 files**, `tsc` exits 0.
+
+### A second contamination vector, also mine
+
+A stop hook prompted a commit while cycle 2's reviewer was mid-sweep. The commit itself was
+safe — the single path was inspected before and after staging, and `git add -A` would have
+captured a live mutation instead. But the reviewer still observed HEAD changing under it
+mid-run and said so. Committing during a review run is its own hazard, distinct from
+running reviewers in parallel, and the same rule closes both: **while a reviewer holds the
+tree, do not write to it.**
 
 ## Not covered by automated tests
 
