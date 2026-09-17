@@ -34,10 +34,37 @@ export type UntrustedTag = (typeof UNTRUSTED_TAGS)[number];
  */
 const DELIMITER_PATTERN = new RegExp(`<\\s*/?\\s*(?:${UNTRUSTED_TAGS.join('|')})\\s*/?\\s*>`, 'gi');
 
-/** Removes every literal delimiter tag from player-supplied text. */
+/**
+ * Removes every literal delimiter tag from player-supplied text.
+ *
+ * Applied repeatedly until the string stops changing, NOT once. A single pass
+ * is bypassable, because removing an inner match can splice its neighbours into
+ * a brand-new tag: `<play<player_action>er_action>` has exactly one match, and
+ * deleting it rejoins `<play` + `er_action>` into a live `<player_action>`.
+ * The same trick with a closing tag lets a player step outside their own
+ * delimiter and address the World Voice directly, which is the entire attack
+ * this module exists to stop. (Found by probing the first implementation:
+ * 3 of 6 crafted inputs escaped it.)
+ *
+ * Termination is guaranteed: every pass that changes the string removes at
+ * least one character, so the loop is bounded by the input length. The
+ * iteration cap is a belt-and-braces guard, and the callers bound length
+ * independently via the routes' `.max()` schemas.
+ */
 export function stripDelimiters(value: string): string {
-  return value.replace(DELIMITER_PATTERN, '');
+  let current = value;
+  for (let i = 0; i < MAX_STRIP_PASSES; i += 1) {
+    const next = current.replace(DELIMITER_PATTERN, '');
+    if (next === current) return next;
+    current = next;
+  }
+  // Pathological input (deeply interleaved beyond the cap): drop every '<' so
+  // no tag can survive at all. Degrades the text rather than the boundary.
+  return current.replace(/</g, '');
 }
+
+/** Bound on `stripDelimiters` passes before it falls back to dropping every '<'. */
+const MAX_STRIP_PASSES = 20;
 
 /**
  * `<tag>value</tag>`, with the value stripped of any delimiter tags first.
