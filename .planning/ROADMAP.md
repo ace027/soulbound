@@ -67,7 +67,7 @@
 
 | Phase | Plans | Completed | Status |
 |-------|-------|-----------|--------|
-| 1. Foundation & Contract | 6 | 6 | **Complete** |
+| 1. Foundation & Contract | 6 | 6 | **Complete** — review passed (2 cycles) |
 | 2. Backend & World Voice | 3 | 0 | Not started |
 | 3. Frontend Port | 4 | 0 | Not started |
 | 4. Parity & Verification | 3 | 0 | Not started |
