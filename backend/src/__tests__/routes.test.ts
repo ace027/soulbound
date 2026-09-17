@@ -15,25 +15,27 @@
  * importing it here is inert. The startup half of `main()` is covered
  * separately in server.test.ts.
  *
- * The app is driven over the loopback interface with Node's built-in
- * `node:http`, never with `fetch` — `fetch` is reserved in this file as a
- * network tripwire (see the `beforeAll`/`afterAll` at the bottom of the
- * imports): the installed SDK's own shim (`internal/shims.js`,
+ * Inside the main suite the app is driven over the loopback interface with
+ * Node's built-in `node:http`, never with `fetch` — there `fetch` is reserved
+ * as a network tripwire (installed in that suite's own `beforeAll`, restored
+ * in its `afterAll`): the installed SDK's own shim (`internal/shims.js`,
  * `getDefaultFetch`) resolves to `globalThis.fetch` when none is passed to
- * the `Anthropic` client, so if any code path here ever bypassed the
+ * the `Anthropic` client, so if any code path there ever bypassed the
  * `create()` mock and reached the real SDK network call, this spy would
- * throw before any actual request left the process.
+ * throw before any actual request left the process. The trailing `buildApp
+ * middleware` describe runs after that spy has been restored and does drive
+ * the app with `fetch`; it mocks no SDK call, so nothing in it can reach one.
  */
 
+import { readFileSync } from 'node:fs';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type express from 'express';
 import Anthropic, { AuthenticationError } from '@anthropic-ai/sdk';
 import type { Message } from '@anthropic-ai/sdk/resources/messages';
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 // Fake key, set before anything in this file lazily imports config.js (both
 // the routes themselves and the error handler inside buildApp). Never valid,
@@ -130,6 +132,17 @@ function makeMessage(model: string, payload: unknown): Message {
       service_tier: null,
     },
   } as Message;
+}
+
+/**
+ * The property names of a captured request's `output_config.format` JSON
+ * Schema — i.e. which fields this route told the model to return.
+ */
+function schemaPropertyNames(request: Record<string, unknown>): string[] {
+  const outputConfig = request.output_config as Record<string, unknown>;
+  const format = outputConfig.format as Record<string, unknown>;
+  const schema = format.schema as Record<string, unknown>;
+  return Object.keys(schema.properties as object);
 }
 
 // ─── Fixture request bodies (each satisfies its route's Zod request schema) ─
@@ -256,9 +269,7 @@ describe('World Voice routes (mocked SDK boundary)', () => {
       expect(request.model).toBe('claude-sonnet-5');
       expect('system' in request).toBe(false);
 
-      const schema = (request.output_config as Record<string, unknown>).format as Record<string, unknown>;
-      const properties = Object.keys((schema.schema as Record<string, unknown>).properties as object);
-      expect(properties.sort()).toEqual(
+      expect(schemaPropertyNames(request).sort()).toEqual(
         ['skill_name', 'tier', 'description', 'soul_resonance', 'etching_text'].sort(),
       );
     });
@@ -282,9 +293,7 @@ describe('World Voice routes (mocked SDK boundary)', () => {
       expect(Array.isArray(request.system)).toBe(true);
       expect((request.system as unknown[]).length).toBe(2);
 
-      const schema = (request.output_config as Record<string, unknown>).format as Record<string, unknown>;
-      const properties = Object.keys((schema.schema as Record<string, unknown>).properties as object);
-      expect(properties.sort()).toEqual(
+      expect(schemaPropertyNames(request).sort()).toEqual(
         ['narration', 'state_updates', 'narrative_memory_updates', 'gm_note'].sort(),
       );
     });

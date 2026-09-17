@@ -77,6 +77,22 @@ const FAKE_KEY = 'sk-ant-test-fake-key-never-sent-mocked-only';
 // that only care about request shape (not response content).
 const TestSchema = z.strictObject({ answer: z.string() });
 
+// The smallest payload that satisfies the real `WorldVoiceResponseSchema`,
+// for the tests below that call through it rather than through `TestSchema`.
+// Read-only: it is serialized into a mocked response, never mutated.
+const validWorldVoicePayload = {
+  narration: 'test',
+  state_updates: {
+    skill_mastery_changes: [],
+    new_skills_granted: [],
+    skill_evolutions: [],
+    unique_sub_ability_unlocked: null,
+    world_events: [],
+  },
+  narrative_memory_updates: { new_entities: [], note: null },
+  gm_note: null,
+};
+
 function makeMessage(model: string, payload: unknown, overrides: Partial<Message> = {}): Message {
   return {
     id: 'msg_test_0001',
@@ -253,19 +269,7 @@ describe('callWorldVoice request construction', () => {
     // `enum` still appears (folded into the deduped tier $def's description
     // as `{enum: [...]}`) — proving the key is genuinely gone rather than
     // the whole annotation being dropped.
-    const validPayload = {
-      narration: 'test',
-      state_updates: {
-        skill_mastery_changes: [],
-        new_skills_granted: [],
-        skill_evolutions: [],
-        unique_sub_ability_unlocked: null,
-        world_events: [],
-      },
-      narrative_memory_updates: { new_entities: [], note: null },
-      gm_note: null,
-    };
-    const request = await callAndCapture(true, WorldVoiceResponseSchema, validPayload);
+    const request = await callAndCapture(true, WorldVoiceResponseSchema, validWorldVoicePayload);
     const format = (request.output_config as Record<string, unknown>).format;
 
     expect(hasKeyDeep(format, '$schema')).toBe(false);
@@ -290,19 +294,7 @@ describe('callWorldVoice request construction', () => {
   });
 
   it('the useSystem: true path sends system as buildSystemBlocks() output, present and correct', async () => {
-    const validPayload = {
-      narration: 'test',
-      state_updates: {
-        skill_mastery_changes: [],
-        new_skills_granted: [],
-        skill_evolutions: [],
-        unique_sub_ability_unlocked: null,
-        world_events: [],
-      },
-      narrative_memory_updates: { new_entities: [], note: null },
-      gm_note: null,
-    };
-    const request = await callAndCapture(true, WorldVoiceResponseSchema, validPayload);
+    const request = await callAndCapture(true, WorldVoiceResponseSchema, validWorldVoicePayload);
     expect('system' in request).toBe(true);
 
     // Anchored to the real constants rather than to buildSystemBlocks() —
@@ -526,7 +518,6 @@ describe('callWorldVoice error mapping', () => {
     const err = await captureThrown();
     expect(err.code).toBe('UPSTREAM_ERROR');
     expect(err.statusCode).toBe(502);
-    // The operator still gets the real upstream status, in the log line.
     // The operator still gets the real upstream status — in the LOG LINE, not
     // in the message the client is handed.
     const logged = consoleErrorSpy.mock.calls.map((call) => call.join(' ')).join('\n');

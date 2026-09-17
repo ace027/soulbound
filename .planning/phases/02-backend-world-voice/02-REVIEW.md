@@ -82,3 +82,39 @@ Attribute-bearing and unicode-lookalike tag forms aren't matched by the delimite
 reconstructs a literal delimiter, so neither permits an escape. Recorded in the module doc.
 
 See `02-05-SUMMARY.md` § "Not covered by automated tests" for the consolidated gap list.
+
+## Post-Review Polish
+
+Verdict: **little to polish** — 6 small changes across 4 files, net zero lines (47/47).
+Three review cycles had already removed the usual targets: no `any`, no `@ts-ignore`, no TODOs,
+no dead code, no unused imports, consistent error construction across the three route files.
+
+- Corrected the `routes.test.ts` header, which had become factually wrong — the trailing
+  `buildApp middleware` describe (added in cycle 3) *does* drive the app with `fetch`, contradicting
+  the header's "never with `fetch`" claim. Full tripwire rationale preserved, plus why that
+  describe is safe.
+- Removed one verbatim duplicate comment line sitting directly above its own fuller rewrite.
+- Hoisted a twice-written response payload and a repeated nested-cast walk into named helpers.
+- Moved `MAX_STRIP_PASSES` above its only consumer; regrouped imports to the node → external →
+  internal order used elsewhere.
+
+`anthropic.ts` and `config.ts` — the two files carrying the densest decision rationale — were not
+modified at all. Suite stayed 108/7, build clean, no fixture or prompt byte touched.
+
+### Deferred, with reasons (not applied)
+
+- **`RequestValidationError` + `describeIssues` are triplicated verbatim** across the three route
+  files. Deduping needs a new module (`routes/requestValidation.ts`), and each copy carries a
+  comment explicitly recording the decision to keep it local. Worth a follow-up that authorizes
+  the file and updates those comments rather than dropping them.
+- **`FAKE_KEY` (4 files) and `makeMessage` (2 files) are duplicated across tests** — same blocker,
+  same follow-up.
+- **⚠️ Trap for a future pass:** do NOT hoist the three repeated
+  `beforeAll(() => { process.env.ANTHROPIC_API_KEY = FAKE_KEY })` blocks in `anthropic.test.ts`.
+  They look like an obvious dedup, but the file's first describe asserts the key is still
+  *undefined* at import time, and Vitest runs a file-scope `beforeAll` ahead of every test —
+  hoisting would silently destroy that guarantee.
+- **Latent behavior concern, not polish:** `anthropic.ts`'s `getClient(apiKey)` ignores its
+  argument on every call after the first, because the client is a module singleton. Harmless while
+  the key is constant for the process lifetime, but a reader can reasonably expect a passed key to
+  take effect. Left unchanged — it is a behavior question, not a cleanup.

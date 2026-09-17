@@ -17,6 +17,8 @@
  * synchronously when it is absent — see `main()`'s lazy import below.
  */
 
+import type { Server } from 'node:http';
+import { pathToFileURL } from 'node:url';
 import express, {
   type ErrorRequestHandler,
   type Express,
@@ -24,8 +26,6 @@ import express, {
   type Request,
   type Response,
 } from 'express';
-import type { Server } from 'node:http';
-import { pathToFileURL } from 'node:url';
 import { assertWorldVoiceContract } from '@soulbound/shared';
 import { WORLD_SYSTEM_PROMPT } from './data/worldSystemPrompt.js';
 // These three route modules never import config.ts at their own top level

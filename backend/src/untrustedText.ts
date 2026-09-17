@@ -34,6 +34,9 @@ export type UntrustedTag = (typeof UNTRUSTED_TAGS)[number];
  */
 const DELIMITER_PATTERN = new RegExp(`<\\s*/?\\s*(?:${UNTRUSTED_TAGS.join('|')})\\s*/?\\s*>`, 'gi');
 
+/** Bound on `stripDelimiters` passes before it falls back to dropping every '<'. */
+const MAX_STRIP_PASSES = 20;
+
 /**
  * Removes every literal delimiter tag from player-supplied text.
  *
@@ -62,9 +65,6 @@ export function stripDelimiters(value: string): string {
   // no tag can survive at all. Degrades the text rather than the boundary.
   return current.replace(/</g, '');
 }
-
-/** Bound on `stripDelimiters` passes before it falls back to dropping every '<'. */
-const MAX_STRIP_PASSES = 20;
 
 /**
  * `<tag>value</tag>`, with the value stripped of any delimiter tags first.
