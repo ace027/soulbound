@@ -11,7 +11,7 @@
 ```
 
 ## Recent Decisions
-- **Design source**: `.planning/explorations/2026-09-17-soulbound-artifact-to-app-design.md` (committed `7ec3ba2`)
+- **Design source**: `.planning/explorations/2026-09-17-soulbound-artifact-to-app-design.md` (committed `e56f400`)
 - **Codebase map**: skipped — this session produced a more detailed structural map of the single legacy file than a generic indexer would, and that file is about to be deleted. Run `/legion:map` after the migration, against `frontend/` + `backend/` + `shared/`.
 - **Scope**: full migration to playable, not a scaffold or vertical slice
 - **Language**: TypeScript both sides; the World Voice contract lives in `shared/` so prompt/parser drift becomes a compile error
@@ -58,18 +58,22 @@ Roughly 6 calls: three route exercises, a second world-engine call for the cache
 ## Auth decision (2026-09-17) — settled, do not re-litigate
 A Claude Max subscription does **not** include API access; Anthropic bills the API separately via Console credits. The artifact only worked because claude.ai injected auth tied to whoever opened it — `docs/design-decisions-log.md` records this as "a crude form of bring your own Claude account". Proceeding on Console credits with the Opus 5 split intact (~$0.04/turn, ~$2.10 per 50-turn session, assuming caching engages). A proxy converting API-key requests into OAuth calls against a Max subscription was raised and declined — that is the separation Anthropic's terms draw between the two products.
 
-## ⚠️ Unresolved, and a fresh session will not otherwise know to ask
-**Five commits use `acedean27@gmail.com` as committer instead of `noreply@anthropic.com`** and show as Unverified on GitHub: `7ec3ba2`, `1821b18`, `224460a`, `fbccbc6`, `5a4089d`. Everything from `5d6e323` onward is correct. All five are pushed, so fixing them means a rebase plus force-push-with-lease. Orchestrator recommendation was to **leave them** — content and authorship are correct, only the verification badge differs — unless branch protection requires verified commits. Two attempts to fix were denied by the permission classifier. **Ask the user before acting.**
+## Committer email — resolved
+✅ **RESOLVED 2026-09-17.** All 23 commits on this branch now use `noreply@anthropic.com`. Fixed by `git rebase --exec "git commit --amend --no-edit --reset-author" 31f7381` followed by a force-push-with-lease.
+
+Verified the rewrite changed metadata only: the tree hash was byte-identical before and after (`06c8793...`), `git diff` between the old and new HEAD was empty, and the commit count stayed at 23. Tests, builds and the verbatim data files were re-checked after.
+
+**Consequence worth knowing:** rewriting the oldest commit changed every descendant's SHA, so all 23 commits have new IDs. The SHA references in these planning docs were remapped by matching commit subjects and each was confirmed to resolve to a real on-branch commit. Any SHA quoted in an older chat transcript or elsewhere outside this repo is stale — the commit exists, under a different ID.
 
 **Auth decision (2026-09-17)**: a Claude Max subscription does not include API access — Anthropic bills the API separately via Console credits. The artifact worked only because claude.ai injected auth tied to the viewer. Proceeding on Console credits with the Opus 5 split intact (~$0.04/turn, ~$2.10 per 50-turn session, assuming caching engages). A proxy converting API-key requests into OAuth calls against a Max subscription was raised and declined.
 
 ## Phase 2 Plans
 | Plan | Wave | Deliverable | Agent | Model | Status |
 |---|---|---|---|---|---|
-| 01 | 1 | Anthropic client module | Backend Architect | Sonnet 5 | ✅ `2b0f82d` |
-| 02 | 1 | Vitest + contract-guard test | QA Verification | Sonnet 5 | ✅ `ca566fc` |
-| 03 | 2 | Three World Voice routes | AI Engineer | Sonnet 5 | ✅ `0909109` |
-| 04 | 3 | Route tests vs mocked SDK | QA Verification | Sonnet 5 | ✅ `b0b9c50` |
+| 01 | 1 | Anthropic client module | Backend Architect | Sonnet 5 | ✅ `f0081fb` |
+| 02 | 1 | Vitest + contract-guard test | QA Verification | Sonnet 5 | ✅ `1d18c25` |
+| 03 | 2 | Three World Voice routes | AI Engineer | Sonnet 5 | ✅ `9ecb0ae` |
+| 04 | 3 | Route tests vs mocked SDK | QA Verification | Sonnet 5 | ✅ `9ca38c2` |
 | 05 | 4 | Live verification & cache proof | orchestrator | Opus 5 | ⏸ **BLOCKED — needs API key** |
 
 **Verified so far without a key**: 38 tests green; three routes built on one shared helper; `unique-skill` omits `system` entirely; the two Opus routes send byte-identical system blocks *and* `output_config`, so they share a cache namespace; all three carry `max_tokens: 16000`, `effort: 'high'`, no prefill, no `budget_tokens`; prompts byte-identical to the artifact by rendered-string diff.

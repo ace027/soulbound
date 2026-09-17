@@ -76,7 +76,7 @@ Initially the developer and their playtester. Then self-hosting deployers who su
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Design source: `.planning/explorations/2026-09-17-soulbound-artifact-to-app-design.md` | Research pass over the artifact, docs, and current API behavior before any code | Committed as `7ec3ba2` |
+| Design source: `.planning/explorations/2026-09-17-soulbound-artifact-to-app-design.md` | Research pass over the artifact, docs, and current API behavior before any code | Committed as `e56f400` |
 | Full migration to playable, not scaffold or vertical slice | Backend now holds a real key, so Claude Code can self-test end-to-end — a capability the artifact phase never had | `MIGRATION-PLAN.md` steps 2–7 in one pass |
 | TypeScript both sides | Makes `CLAUDE.md` constraint #4 mechanical rather than a matter of discipline | `shared/worldVoice.ts` is the single contract source |
 | Structured outputs via `output_config.format` | Kills the JSON truncation/parse-failure class that drove `max_tokens` 1000→2000; field names unchanged | Schema derived from the shared types |
