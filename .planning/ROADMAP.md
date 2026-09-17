@@ -68,7 +68,7 @@
 | Phase | Plans | Completed | Status |
 |-------|-------|-----------|--------|
 | 1. Foundation & Contract | 6 | 6 | **Shipped** 2026-09-17 — review passed (2 cycles) |
-| 2. Backend & World Voice | 5 | 4 | **Partial** — waves 1–3 done; 02-05 blocked on API key |
+| 2. Backend & World Voice | 5 | 5 | **Complete** 2026-09-17 — caching verified live; pending review |
 | 3. Frontend Port | 4 | 0 | Not started |
 | 4. Parity & Verification | 3 | 0 | Not started |
-| **Total** | **18** | **10** | 56% |
+| **Total** | **18** | **11** | 61% |

@@ -1,13 +1,13 @@
 # Project State
 
 ## Current Position
-- **Phase**: 2 of 4 (waves 1–3 executed; wave 4 blocked on an API key)
-- **Status**: Phase 2 — 4 of 5 plans complete. Only 02-05 (live verification) remains, and it needs a real API key.
-- **Last Activity**: Phase 2 waves 1–3 executed (2026-09-17)
+- **Phase**: 2 of 4 (executed, pending review)
+- **Status**: Phase 2 complete — all 5 plans executed. Prompt caching verified against real API responses.
+- **Last Activity**: Phase 2 wave 4 executed — plan 02-05 live verification (2026-09-17)
 
 ## Progress
 ```
-[███████████░░░░░░░░░] 56% — 10/18 plans complete
+[████████████░░░░░░░░] 61% — 11/18 plans complete
 ```
 
 ## Recent Decisions
@@ -21,42 +21,42 @@
 - **Planning depth**: Standard — deep analysis already lives in the exploration doc
 - **Cost profile**: Balanced — Opus 5 for the contract and the `App.tsx` game-logic port, Sonnet 5 for backend routes and UI extraction, Haiku 4.5 for verbatim data copying
 
-## Next Action — READ THIS FIRST IF YOU ARE A FRESH SESSION
+## Next Action
 
-**Phase 2 is 4/5 done.** Plans 02-01 through 02-04 are complete, committed, pushed, and independently verified. **Only plan 02-05 remains**, and it is the one plan that requires a real Anthropic API key.
+**Phase 2 is done — 5/5 plans complete.** Plan 02-05 ran live against the real API on
+2026-09-17 and spent about $0.26.
 
-### Step 1 — confirm the key is actually reaching the backend, BEFORE spending anything
-```bash
-# Is it in the environment under either name?
-env | grep -c 'SOULBOUND_ANTHROPIC_KEY\|ANTHROPIC_API_KEY'
+1. `/legion:review` for Phase 2
+2. then `/legion:plan 3` — the frontend port, which is the real regression risk (run plan
+   critique before it; Phase 1 skipped it deliberately and Phase 3 should not)
 
-# Does compose resolve it into the container?
-printf 'SOULBOUND_ANTHROPIC_KEY=%s\n' "$SOULBOUND_ANTHROPIC_KEY" > .env
-docker compose config | grep 'ANTHROPIC_API_KEY'   # must show a real sk-ant-... value
-```
-If neither name is set, **stop**: plan 02-05 reports BLOCKED. That is the designed behaviour, not a failure. Do not stub it, do not mark it passed, and do not reason that the mocked tests are equivalent — they cannot prove `cache_read_input_tokens > 0`, which is the entire point of that plan.
+### What 02-05 proved (see 02-05-SUMMARY.md for evidence)
+- **Caching engages.** world-engine wrote 15,132 cached tokens; the next call read all 15,132 back.
+- **The two Opus routes genuinely share a cache namespace** — `intro-scene` read the cache
+  `world-engine` wrote. The Opus 5 intro-scene decision is now validated on measurement, not argument.
+- `unique-skill` shows zero cache activity, as CLAUDE.md #8 requires.
+- **Opus 5 holds the MUST NOT list.** An adversarial turn demanding an Ultimate Skill, a Soul
+  Rewrite, Plundering and Ithren's true nature was refused on every count.
 
-### Step 2 — run it
-```bash
-/legion:build     # reads this file, sees 02-01..02-04 have summaries, runs 02-05 alone
-```
+### ⚠️ Carry into Phase 3/4 planning — the cost estimate was low
+- System blocks are **15,132 tokens, not ~9,600** (58% larger than the figure the estimate used).
+- A cached world-engine turn costs **$0.0499**, not $0.04. A 50-turn session is **~$2.65, not $2.10** (26% over).
+- **Output tokens dominate** (~77% of a cached turn) at `effort: 'high'` — caching is working; the gap is output spend.
+- The 5-minute cache TTL means a >5-min pause between turns costs **+$0.087** on the next call.
+  Ten such pauses take a session to ~$3.52. If cost bites, tune `effort` before touching the model
+  split, and consider `cache_control: {ttl: '1h'}`.
 
-### Step 3 — then
-`/legion:review` for Phase 2, then `/legion:plan 3`.
-
----
-
-## ⚠️ Key naming — do NOT use `ANTHROPIC_API_KEY` as a host/cloud env var
-
-Claude Code uses an `ANTHROPIC_API_KEY` found in the environment **in preference to a Pro/Max subscription**. Naming the host variable that would quietly move the developer's own Claude Code usage onto billed API credits — the exact outcome they are trying to avoid.
-
-Use **`SOULBOUND_ANTHROPIC_KEY`**. `docker-compose.yml` maps it into the container as `ANTHROPIC_API_KEY` (which is what `backend/src/config.ts` reads), with a fallback to `ANTHROPIC_API_KEY` if only that is set. Both paths verified working.
-
-## What plan 02-05 will spend
-Roughly 6 calls: three route exercises, a second world-engine call for the cache proof, one adversarial sample. Well under a dollar. The plan forbids exploratory looping and re-running passing checks. A workspace spend limit is a sensible hard stop.
+### Still untested after Phase 2 — do not record these as passing
+- **Containerized runtime**: no Docker daemon in the build sandbox. 02-05 ran the backend directly
+  on the host. `docker compose config` resolves correctly and `USER node` is present in both
+  Dockerfiles, but nothing was actually containerized, and non-root was not runtime-confirmed.
+- **Live non-2xx error paths**: every live call succeeded, so the structured-error path is still
+  only covered by 02-04's mocked tests.
+- `/proc/<pid>/environ` retains the key for the process lifetime (the kernel does not update that
+  region on `unsetenv`). Outside R2 as written, but `config.ts`'s comment does not mention the limit.
 
 ## Auth decision (2026-09-17) — settled, do not re-litigate
-A Claude Max subscription does **not** include API access; Anthropic bills the API separately via Console credits. The artifact only worked because claude.ai injected auth tied to whoever opened it — `docs/design-decisions-log.md` records this as "a crude form of bring your own Claude account". Proceeding on Console credits with the Opus 5 split intact (~$0.04/turn, ~$2.10 per 50-turn session, assuming caching engages). A proxy converting API-key requests into OAuth calls against a Max subscription was raised and declined — that is the separation Anthropic's terms draw between the two products.
+A Claude Max subscription does **not** include API access; Anthropic bills the API separately via Console credits. The artifact only worked because claude.ai injected auth tied to whoever opened it — `docs/design-decisions-log.md` records this as "a crude form of bring your own Claude account". Proceeding on Console credits with the Opus 5 split intact (originally estimated ~$0.04/turn, ~$2.10 per 50-turn session assuming caching engages; **measured 2026-09-17: $0.0499/turn, ~$2.65/session** — caching does engage, but output tokens run higher than the estimate assumed). A proxy converting API-key requests into OAuth calls against a Max subscription was raised and declined — that is the separation Anthropic's terms draw between the two products.
 
 ## Committer email — resolved
 ✅ **RESOLVED 2026-09-17.** All 23 commits on this branch now use `noreply@anthropic.com`. Fixed by `git rebase --exec "git commit --amend --no-edit --reset-author" 31f7381` followed by a force-push-with-lease.
@@ -65,7 +65,7 @@ Verified the rewrite changed metadata only: the tree hash was byte-identical bef
 
 **Consequence worth knowing:** rewriting the oldest commit changed every descendant's SHA, so all 23 commits have new IDs. The SHA references in these planning docs were remapped by matching commit subjects and each was confirmed to resolve to a real on-branch commit. Any SHA quoted in an older chat transcript or elsewhere outside this repo is stale — the commit exists, under a different ID.
 
-**Auth decision (2026-09-17)**: a Claude Max subscription does not include API access — Anthropic bills the API separately via Console credits. The artifact worked only because claude.ai injected auth tied to the viewer. Proceeding on Console credits with the Opus 5 split intact (~$0.04/turn, ~$2.10 per 50-turn session, assuming caching engages). A proxy converting API-key requests into OAuth calls against a Max subscription was raised and declined.
+**Auth decision (2026-09-17)**: a Claude Max subscription does not include API access — Anthropic bills the API separately via Console credits. The artifact worked only because claude.ai injected auth tied to the viewer. Proceeding on Console credits with the Opus 5 split intact (originally estimated ~$0.04/turn, ~$2.10 per 50-turn session assuming caching engages; **measured 2026-09-17: $0.0499/turn, ~$2.65/session** — caching does engage, but output tokens run higher than the estimate assumed). A proxy converting API-key requests into OAuth calls against a Max subscription was raised and declined.
 
 ## Phase 2 Plans
 | Plan | Wave | Deliverable | Agent | Model | Status |
@@ -74,11 +74,11 @@ Verified the rewrite changed metadata only: the tree hash was byte-identical bef
 | 02 | 1 | Vitest + contract-guard test | QA Verification | Sonnet 5 | ✅ `1d18c25` |
 | 03 | 2 | Three World Voice routes | AI Engineer | Sonnet 5 | ✅ `9ecb0ae` |
 | 04 | 3 | Route tests vs mocked SDK | QA Verification | Sonnet 5 | ✅ `9ca38c2` |
-| 05 | 4 | Live verification & cache proof | orchestrator | Opus 5 | ⏸ **BLOCKED — needs API key** |
+| 05 | 4 | Live verification & cache proof | orchestrator | Opus 5 | ✅ caching proven live |
 
 **Verified so far without a key**: 38 tests green; three routes built on one shared helper; `unique-skill` omits `system` entirely; the two Opus routes send byte-identical system blocks *and* `output_config`, so they share a cache namespace; all three carry `max_tokens: 16000`, `effort: 'high'`, no prefill, no `budget_tokens`; prompts byte-identical to the artifact by rendered-string diff.
 
-**Not yet verified, and only 02-05 can**: that the API accepts the derived schema; that `cache_read_input_tokens > 0`; that Opus 5 honours the MUST NOT list the way Sonnet 5 did.
+**All three now verified by 02-05**: the API accepted the derived schema on every call; `cache_read_input_tokens` hit 15,132 on the second Opus call and again on `intro-scene`; and Opus 5 refused an adversarial Ultimate-Skill / Soul-Rewrite / Plundering / Ithren turn on every count.
 
 ## Phase 1 Plans
 | Plan | Wave | Deliverable | Agent | Model | Status |
