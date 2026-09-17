@@ -46,7 +46,17 @@ Before making any change:
 8. **`determineUniqueSkill()` is deliberately lore-blind** — it does not receive `WORLD_LORE`. Its job is soul-reading from questionnaire answers, not world-consistency, and this keeps that call cheap and focused. This was an explicit choice, not an oversight — don't "fix" it by adding lore access without confirming first.
 
 ## Model & API pattern
-- Model: `claude-sonnet-5`, used identically across all three call sites (unique-skill determination, world engine loop, intro scene generation).
+- **Models are split — this is deliberate, and the split is load-bearing.**
+  - `claude-sonnet-5` on unique-skill determination (`/api/unique-skill`)
+  - `claude-opus-5` on the world engine loop AND intro scene generation
+  Defined in one place, `backend/src/config.ts`'s `MODELS` — never as a literal at a call site.
+  **The two Opus routes MUST stay on the same model.** Prompt caches are model-scoped, so
+  moving either one off `claude-opus-5` silently strands the other's cache warmth — measured
+  2026-09-17: intro-scene read back the exact 15,132 tokens the world-engine call wrote.
+  `determineUniqueSkill` stays on Sonnet 5 because its prompt is the adversarially-validated
+  surface and it sends no system blocks at all, so it has no cache to share (see #8).
+  ⚠️ This reverses an older all-Sonnet decision, chosen deliberately by the developer after the
+  reversal was flagged. Do not "correct" it back.
 - `WORLD_SYSTEM_PROMPT` and `WORLD_LORE` are both static per playthrough (and across playthroughs) and are sent as separate `system` blocks via a shared `buildSystemBlocks()` helper, with `cache_control: { type: "ephemeral" }` on the `WORLD_LORE` block, so their token cost is paid once via prompt caching rather than on every call.
 - Verify caching is actually engaging (`cache_creation_input_tokens` / `cache_read_input_tokens` in the API response) once this is running in a real environment with visibility into raw responses — this was previously hard to verify from inside an artifact.
 

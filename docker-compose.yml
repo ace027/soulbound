@@ -52,6 +52,15 @@ services:
       # affirmative choice: change this, and put a reverse proxy and auth in
       # front of it.
       - "127.0.0.1:3001:3001"
+    # Runtime hardening. The backend holds the API key and proxies paid calls, so
+    # it gets the tightest posture the service can actually run under:
+    # no privilege escalation, no capabilities, and an immutable root filesystem
+    # (the process only ever reads its own bundle and writes to stdout).
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
     healthcheck:
       # Gates frontend startup below. Without this the frontend can come up
       # against a backend that is still booting, and the first proxied request
