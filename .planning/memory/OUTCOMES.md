@@ -17,3 +17,13 @@ review: passed after 2 cycles, 0 blockers, 8 warnings + 3 suggestions resolved
 notable: 3 defects were found while verifying fixes rather than by any reviewer — a duplicate
   tsconfig "module" key, an EACCES from dropping privileges on a root-owned tree, and a
   root-owned BuildKit secret that became unreadable once the build stage dropped privileges.
+
+## Phase 2 — Shipped 2026-09-17
+task_type: ship
+agent: ship-pipeline
+result: success
+pr: https://github.com/DeanItServices/soulbound/pull/1
+verification: 6/6 gates passed; 108/108 tests; containerized re-check 1 commit stale (Docker Hub 429)
+note: Review found 2 blockers, both in code already reported as done — server.ts untested, and a
+  security fix that 403'd every API call under Compose while the container reported healthy.
+  Lesson: a passing healthcheck does not mean the app is reachable the way users reach it.

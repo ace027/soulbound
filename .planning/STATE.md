@@ -1,14 +1,25 @@
 # Project State
 
 ## Current Position
-- **Phase**: 2 of 4 (complete)
-- **Status**: Phase 2 complete — review passed after 3 cycles. Suite grew 38 → 108 tests.
-- **Last Activity**: Phase 2 review passed (2026-09-17)
+- **Phase**: 2 of 4 (**shipped** 2026-09-17)
+- **Status**: Phases 1–2 shipped in [PR #1](https://github.com/DeanItServices/soulbound/pull/1) — 31 commits, 91 files. Awaiting review/merge.
+- **Last Activity**: Phase 2 shipped (2026-09-17)
 
 ## Progress
 ```
 [████████████░░░░░░░░] 61% — 11/18 plans complete
 ```
+
+## Ship record
+- **PR #1** — https://github.com/DeanItServices/soulbound/pull/1 (base `main`, head `claude/admiring-wright-hfmugk`)
+  Covers **both** Phase 1 and Phase 2: `main` had not received Phase 1 either.
+- Pre-ship gate: 6/6. Tests 108/108, build clean, working tree clean.
+- ⚠️ **One gap recorded in the PR rather than hidden**: the containerized verification
+  (compose healthy, Vite proxy forwarding, non-root, no key in frontend env) was captured at
+  `0f060ea`, one commit behind the shipped HEAD `02ea728`. That commit's only backend change was
+  behavior-neutral import reordering, and 108 tests are green — but it was not re-verified in a
+  container, because pruning Docker's image store (to repair snapshot corruption) ran into a
+  Docker Hub 429 on the base-image pull. Re-run when the limit clears if you want it closed.
 
 ## Recent Decisions
 - **Design source**: `.planning/explorations/2026-09-17-soulbound-artifact-to-app-design.md` (committed `e56f400`)
@@ -23,9 +34,9 @@
 
 ## Next Action
 
-**Phase 2 is complete and review-passed.** Run `/legion:plan 3` for the frontend port.
+**Phases 1–2 are shipped** (PR #1). Next: `/legion:plan 3` — the frontend port.
 
-Run **plan critique** before Phase 3 — Phase 1 skipped it deliberately as a mechanical scaffold,
+Run **plan critique** before Phase 3. Phase 1 skipped it deliberately as a mechanical scaffold,
 and Phase 3's `App.tsx` game-logic port is where the real regression risk lives.
 
 ### What review changed (see 02-REVIEW.md)
