@@ -81,7 +81,8 @@ number from prose.** Four of the five blocking defects were that failure.
 
 ### Architecture: Pragmatic, chosen from three proposals
 Three read-only proposals were generated. **Pragmatic** won: split the five screens into
-`screens/*.tsx`, but leave the state graph alone — `App.tsx` keeps all 17 `useState` and the
+`screens/*.tsx`, but leave the state graph alone — `App.tsx` keeps all **16** `useState` (plus one
+`useRef`) and the
 `autoSave`-inside-`setLog` closure exactly as legacy has them. Clean's `useGameSession` hook was
 rejected because it rewrites the state graph, which is the most behaviour-load-bearing and
 least-tested part of the port. Minimal's single 700-line `App.tsx` was rejected because its own
@@ -101,11 +102,7 @@ become testable.
    `minHeight: 0`, and a Fragment at L1388 acts as the mobile flex/scroll container with its parent
    also missing it. A literal verbatim port would carry both forward. Plans 06 and 08 fix them.
 4. **`frontend/package.json` has no test runner**, which is why wave 0 exists and why the plan count
-   went 4 → 9.
-
-### ⚠️ Plan critique is still outstanding (retro AI-2/AI-5, carried twice)
-Phase 1's retro asked for plan critique before Phase 3, and Phase 2's retro carried it forward. It has
-not run yet. Run it before `/legion:build` — this is the phase it was requested for.
+   went 4 → 10.
 
 ### What review changed (see 02-REVIEW.md)
 Two blockers, ten warnings, nine suggestions — all resolved. The panel's shared conclusion was
