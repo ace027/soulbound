@@ -4,7 +4,7 @@
 
 - [x] **Phase 1: Foundation & Contract** — scaffold, Docker, and the shared World Voice contract
 - [x] **Phase 2: Backend & World Voice** — three routes on the official SDK, structured outputs, caching verified
-- [ ] **Phase 3: Frontend Port** — components, screens, game logic, saves
+- [x] **Phase 3: Frontend Port** — components, screens, game logic, saves
 - [ ] **Phase 4: Parity & Verification** — end-to-end playthrough, constraint audit, doc updates
 
 ## Phase Details
@@ -47,7 +47,10 @@
 - Mobile two-tab layout works below 700px and now responds to resize (legacy line 1348 bug fixed)
 - Google Fonts loaded once via `index.html`, not re-injected per render in six places
 - No `window.confirm`/`alert`/`prompt` anywhere; `min-height: 0` present on every flex ancestor of a scroll region
-**Plans**: 4
+**Plans**: 10 (planned 2026-09-17 — revised up from 4. Two reasons found only by reading the code:
+`frontend/package.json` has no test runner at all, so a blocking wave-0 plan is needed before the
+retro's "tests alongside build" is even possible; and the 3-task-per-plan cap plus the dependency
+structure don't permit fewer. Architecture chosen from three competing proposals — see 03-CONTEXT.md.)
 
 ### Phase 4: Parity & Verification
 **Goal**: Prove the migrated app matches the artifact, and bring the logged decisions back in sync with the code.
@@ -69,6 +72,6 @@
 |-------|-------|-----------|--------|
 | 1. Foundation & Contract | 6 | 6 | **Shipped** 2026-09-17 — review passed (2 cycles) · [PR #1](https://github.com/DeanItServices/soulbound/pull/1) |
 | 2. Backend & World Voice | 5 | 5 | **Shipped** 2026-09-17 — review passed (3 cycles) · [PR #1](https://github.com/DeanItServices/soulbound/pull/1) |
-| 3. Frontend Port | 4 | 0 | Not started |
+| 3. Frontend Port | 10 | 10 | **Shipped** 2026-09-18 — review passed (2 cycles, 3-reviewer panel) · [PR #2](https://github.com/DeanItServices/soulbound/pull/2) |
 | 4. Parity & Verification | 3 | 0 | Not started |
-| **Total** | **18** | **11** | 61% |
+| **Total** | **24** | **21** | 88% |

@@ -1,16 +1,29 @@
 # Project State
 
 ## Current Position
-- **Phase**: 2 of 4 (**shipped** 2026-09-17)
-- **Status**: Phases 1–2 shipped in [PR #1](https://github.com/DeanItServices/soulbound/pull/1) — 31 commits, 91 files. Awaiting review/merge.
-- **Last Activity**: Phase 2 shipped (2026-09-17)
+- **Phase**: 3 of 4 (complete)
+- **Status**: Phase 3 shipped — 10 plans, review passed in 2 cycles, PR #2 open against `main`.
+- **Last Activity**: Phase 3 ship (2026-09-18)
 
 ## Progress
 ```
-[████████████░░░░░░░░] 61% — 11/18 plans complete
+[██████████████████░░] 88% — 21/24 plans complete
 ```
 
 ## Ship record
+- **PR #2** — https://github.com/DeanItServices/soulbound/pull/2 (base `main`, head `claude/admiring-wright-hfmugk`)
+  Phase 3 — 14 commits, 46 files, +7,653/-28. Pre-ship gate: tests 237/237, shared+backend+frontend
+  builds clean, working tree clean, review PASSED (2 cycles).
+  ⚠️ **PR #1 was already merged** (`38cb2c9`, head `eed43ec`), so this is a NEW pull request — a
+  merged PR cannot track new work. No rebase was done: `eed43ec` is an ancestor of `origin/main`, so
+  the branch descends cleanly from merged history with no divergence, and rebasing would have
+  rewritten 14 SHAs that STATE.md and 03-REVIEW.md reference by name. This repo already lost a full
+  set of SHA references to a history rewrite once (see "Committer email" below).
+  ⚠️ **Gate 3a (build completeness) does not hold as literally specified** — this project has never
+  produced `SUMMARY.md` files; all three phases recorded plan outcomes in commit messages. Every one
+  of the 10 plans has a commit and the plan→commit table below is the evidence. Recorded rather than
+  marked green.
+
 - **PR #1** — https://github.com/DeanItServices/soulbound/pull/1 (base `main`, head `claude/admiring-wright-hfmugk`)
   Covers **both** Phase 1 and Phase 2: `main` had not received Phase 1 either.
 - Pre-ship gate: 6/6. Tests 108/108, build clean, working tree clean.
@@ -34,10 +47,115 @@
 
 ## Next Action
 
-**Phases 1–2 are shipped** (PR #1). Next: `/legion:plan 3` — the frontend port.
+**Phase 3 is shipped** ([PR #2](https://github.com/DeanItServices/soulbound/pull/2)). Run `/legion:plan 4` to plan Parity & Verification.
 
-Run **plan critique** before Phase 3. Phase 1 skipped it deliberately as a mechanical scaffold,
-and Phase 3's `App.tsx` game-logic port is where the real regression risk lives.
+### Phase 3 execution record
+| Plan | Wave | Commit |
+|---|---|---|
+| 01 | 0 | `2a0786f` test harness |
+| 02, 04, 05 | 1 | `9f7f6a0` saves, game logic, viewport hook |
+| 03, 07 | 1 | `2ee1faa` API client, creation screens |
+| 06 | 2 | `1b8e8f5` presentational components + shared LogEntry |
+| 08 | 3 | `bca8dd0` loading/simulation screens, CLAUDE.md #3 fixes |
+| 09 | 4 | `963513c` App.tsx wiring |
+| 10 | 5 | `61fbb07` integration test + cross-plan re-verification |
+| review | — | cycle 1: 4 surviving mutants closed. cycle 2: `deleteSave` gap closed, 129 tests |
+
+### ⚠️ Carried into Phase 4 from the Phase 3 review
+1. **Inherited closure race, NOT fixed — developer call needed.** `handleAction`
+   closes over `currentSlotId`. Clicking "+ Slot" (`handleManualSave`, which has no
+   `isThinking` guard) while a world-engine call is in flight lands that turn's
+   autosave on the OLD slot; the new slot stays one turn stale. Reproduced live
+   during review. Present identically in legacy 913-1031, so the port did not
+   introduce it — flagged rather than changed, per CLAUDE.md's working-style rule.
+   Minimal fix if wanted: mirror `currentSlotId` in a `useRef` and read that inside
+   the `setLog` updater.
+2. **No repeatable visual regression guard.** jsdom performs no layout, so the
+   suite asserts declared style properties only. Plan 03-08's screenshot harness was
+   deleted after use. Nothing automated would catch a future collapsed panel.
+3. **Nothing has touched a live backend.** Every frontend test mocks `fetch`.
+   The API wiring's "PASS" has never reached a real Express server — that is R14.
+4. **`runtime` Docker image still non-deployable** (`/api/*` answers 200 + HTML).
+   Known and deferred; it becomes real the moment the frontend is served from it.
+
+### Process finding from the review — worth not repeating
+Three reviewers ran in parallel against one working tree, one of which mutates
+source files by design. All three independently observed a "flaky" test and
+attributed it to Vitest pool flakiness. It was not flaky: the failures were other
+reviewers' live mutations. `|| 5` → `?? 5` produced `expected +0 to be 5`, and
+`response.ok` → `if (false)` produced the 9-test api failure. On a clean tree the
+suite is 8/8 green. **A mutating reviewer needs its own worktree, or must run
+serially.** Cycle 2 ran serially and was clean. A second vector surfaced there: a stop
+hook prompted a commit mid-sweep, and the reviewer saw HEAD move under it. Same rule
+covers both — **while a reviewer holds the tree, do not write to it.**
+
+### Phase 3 Plans (post-critique)
+| Plan | Wave | Deliverable | Agent | Model |
+|---|---|---|---|---|
+| 01 | 0 | Test harness — jest-dom wiring, scrollIntoView stub, configs frozen | Frontend Dev | Sonnet 5 |
+| 02 | 1 | `lib/saves.ts` + tests (R11) | Frontend Dev | Sonnet 5 |
+| 03 | 1 | `lib/api.ts` + content-type guard + zero-cost stub (R9, R12) | Frontend Dev | Sonnet 5 |
+| 04 | 1 | `game/applyWorldUpdate.ts` (925-1021) + 10 mutants (R10) | orchestrator | Opus 5 |
+| 05 | 1 | `hooks/useIsMobile.ts` + tests (R12) | Frontend Dev | Sonnet 5 |
+| 07 | 1 | Title / Race / Questionnaire screens (R9) | Frontend Dev | Sonnet 5 |
+| 06 | 2 | Four components + `shared` LogEntry extension (R9) | Frontend Dev | Sonnet 5 |
+| 08 | 3 | Loading / Simulation screens + CLAUDE.md #3 fixes + screenshots | UX Architect | Sonnet 5 |
+| 09 | 4 | `App.tsx` wiring (seeded-save path, zero cost) | orchestrator | Opus 5 |
+| 10 | 5 | Integration test + phase-close cross-plan re-verification | orchestrator | Opus 5 |
+
+Wave 1 runs **five** plans in parallel (file-disjointness verified).
+
+### ⚠️ Plan critique ran and returned REWORK — findings applied
+Carried forward unaddressed through two retros, it caught five execution-blocking defects:
+
+1. **Four factual errors in the plans**: "17 `useState`" (legacy has 16 + 1 `useRef`) — which would
+   have made a *correct* port fail its own verify gate; every component port range off by one at the
+   start; "`writeSave` already slices the log" (it has zero slices — the cap is in `autoSave`); and
+   a new `game/tierStyle.ts` duplicating a `TIER_STYLE` **already exported by `shared`**.
+2. **A fix-induced defect in the prescribed fix**: the CLAUDE.md #3 replacement div omitted `flex: 1`,
+   which collapses the mobile layout — and **jsdom does no layout**, so every test would have passed
+   on a visibly broken page. Third consecutive phase where a fix introduces the defect.
+3. **Wave 0 could not run waves 2-4's tests**: `@testing-library/jest-dom` installed but never
+   registered, the exclude glob matching none of this phase's test directories, and no
+   `scrollIntoView` stub (jsdom lacks it; legacy 812 calls it on every log change).
+4. **Three vacuous verifications**: the `<style>` grep pointed at `components/`, which contains none
+   of the six blocks; "17 `useState`" was unsatisfiable; "compare programmatically" is not executable
+   against JSX with conditionals and template interpolation.
+5. **Three orphaned seams**: the 80-entry cap, the `logEntry` composition (range said 1008, it is
+   built at 1014), and `actionHistory` growing past the backend's `max(2000)`.
+
+Also applied: `shared/src/gameState.ts` gained an owner (plan 06) for the missing `LogEntry.etchingSkill`
+and `unknown[]` `newSkills`; plan 09 was split so the integration test cannot be absorbed into the
+wiring; and the **cross-plan re-verification** the context claimed to apply — but no plan contained —
+is now plan 10.
+
+**Rule adopted for this phase: derive every count and range, report the derivation, never restate a
+number from prose.** Four of the five blocking defects were that failure.
+
+### Architecture: Pragmatic, chosen from three proposals
+Three read-only proposals were generated. **Pragmatic** won: split the five screens into
+`screens/*.tsx`, but leave the state graph alone — `App.tsx` keeps all **16** `useState` (plus one
+`useRef`) and the
+`autoSave`-inside-`setLog` closure exactly as legacy has them. Clean's `useGameSession` hook was
+rejected because it rewrites the state graph, which is the most behaviour-load-bearing and
+least-tested part of the port. Minimal's single 700-line `App.tsx` was rejected because its own
+author called it "unreviewable by diff, with the tests covering none of it".
+
+The one deviation from verbatim is `game/applyWorldUpdate.ts` — extracted purely so R10's rules
+become testable.
+
+### Four things verified while planning that changed the plans
+1. **`shared/src/gameState.ts` already exports the save keys** (`SAVE_INDEX_KEY`, `SAVE_PREFIX`,
+   `MAX_LOG_SAVED`, `SAVE_SCHEMA_VERSION`). `lib/saves.ts` imports them; redeclaring would create a
+   second source of truth for the one thing that must stay byte-identical.
+2. **The 25/60/100 thresholds are model-side, not client-side** (`WORLD_SYSTEM_PROMPT` 40/55/93/139).
+   A frontend test asserting them would have been untestable fiction, and a client-side guard would
+   silently swallow legitimate unlocks on an overshooting mastery jump. Plans forbid both.
+3. **Legacy violates CLAUDE.md #3 twice on one scroll chain** — `WorldLog`'s root (L659) lacks
+   `minHeight: 0`, and a Fragment at L1388 acts as the mobile flex/scroll container with its parent
+   also missing it. A literal verbatim port would carry both forward. Plans 06 and 08 fix them.
+4. **`frontend/package.json` has no test runner**, which is why wave 0 exists and why the plan count
+   went 4 → 10.
 
 ### What review changed (see 02-REVIEW.md)
 Two blockers, ten warnings, nine suggestions — all resolved. The panel's shared conclusion was
