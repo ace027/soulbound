@@ -57,9 +57,9 @@ Initially the developer and their playtester. Then self-hosting deployers who su
 3. Scrollable panels need `min-height: 0` on every flex ancestor; never use a Fragment as a flex/scroll container
 4. World Voice JSON response contract field names preserved exactly; prompt and parser never drift apart
 5. `max_tokens` >= 2000 on all three World Voice calls
-6. The MUST NOT rule list in `WORLD_SYSTEM_PROMPT` is load-bearing for balance — additions are cheap, removals need explicit confirmation
+6. The MUST NOT rule list in `WORLD_SYSTEM_PROMPT` is load-bearing for balance — additions are cheap, removals need explicit confirmation (guarded since the Phase 4 review by `backend/src/__tests__/prompts.test.ts`, which fails on a deleted rule and passes on an added one)
 7. Lore facts live in `WORLD_LORE`, behavioral/reveal constraints in `WORLD_SYSTEM_PROMPT` — do not merge
-8. `determineUniqueSkill()` is deliberately lore-blind (in fact it sends no `system` param at all — preserve this)
+8. `determineUniqueSkill()` is deliberately **system-blind** — it sends no `system` param at all (not `WORLD_LORE`, not `WORLD_SYSTEM_PROMPT`); strengthened from "lore-blind" in the Phase 4 review
 
 **API constraints**
 - Assistant prefill returns HTTP 400 on Sonnet 5 and Opus 5 (the artifact uses none — keep it that way)

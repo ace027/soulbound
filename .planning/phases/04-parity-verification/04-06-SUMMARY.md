@@ -93,7 +93,7 @@ Requirements R13, R14, R15, R16 all close.
 4. **Long sessions.** Seven live calls is not fifty. The 80-entry log cap, the 40-note memory cap
    and Soul Rewrite were never reached. Sub-ability emergence was observed only as *correctly not
    firing* below mastery 25 — never as firing.
-5. **Constraint 6 is only partially test-guarded** (04-01, O-5). The `WORLD_SYSTEM_PROMPT` MUST NOT
+5. **Constraint 6 was only partially test-guarded** (04-01, O-5) — **CLOSED** after the review, in `backend/src/__tests__/prompts.test.ts`: six rule assertions scoped to the sliced MUST NOT block plus a bullet-count floor. Verified by deleting each of the seven rule lines in turn (each killed 2 tests) and by adding a bullet (passed) — the deletions-fail/additions-pass asymmetry constraint 6 actually asks for. The assertions deliberately avoid the proper nouns "Sevreth" and "Ithren": neither appears in `WORLD_SYSTEM_PROMPT`, because which Sovereign is a lore fact living in `WORLD_LORE` (constraint 7), so asserting them here would make the test enforce a violation of #7. Original note follows. The `WORLD_SYSTEM_PROMPT` MUST NOT
    rule list has one assertion covering one of its bullets
    (`grep -rn 'What you MUST NOT do' backend/src/__tests__/` → 1), and **none** of the six rules
    `CLAUDE.md:42` names is asserted anywhere. Deleting a balance rule breaks no build and fails no

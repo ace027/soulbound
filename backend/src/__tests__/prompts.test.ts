@@ -287,6 +287,86 @@ describe('player text is delimited, and the delimiters cannot be closed early', 
   });
 });
 
+// ─── CLAUDE.md #6: the MUST NOT rule list is load-bearing for balance ────────
+
+/**
+ * Constraint 6 names six rules as load-bearing for game balance. Before this
+ * block existed, exactly one assertion touched the MUST NOT list at all (the
+ * prompt-injection rule), so deleting any of the other six broke no build and
+ * failed no test — the one constraint whose violation is completely invisible.
+ * Found in the Phase 4 review as observation O-5.
+ *
+ * Every assertion is scoped to the sliced MUST NOT block, not to the whole
+ * prompt. That is deliberate: constraint 6 protects these rules' presence *in
+ * the rule list*, and a rule demoted into surrounding prose would still satisfy
+ * a whole-prompt `toContain` while losing the position that makes the model
+ * treat it as a hard rule.
+ *
+ * ── Why no proper nouns are asserted here ───────────────────────────────────
+ * CLAUDE.md #6 writes rule 1 as "the one defined Sevreth-encounter path" and
+ * rule 6 as "Ithren's dual nature". Neither name appears in WORLD_SYSTEM_PROMPT
+ * (`grep -c 'Sevreth' backend/src/data/worldSystemPrompt.ts` -> 0), and that is
+ * correct, not a gap: WHICH Sovereign is a lore fact and lives in WORLD_LORE,
+ * while the behavioural rule lives here. That split is CLAUDE.md #7. Asserting
+ * "Sevreth" in the prompt would make this test enforce a violation of #7 —
+ * so the assertions match the prompt's own generic phrasing and the cross-
+ * reference to the lore block instead.
+ */
+describe('WORLD_SYSTEM_PROMPT keeps every MUST NOT rule CLAUDE.md #6 names', () => {
+  /** The rule list only, sliced at its own headings. */
+  function mustNotBlock(prompt: string): string {
+    const start = prompt.indexOf('### What you MUST NOT do:');
+    const end = prompt.indexOf('### RESPONSE FORMAT:');
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    return prompt.slice(start, end);
+  }
+
+  it.each([
+    [
+      'no Ultimate Skills outside the single defined Sovereign path',
+      [/never grant an ultimate skill during normal play/i, /only path to an ultimate skill transformation/i],
+    ],
+    [
+      'never honour a direct player request for a skill',
+      [/do not let the player "ask" for skills/i, /skills emerge, they are not requested/i],
+    ],
+    [
+      'Plundering fails unless the player actually has it',
+      [/never let a plundering skill work unless the player has one in their sheet/i],
+    ],
+    [
+      'Extra Skills require the prerequisite Common Skill at 80+',
+      [/never grant extra skills unless the prerequisite common skill is at 80\+/i],
+    ],
+    [
+      'Soul Rewrite is a rare climax, never on request or as a reward',
+      [/never trigger a soul rewrite casually, frequently, or on request/i, /not a leveling mechanic/i],
+    ],
+    [
+      'Sovereign ambiguity never resolves, including after the encounter',
+      [/which "half" of a fractured sovereign/i, /including after an encounter ends/i, /must never resolve/i],
+    ],
+  ])('rule still present: %s', async (_name, patterns) => {
+    const { WORLD_SYSTEM_PROMPT } = await import('../data/worldSystemPrompt.js');
+    const block = mustNotBlock(WORLD_SYSTEM_PROMPT);
+    for (const pattern of patterns) expect(block).toMatch(pattern);
+  });
+
+  it('the rule list has not shrunk — bullet count is a floor, additions are welcome', async () => {
+    const { WORLD_SYSTEM_PROMPT } = await import('../data/worldSystemPrompt.js');
+    const bullets = mustNotBlock(WORLD_SYSTEM_PROMPT)
+      .split('\n')
+      .filter((line) => line.trimStart().startsWith('- '));
+    // CLAUDE.md #6: "additions are cheap insurance, removals need explicit
+    // confirmation". A floor catches a deletion while letting an addition pass.
+    // Derive the current count with:
+    //   sed -n '/### What you MUST NOT do:/,/### RESPONSE FORMAT:/p' \
+    //     backend/src/data/worldSystemPrompt.ts | grep -c '^- '
+    expect(bullets.length).toBeGreaterThanOrEqual(11);
+  });
+});
+
 // ─── Prompt/schema agreement on the world_events example ────────────────────
 
 describe('the intro-scene world_events example matches WorldEventSchema', () => {
