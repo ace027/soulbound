@@ -2,9 +2,10 @@
 
 ## Current Position
 - **Phase**: 4 of 4 (complete)
-- **Status**: **All four phases complete.** Phase 4 review PASSED after 3 cycles (3-reviewer panel, 29 findings, 0 blockers). R13, R14, R15, R16 close. The legacy artifact is deleted — recover it with `git show 3d01fa5:legacy/souldbound-world.jsx` (the `parity-oracle` tag is local-only; it cannot be pushed from this environment). Phase 3 shipped (PR #2, open against `main`); Phase 4 is not yet in a PR.
-- **Last Activity**: Phase 4 review passed (2026-09-18)
-- **Next Action**: `/legion:ship` to open a PR for Phase 4, or `/legion:retro` to capture the review's process findings.
+- **Status**: **All four phases complete and shipped.** Phase 4 review PASSED after 3 cycles (3-reviewer panel, 29 findings, 0 blockers); shipped as [PR #3](https://github.com/DeanItServices/soulbound/pull/3), 15 commits / 48 files / +4,757−1,474. R13, R14, R15, R16 close. The legacy artifact is deleted — recover it with `git show 3d01fa5:legacy/souldbound-world.jsx` (the `parity-oracle` tag is local-only and cannot be pushed from this environment; the SHA is on the branch and works everywhere).
+  ⚠️ **Correction**: this file previously said PR #2 was "open against `main`". It was **merged** 2026-09-18T01:49Z (head `5147bd8`). That is why Phase 4 needed a new PR rather than additions to #2.
+- **Last Activity**: Phase 4 shipped as PR #3 (2026-09-18)
+- **Next Action**: `/legion:retro` to capture the review's process findings, and `/legion:map --refresh` — deleting `legacy/` changed the codebase fingerprint.
 
 ### Two things to carry into any next phase
 1. **A fix is a claim, and carries the same derivation burden as a finding.** All three review cycles
@@ -23,7 +24,17 @@ permission. Any durability scheme must survive without tags.
 ```
 
 ## Ship record
-- **PR #2** — https://github.com/DeanItServices/soulbound/pull/2 (base `main`, head `claude/admiring-wright-hfmugk`)
+- **PR #3** — https://github.com/DeanItServices/soulbound/pull/3 (base `main`, head `claude/admiring-wright-hfmugk`)
+  Phase 4 — 15 commits, 48 files, +4,757/−1,474. Pre-ship gate **6/6**, the first phase where gate 3a
+  (build completeness) holds as literally specified: all 6 plans produced SUMMARY.md files, which was
+  retro AI-6's purpose. Tests 115 backend + 139 frontend + 5 e2e, three typechecks clean, build clean,
+  working tree clean, review PASSED (3 cycles).
+  ⚠️ **Not rebased, deliberately.** `3d01fa5` is referenced 9 times across README, the design log, the
+  constraint audit and this file — it is the recovery handle for 69 legacy citations. A rebase rewrites
+  it and silently breaks the recovery path. The branch descends cleanly from PR #2's merged head
+  (`5147bd8` is an ancestor) and `main` carries no independent work, so there is no conflict to resolve.
+
+- **PR #2** — https://github.com/DeanItServices/soulbound/pull/2 — **MERGED** 2026-09-18T01:49Z (head `5147bd8`)
   Phase 3 — 14 commits, 46 files, +7,653/-28. Pre-ship gate: tests 237/237, shared+backend+frontend
   builds clean, working tree clean, review PASSED (2 cycles).
   ⚠️ **PR #1 was already merged** (`38cb2c9`, head `eed43ec`), so this is a NEW pull request — a
