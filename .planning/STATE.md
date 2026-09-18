@@ -7,7 +7,7 @@
 
 ## Progress
 ```
-[██████████████████░░] 88% — 21/24 plans complete
+[███████████████░░░░░] 77% — 21/27 plans complete
 ```
 
 ## Ship record

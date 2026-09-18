@@ -77,5 +77,5 @@ citations that deletion would strand each earned their own plan. Only one plan s
 | 1. Foundation & Contract | 6 | 6 | **Shipped** 2026-09-17 — review passed (2 cycles) · [PR #1](https://github.com/DeanItServices/soulbound/pull/1) |
 | 2. Backend & World Voice | 5 | 5 | **Shipped** 2026-09-17 — review passed (3 cycles) · [PR #1](https://github.com/DeanItServices/soulbound/pull/1) |
 | 3. Frontend Port | 10 | 10 | **Shipped** 2026-09-18 — review passed (2 cycles, 3-reviewer panel) · [PR #2](https://github.com/DeanItServices/soulbound/pull/2) |
-| 4. Parity & Verification | 3 | 0 | Not started |
-| **Total** | **24** | **21** | 88% |
+| 4. Parity & Verification | 6 | 0 | **Planned** 2026-09-18 — 6 plans, 4 waves |
+| **Total** | **27** | **21** | 77% |
