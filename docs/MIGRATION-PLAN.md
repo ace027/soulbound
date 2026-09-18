@@ -12,6 +12,7 @@ Inside the artifact, `fetch("https://api.anthropic.com/v1/messages")` worked wit
 Two alternatives were considered and rejected:
 - **Hardcoded/baked-in key** — wrong shape for "anybody can deploy their own instance": either the original developer eats everyone's usage cost, or every deployer has to edit and rebuild source to swap in their own key.
 - **Session-only, in-memory key (paste-per-session BYOK)** — this was the original plan, matching the artifact's "session-only, in-memory" posture. Superseded: it assumes a threat model (untrusted host, no persistence acceptable) that doesn't match the actual deployment shape, and the added friction (re-paste key every session/restart) wasn't buying protection against anything realistic for a deployer running this on their own box.
+- **A proxy converting API-key requests into OAuth calls against a Claude Max subscription** — raised and declined. Max does not include API access; Anthropic bills the API separately via Console credits, which is what this deployment runs on. That is the separation Anthropic's terms draw between the two products. (Decided 2026-09-17.)
 
 Implementation:
 - `.env.example` committed with `ANTHROPIC_API_KEY=` empty; real `.env` gitignored

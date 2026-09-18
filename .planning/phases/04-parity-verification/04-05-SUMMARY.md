@@ -112,7 +112,12 @@ Screenshots were **viewed, not merely captured** (retro AI-7). Observed across t
 - `gm_note` renders as the italic parenthetical under the narration.
 - The `✓ saved` autosave indicator appears after a turn.
 
-No behaviour differed from the artifact in anything observed.
+Nothing observed contradicted the ported behaviour. **Stated precisely, because the wording
+matters here:** this run compared the app against the shipped code's own spec, not against the
+artifact — no legacy line number is cited anywhere in this plan. Artifact parity rests on 04-01's
+byte-level diffs (`WORLD_LORE` identical, prompt 3 additions / 0 removals, 9/9 contract fields) and
+on Phase 3's port review. What this run proves is that the app *plays*, which is what ROADMAP's R14
+criteria actually ask for.
 
 ## Criterion 2 — save, reload, load, state restored
 

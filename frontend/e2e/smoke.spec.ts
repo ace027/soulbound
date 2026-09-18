@@ -328,7 +328,13 @@ const BODY_MARGIN_OVERHANG_PX = 8;
 
 function expectActionBarPinned(probe: Probe) {
   const { actionBar, viewport } = probe;
-  const screenRoot = probe.chain[probe.chain.length - 1];
+  // length - 2, matching expectChainIntact: the LAST chain entry is #root (the
+  // mount node), and the screen root is the `height: 100vh` div SimulationScreen
+  // returns. They coincide today only because index.css declares no #root rule,
+  // so #root is a plain block box sized by its child. The moment #root acquires
+  // layout of its own the two diverge — and this assertion would silently start
+  // measuring something other than what its name says.
+  const screenRoot = probe.chain[probe.chain.length - 2];
 
   expect(actionBar.height, 'action bar has no height').toBeGreaterThan(0);
   expect(actionBar.width, 'action bar has no width').toBeGreaterThan(0);

@@ -56,9 +56,19 @@ $ grep -noE '^[0-9]+\. \*\*[^*]+\*\*' CLAUDE.md
 
 Eight PASS on a first audit is the kind of result this role treats as a signal to look harder, so
 the justification is stated explicitly: these are **preservation** properties, not new behaviour.
-Seven of the eight are guarded by a committed automated test or a startup assertion (rows 4, 5, 6,
-7, 8 by `backend/src/__tests__/`; rows 1 and 2 by grep-shaped absence properties with zero true
-positives; row 3 by manual chain-walk because no runtime layout test exists in jsdom). Every row
+**Corrected during the Phase 4 review:** *five* of the eight are guarded by a committed automated
+test or a startup assertion — rows 4, 5, 6, 7 and 8 by `backend/src/__tests__/`. Row 3 is guarded by
+`simulationScreen.test.tsx` (declared style) plus `frontend/e2e/smoke.spec.ts` (real geometry).
+**Rows 1 and 2 had no committed guard at all** when this audit was written: the PASS rests on
+ad-hoc greps run here, which prove absence at this commit and nothing about the next one. The
+review confirmed this by mutation — a behaviour-preserving `window.confirm(...)` plus
+`window.alert(...)` in `TitleScreen.tsx`'s delete branch left all 242 tests green. Closed by
+`frontend/src/__tests__/constraints.test.ts`, added in the review fix cycle.
+
+Note for the next auditor: the *naive* check gives a false positive. Gating the delete on
+`window.confirm(...)` does fail one test — but only because jsdom's `confirm()` returns `undefined`,
+so the gate swallows the call and the tap-to-arm assertion fails on behaviour, not on the banned
+API. Do not read that failure as coverage. Every row
 below was re-derived at HEAD `4e29596`, not carried over from Phase 3's review at `61fbb07`.
 Three observations that are **not** FAILs are recorded at the end; two of them are doc drift owned
 by plan 04-04.
@@ -133,7 +143,7 @@ $ grep -rn "sbc-save-index\|sbc-save:" shared/src --include='*.ts'
 shared/src/gameState.ts:163:export const SAVE_INDEX_KEY = 'sbc-save-index';
 shared/src/gameState.ts:164:export const SAVE_PREFIX = 'sbc-save:';
 
-$ grep -n "sbc-save-index\|sbc-save:" legacy/souldbound-world.jsx
+$ grep -n "sbc-save-index\|sbc-save:" "$LEGACY"
 5:const SAVE_INDEX_KEY = "sbc-save-index";
 6:const SAVE_PREFIX    = "sbc-save:";
 ```
@@ -364,7 +374,7 @@ The legacy file uses CRLF line endings, which makes a naive `diff` report a whol
 Normalizing first:
 
 ```
-$ sed -n '160,169p' legacy/souldbound-world.jsx        | sed 's/\r$//; s/[[:space:]]*$//' > /tmp/l.n
+$ sed -n '160,169p' "$LEGACY"        | sed 's/\r$//; s/[[:space:]]*$//' > /tmp/l.n
 $ sed -n '98,108p'  backend/src/data/worldSystemPrompt.ts | sed 's/\r$//; s/[[:space:]]*$//' > /tmp/c.n
 $ diff /tmp/l.n /tmp/c.n
 10a11
@@ -386,7 +396,7 @@ Widening to the whole `WORLD_SYSTEM_PROMPT` block gives the figure `04-CONTEXT.m
 approved additions":
 
 ```
-$ sed -n '63,216p' legacy/souldbound-world.jsx | sed '1s/^const WORLD_SYSTEM_PROMPT = `//' \
+$ sed -n '63,216p' "$LEGACY" | sed '1s/^const WORLD_SYSTEM_PROMPT = `//' \
     | sed 's/\r$//; s/[[:space:]]*$//' > /tmp/l_prompt.txt
 $ sed -n '1,157p' backend/src/data/worldSystemPrompt.ts | sed '1s/^export const WORLD_SYSTEM_PROMPT: string = `//' \
     | sed 's/\r$//; s/[[:space:]]*$//' > /tmp/c_prompt.txt
@@ -486,7 +496,7 @@ identities (`worldLore.ts:35` Ithren, `:37` and `:43-47` Sevreth).
 `WORLD_LORE` is byte-identical to the artifact after newline normalization:
 
 ```
-$ sed -n '219,302p' legacy/souldbound-world.jsx | sed '1s/^const WORLD_LORE = `//' \
+$ sed -n '219,302p' "$LEGACY" | sed '1s/^const WORLD_LORE = `//' \
     | sed 's/\r$//; s/[[:space:]]*$//' > /tmp/l_lore.txt
 $ sed -n '1,84p' backend/src/data/worldLore.ts | sed '1s/^export const WORLD_LORE: string = `//' \
     | sed 's/\r$//; s/[[:space:]]*$//' > /tmp/c_lore.txt
@@ -627,6 +637,16 @@ generic ambiguity bullet to the MUST NOT list would be an *addition*, which cons
 "cheap insurance". Flagged for a decision, deliberately not made here.
 
 ---
+
+## Re-running the legacy comparisons after the deletion
+
+Four blocks below (constraints 2, 6 and 7) compare against the legacy artifact, which Phase 4
+deleted. They still run — export the recovered file first, then every `"$LEGACY"` below resolves:
+
+```bash
+export LEGACY=/tmp/legacy-oracle.jsx
+git show parity-oracle:legacy/souldbound-world.jsx > "$LEGACY"
+```
 
 ## Re-run everything
 

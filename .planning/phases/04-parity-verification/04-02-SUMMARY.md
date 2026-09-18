@@ -43,7 +43,7 @@ and proven with `diff`.
 
 | # | Mutation | Applied-proof | What the suite actually did |
 |---|---|---|---|
-| M1 | `CONTRACT_FIELD_NAMES`: `'gm_note'` → `'gm_noteRENAMED'` (`shared/src/worldVoice.ts`, rebuilt) | needle 1×; `grep -c` in `shared/dist/worldVoice.js` 0 → 1 | **2 failed / 4 passed.** case 5 failed on the exact diff; case 1 also failed |
+| M1 | `CONTRACT_FIELD_NAMES`: `'gm_note'` → `'gm_noteRENAMED'` (`shared/src/worldVoice.ts`, rebuilt) | needle 1×; `grep -c` in `shared/dist/worldVoice.js` 0 → 1 | **2 failed / 4 passed — of `contract.test.ts`'s 6 tests, not the 108-test backend suite** (rows M2-M8 below report whole-suite counts; this row does not). case 5 failed on the exact diff; case 1 also failed |
 | M2 | `"world_events": [],` deleted from the prompt's RESPONSE FORMAT block (`backend/src/data/worldSystemPrompt.ts`) | needle 1×; `grep -c '"world_events"'` 1 → 0 | **4 failed / 104 passed.** case 3, case 1, the untouched-constant guard, **and** `server.test.ts` "boots … on the real, undrifted prompt" |
 | M3 | `assertWorldVoiceContract` made a no-op (early `return`) | needle 1×; `grep -c 'MUTATION: no-op'` in dist = 1 | **4 failed / 104 passed.** cases 2, 3, 4 — exactly as predicted — plus `server.test.ts` "exits 1 when WORLD_SYSTEM_PROMPT has drifted" |
 | M4 | `SAVE_PREFIX` `'sbc-save:'` → `'sbc-save-v2:'` — **internally consistent**, `saves.ts` imports it | needle 1×; `grep -c` in dist = 1 | **4 failed / 125 passed.** 3 artifact-era tests + "writes under the artifact key" |

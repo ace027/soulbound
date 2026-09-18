@@ -100,6 +100,25 @@ Requirements R13, R14, R15, R16 all close.
    test. A six-`toMatch` regression test over the already-sliced MUST NOT block would close it.
    Left open deliberately: it is a constraint-6 gap in `prompts.test.ts`, outside every plan's
    declared files this phase.
+
+   **Constraints 1 and 2 had the same gap and are now CLOSED** (found in the Phase 4 review, which
+   established by mutation that a behaviour-preserving `window.confirm(...)` plus `window.alert(...)`
+   in `TitleScreen.tsx`'s delete branch left all 242 tests green). Closed by
+   `frontend/src/__tests__/constraints.test.ts`, which fails on exactly that mutation.
+   **Trap for the next auditor:** the naive check gives a false positive. *Gating* the delete on
+   `window.confirm` does fail an existing test — but only because jsdom's `confirm()` returns
+   `undefined`, so the gate swallows the call and the tap-to-arm assertion fails on behaviour, not
+   on the banned API. Do not read that failure as coverage.
+
+11. **Hard constraint 8 understates what the code guarantees — developer decision.** `CLAUDE.md:46`
+    says `determineUniqueSkill()` "does not receive `WORLD_LORE`" and forbids adding *lore* access.
+    The code is stronger: it sends **no `system` parameter at all** (`routes/uniqueSkill.ts:169`
+    `useSystem: false`, pinned by `anthropic.test.ts:286-293`). As literally written, a future
+    session could add `WORLD_SYSTEM_PROMPT` — not lore — to that route and believe it complied,
+    which would flip `useSystem` to `true` and change the exact prompt that survived the Tier 0
+    adversarial tests. The design log now carries the corrected, stronger claim. **The constraint
+    text itself was deliberately NOT edited**: hard constraints are the developer's, and
+    strengthening one is their call, not a review fix.
 6. **Body-margin layout defect** (04-03). Neither `index.css` nor the legacy artifact declared a
    `body` rule, so `body` keeps the UA default `margin: 8px`; every screen is `100vh` inside it, so
    the page is 8px taller than the viewport and acquires a scrollbar. Inherited, not introduced —
