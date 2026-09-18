@@ -5,7 +5,7 @@
 - [x] **Phase 1: Foundation & Contract** — scaffold, Docker, and the shared World Voice contract
 - [x] **Phase 2: Backend & World Voice** — three routes on the official SDK, structured outputs, caching verified
 - [x] **Phase 3: Frontend Port** — components, screens, game logic, saves
-- [ ] **Phase 4: Parity & Verification** — end-to-end playthrough, constraint audit, doc updates
+- [~] **Phase 4: Parity & Verification** — end-to-end playthrough, constraint audit, doc updates (executed, pending review)
 
 ## Phase Details
 
@@ -77,5 +77,5 @@ citations that deletion would strand each earned their own plan. Only one plan s
 | 1. Foundation & Contract | 6 | 6 | **Shipped** 2026-09-17 — review passed (2 cycles) · [PR #1](https://github.com/DeanItServices/soulbound/pull/1) |
 | 2. Backend & World Voice | 5 | 5 | **Shipped** 2026-09-17 — review passed (3 cycles) · [PR #1](https://github.com/DeanItServices/soulbound/pull/1) |
 | 3. Frontend Port | 10 | 10 | **Shipped** 2026-09-18 — review passed (2 cycles, 3-reviewer panel) · [PR #2](https://github.com/DeanItServices/soulbound/pull/2) |
-| 4. Parity & Verification | 6 | 0 | **Planned** 2026-09-18 — 6 plans, 4 waves |
-| **Total** | **27** | **21** | 77% |
+| 4. Parity & Verification | 6 | 6 | **Executed** 2026-09-18 — pending review |
+| **Total** | **27** | **27** | 100% |

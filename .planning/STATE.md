@@ -1,13 +1,14 @@
 # Project State
 
 ## Current Position
-- **Phase**: 4 of 4 (planned)
-- **Status**: Phase 4 planned — 6 plans across 4 waves. Phase 3 shipped (PR #2, open against `main`).
-- **Last Activity**: Phase 4 planning (2026-09-18)
+- **Phase**: 4 of 4 (executed, pending review)
+- **Status**: Phase 4 executed — all 6 plans complete. R13, R14, R15, R16 close. The legacy artifact is deleted (recoverable at `3d01fa5`). Phase 3 shipped (PR #2, open against `main`).
+- **Last Activity**: Phase 4 execution (2026-09-18) — live playthrough verified R14 against real models; cross-route cache read observed (intro-scene wrote 15,490, world-engine read 15,490)
+- **Next Action**: `/legion:review` to verify Phase 4
 
 ## Progress
 ```
-[███████████████░░░░░] 77% — 21/27 plans complete
+[████████████████████] 100% — 27/27 plans complete
 ```
 
 ## Ship record

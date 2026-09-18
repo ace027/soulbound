@@ -1,6 +1,6 @@
 # The Soulbound Chronicles — Design Decisions Log
 
-This document captures *why* the system is built the way it is, not just what it does. The code (soulbound-world.jsx) is the source of truth for current behavior — this file exists so future changes don't accidentally undo deliberate tradeoffs.
+This document captures *why* the system is built the way it is, not just what it does. The migrated app — `frontend/`, `backend/`, `shared/` — is the source of truth for current behavior; the original `soulbound-world.jsx` artifact was retired at the end of Phase 4 (see "Legacy artifact retired" below). This file exists so future changes don't accidentally undo deliberate tradeoffs.
 
 ## Core Concept
 A Tensura-inspired (Tensei Shitara Slime Datta Ken) text RPG where Claude acts as "The World Voice" — an AI game master running an entire original fantasy world (Vaeltharion) inside a single React artifact, calling the Anthropic API directly from the browser. Skills are "remembered by the soul" rather than learned — power emerges from who a character is and what they do, not from leveling mechanics in the traditional sense.
@@ -125,6 +125,36 @@ Title screen merged with the save browser into a single screen (not two separate
 Desktop uses a fixed side-by-side layout (240px Soul Codex sidebar + flexible World panel). Below 700px width, this collapses into a two-tab interface (World / Codex) since the side-by-side layout doesn't fit. Tapping "Act" automatically switches back to the World tab so the response is visible without manual navigation. Input font size is forced to 16px on mobile specifically to prevent iOS Safari's auto-zoom-on-focus behavior.
 
 **Known flexbox bug pattern, already fixed once, worth remembering**: a scrollable region needs `min-height: 0` on every flex ancestor in the chain, or content can overflow the container instead of triggering scroll — this is a non-obvious CSS flexbox trap (flex children default to `min-height: auto`) and caused a real bug where the Soul Codex panel's "All Skills" section couldn't be scrolled to past the Unique Skill card. Also: a React Fragment (`<>...</>`) is not a real DOM element, so applying flex/overflow properties expecting it to act as a scroll container will not work — wrap shared sub-components in an actual `<div>` if they need their own scroll behavior.
+
+## Legacy artifact retired
+
+`legacy/souldbound-world.jsx` — the original 1,440-line Claude.ai artifact — was deleted at the
+close of Phase 4, once parity was confirmed against a live playthrough (R14: real backend, real
+models, cross-route cache read observed, save/reload/load verified field by field).
+
+**It served as the parity oracle for four phases and is still readable.** The content is preserved
+in git history; the last commit containing it is `3d01fa5`:
+
+```
+git show 3d01fa5:legacy/souldbound-world.jsx            # read it
+git show 3d01fa5:legacy/souldbound-world.jsx | sed -n '913,1031p'   # read a cited range
+```
+
+**Why this note exists.** 25 migrated source files carry 69 citations of the form `legacy 787-802`
+or `legacy 1022-1027` in their docstrings (derive with
+`grep -rhoE 'legacy [0-9]+(-[0-9]+)?' frontend/src shared/src | wc -l`). Those citations are
+load-bearing documentation — they are how a reader learns that `autoSave`-inside-`setLog` is
+deliberate, that `|| 5` is a falsy-coalesce on purpose, that the dead `changed` Set is kept for
+fidelity. They were deliberately **not** rewritten to name the SHA inline: that would have churned
+the docstrings of every ported file at phase close, a large diff with real risk and no behavioural
+gain. They resolve against the command above instead.
+
+**Residual risk, stated rather than discovered later.** Parity was confirmed against the criteria
+ROADMAP names, but several behaviours were never exercised live and the artifact was the oracle for
+them: Soul Rewrite, the 80-entry log cap, the 40-note memory cap, and sub-ability emergence actually
+*firing* at 25/60/100 (the live run only confirmed it correctly does not fire below 25). If one of
+those turns out to have drifted, the comparison is `git show 3d01fa5:legacy/souldbound-world.jsx`,
+not a lost file.
 
 ## Architecture Constraints Discovered
 - This sandbox's bash tool CAN reach `api.anthropic.com` over the network (it's allowlisted), but has no `x-api-key` credential — authenticated calls only work from inside the artifact's own browser runtime, where Anthropic injects auth automatically tied to the user's account/session. This means Claude cannot self-test the live API from outside the artifact; live testing requires the user to run the artifact and relay results back.
