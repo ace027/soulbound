@@ -60,12 +60,13 @@ Before making any change:
 - `WORLD_SYSTEM_PROMPT` and `WORLD_LORE` are both static per playthrough (and across playthroughs) and are sent as separate `system` blocks via a shared `buildSystemBlocks()` helper, with `cache_control: { type: "ephemeral" }` on the `WORLD_LORE` block, so their token cost is paid once via prompt caching rather than on every call.
 - Verify caching is actually engaging (`cache_creation_input_tokens` / `cache_read_input_tokens` in the API response) once this is running in a real environment with visibility into raw responses — this was previously hard to verify from inside an artifact.
 
-## Auth architecture — OPEN DECISION, resolve before scaffolding a backend
-Inside the Claude.ai artifact, calls to `api.anthropic.com` were authenticated automatically by the platform — that doesn't exist in a normal deployed app. Before writing backend code, confirm with the developer which model applies:
-- **Backend proxy holding the developer's own API key** — simplest, developer pays for usage, no per-user key handling.
-- **True BYOK (bring your own key)** — user supplies their own key per session; backend proxies the request through and does not persist the key (matches the "session-only, in-memory" approach already used in the artifact version).
+## Auth architecture — RESOLVED, do not re-litigate
+Inside the Claude.ai artifact, calls to `api.anthropic.com` were authenticated automatically by the platform — that doesn't exist in a normal deployed app. **Resolved: a backend proxy holding the deployer's own Anthropic API key**, read from `.env` as an environment variable at startup. The key never reaches the browser bundle or any client-side `fetch()`. The backend is built and shipped on this model — don't re-open the question.
+- Usage runs on **Anthropic Console credits**. A Claude Max subscription does *not* include API access; a proxy converting API-key requests into OAuth calls against Max was raised and declined.
+- Deployment shape is **single-tenant self-hosting**: one deployer, one container, their own key, on their own trusted machine. So a self-hosting deployer does bring their own key — via `.env`, not via the UI.
+- **Paste-per-session BYOK** (session-only, in-memory, as in the artifact) is the documented *rejected* alternative, not a fallback to reach for. It assumes an untrusted host, which doesn't match this deployment shape.
 
-Do not default silently to one of these. If it's still unresolved when a session starts, ask. See `docs/MIGRATION-PLAN.md` for more detail.
+See `docs/MIGRATION-PLAN.md` for the full decision and both rejected options.
 
 ## Current functional scope (as of migration)
 Character creation (race select → open-ended questionnaire → Unique Skill generation → intro scene), a live simulation loop, the full skill tier system (Intrinsic/Common/Extra/Unique/Ultimate) with mastery tracking and emergent sub-abilities at 25/60/100, Soul Rewrite, a persistent narrative-memory system (entity ledger + rolling notes) to prevent NPC/history drift, and a mobile-responsive two-tab layout with a Soul Codex sidebar. Full detail in `docs/PROJECT-BACKGROUND.md`.
