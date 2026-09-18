@@ -75,6 +75,24 @@ describe('CLAUDE.md constraint 1 — no window.confirm / alert / prompt', () => 
     expect(offenders).toEqual([]);
   });
 
+  /**
+   * The bare globals are the SAME native API and the more idiomatic spelling, so a
+   * guard anchored on the `window.` prefix is under-inclusive: review cycle 2 showed
+   * `confirm("...")` / `alert("...")` in the delete branch passing all 136 tests while
+   * jsdom itself printed "Not implemented: Window's confirm() method" — proof the
+   * native call was reached.
+   *
+   * `prompt` is deliberately NOT in this list. It is a common identifier in this
+   * codebase (the World Voice prompts), and a bare-word rule would fire on
+   * `prompt(` in unrelated code. It stays covered by the `window.`-prefixed test
+   * above, which is the form CLAUDE.md constraint 1 literally names.
+   */
+  it.each(['confirm', 'alert'])('no bare %s( call in any source file', (api) => {
+    const pattern = new RegExp(`(^|[^.\\w$])${api}\\s*\\(`, 'm');
+    const offenders = FILES.filter((f) => pattern.test(stripComments(readFileSync(f, 'utf8'))));
+    expect(offenders).toEqual([]);
+  });
+
   it('would catch a real call — the stripper does not blank everything', () => {
     const stripped = stripComments('/* window.confirm() in prose */\nwindow.confirm("x");\n');
     expect(stripped).not.toMatch(/in prose/);

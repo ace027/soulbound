@@ -157,6 +157,13 @@ them: Soul Rewrite, the 80-entry log cap, the 40-note memory cap, and sub-abilit
 those turns out to have drifted, the comparison is `git show parity-oracle:legacy/souldbound-world.jsx`,
 not a lost file.
 
+> **The `parity-oracle` tag is local-only right now.** It could not be pushed from the environment
+> that created it (`git push origin parity-oracle` fails with `remote end hung up`; the branch pushes
+> fine, so it is a tag-ref permission, not a network fault). **Until someone pushes it**, a fresh
+> clone has no such tag and must use the raw SHA, which IS on the pushed branch:
+> `git show 3d01fa5:legacy/souldbound-world.jsx`. Pushing the tag is worth doing — see the rationale
+> below — but the SHA is what works today.
+
 The tag exists because a bare SHA is not a durable handle in *this* repo specifically: every commit
 was re-SHA'd once already by a `rebase --exec ... --reset-author` (`.planning/STATE.md` records it),
 and an unreferenced commit is garbage-collectable. A tag keeps the object reachable and survives

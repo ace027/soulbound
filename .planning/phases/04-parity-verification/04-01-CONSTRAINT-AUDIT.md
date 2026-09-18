@@ -9,6 +9,18 @@ Every verdict below carries the command that produced it. No constraint is marke
 authority of another document — `03-REVIEW.md`, `STATE.md` and `04-CONTEXT.md` were **not** used as
 evidence for any row. Re-run any block from this document alone.
 
+## Re-running the legacy comparisons after the deletion
+
+Four blocks in this document (constraints 2, 6 and 7) compare against the legacy artifact, which Phase 4
+deleted. They still run — export the recovered file first, then every `"$LEGACY"` in this document resolves:
+
+```bash
+export LEGACY=/tmp/legacy-oracle.jsx
+git show 3d01fa5:legacy/souldbound-world.jsx > "$LEGACY"     # SHA: on the pushed branch, works today
+# git show parity-oracle:legacy/souldbound-world.jsx > "$LEGACY"   # preferred once the tag is pushed
+```
+
+
 ---
 
 ## How many constraints there are
@@ -637,16 +649,6 @@ generic ambiguity bullet to the MUST NOT list would be an *addition*, which cons
 "cheap insurance". Flagged for a decision, deliberately not made here.
 
 ---
-
-## Re-running the legacy comparisons after the deletion
-
-Four blocks below (constraints 2, 6 and 7) compare against the legacy artifact, which Phase 4
-deleted. They still run — export the recovered file first, then every `"$LEGACY"` below resolves:
-
-```bash
-export LEGACY=/tmp/legacy-oracle.jsx
-git show parity-oracle:legacy/souldbound-world.jsx > "$LEGACY"
-```
 
 ## Re-run everything
 

@@ -54,7 +54,9 @@ Before making any change:
   moving either one off `claude-opus-5` silently strands the other's cache warmth — measured
   twice: 2026-09-17 the intro-scene call read back the exact 15,132 tokens the world-engine call
   wrote, and 2026-09-18 the same shared namespace was observed in the reverse direction at
-  **15,490** (intro-scene wrote, all three world-engine turns read it). The figure moves whenever
+  **15,490** (intro-scene wrote; every subsequent world-engine call read it — five of them, across
+  two sessions, in `.planning/phases/04-parity-verification/evidence/usage-lines.log`). **Quote
+  15,490; 15,132 is the superseded Phase 2 figure.** The number moves whenever
   `WORLD_SYSTEM_PROMPT` or `WORLD_LORE` changes — re-derive it with `count_tokens`, which is free.
   The property, not the number, is what this constraint protects.
   `determineUniqueSkill` stays on Sonnet 5 because its prompt is the adversarially-validated
@@ -70,7 +72,7 @@ Inside the Claude.ai artifact, calls to `api.anthropic.com` were authenticated a
 - Deployment shape is **single-tenant self-hosting**: one deployer, one container, their own key, on their own trusted machine. So a self-hosting deployer does bring their own key — via `.env`, not via the UI.
 - **Paste-per-session BYOK** (session-only, in-memory, as in the artifact) is the documented *rejected* alternative, not a fallback to reach for. It assumes an untrusted host, which doesn't match this deployment shape.
 
-See `docs/MIGRATION-PLAN.md` for the full decision and both rejected options.
+See `docs/MIGRATION-PLAN.md` for the full decision and all three rejected options.
 
 ## Current functional scope (as of migration)
 Character creation (race select → open-ended questionnaire → Unique Skill generation → intro scene), a live simulation loop, the full skill tier system (Intrinsic/Common/Extra/Unique/Ultimate) with mastery tracking and emergent sub-abilities at 25/60/100, Soul Rewrite, a persistent narrative-memory system (entity ledger + rolling notes) to prevent NPC/history drift, and a mobile-responsive two-tab layout with a Soul Codex sidebar. Full detail in `docs/PROJECT-BACKGROUND.md`.

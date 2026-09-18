@@ -102,8 +102,18 @@ Screenshots were **viewed, not merely captured** (retro AI-7). Observed across t
 
 - Soul Codex renders the unique skill with its `soul_resonance` and etching text, the mastery
   bar, locked sub-abilities, and the intrinsic skills from the chosen race.
-- Mastery advances per turn and is visible: Kept Verdict 0 → 12 → 19, Umbral Slip 5 → 9 → 10,
-  Dark Sense 16 → 19.
+- Mastery advances and is visible. Per-turn, read off the committed screenshots
+  (`evidence/screenshots/04-turn{1,2,3}.png`): Kept Verdict **3 → 9 → 12**, Umbral Slip
+  **5 → 5 → 9**, Dark Sense **8 → 11 → 16**, starting from 0 / 5 / 16 at the intro scene.
+  **Corrected in review cycle 2.** This bullet previously read "Kept Verdict 0 → 12 → 19,
+  Umbral Slip 5 → 9 → 10, Dark Sense 16 → 19", which sampled the intro scene, turn 3 and the
+  *separate* reload session and presented them as one three-turn progression. The 19 / 10 / 19
+  values belong to `05-post-action.png` — a different session, seeded at the playthrough's end
+  state and advanced by one further live turn. Note also that Umbral Slip did **not** move
+  between turns 1 and 2, so "advances per turn" was wrong even as a generalisation: mastery
+  advances when a skill is used, which is the designed behaviour.
+  This error was caught only because the review required the screenshots to be committed —
+  filing the evidence made the prose checkable, and the first check failed it.
 - **Sub-abilities stay locked below 25.** At mastery 19 the panel still reads "3 more sleep,
   waiting to be discovered" — the 25/60/100 emergence thresholds are holding against a live
   model rather than only against fixtures.

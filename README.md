@@ -50,8 +50,12 @@ Docstrings across `frontend/src` and `shared/src` still cite it by line number (
 `legacy 1022-1027`, and 67 others). Those citations still resolve — read the file from the tag:
 
 ```bash
-git show parity-oracle:legacy/souldbound-world.jsx                        # the whole file
-git show parity-oracle:legacy/souldbound-world.jsx | sed -n '1022,1027p'  # a cited range
+# The SHA is on the pushed branch, so this works in any clone that has it:
+git show 3d01fa5:legacy/souldbound-world.jsx                        # the whole file
+git show 3d01fa5:legacy/souldbound-world.jsx | sed -n '1022,1027p'  # a cited range
+
+# Preferred once the tag is pushed (it is local-only today — see the design log):
+git show parity-oracle:legacy/souldbound-world.jsx
 ```
 
 See `docs/design-decisions-log.md` → "Legacy artifact retired" for the full reasoning.

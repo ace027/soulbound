@@ -110,15 +110,6 @@ Requirements R13, R14, R15, R16 all close.
    `undefined`, so the gate swallows the call and the tap-to-arm assertion fails on behaviour, not
    on the banned API. Do not read that failure as coverage.
 
-11. **Hard constraint 8 understates what the code guarantees — developer decision.** `CLAUDE.md:46`
-    says `determineUniqueSkill()` "does not receive `WORLD_LORE`" and forbids adding *lore* access.
-    The code is stronger: it sends **no `system` parameter at all** (`routes/uniqueSkill.ts:169`
-    `useSystem: false`, pinned by `anthropic.test.ts:286-293`). As literally written, a future
-    session could add `WORLD_SYSTEM_PROMPT` — not lore — to that route and believe it complied,
-    which would flip `useSystem` to `true` and change the exact prompt that survived the Tier 0
-    adversarial tests. The design log now carries the corrected, stronger claim. **The constraint
-    text itself was deliberately NOT edited**: hard constraints are the developer's, and
-    strengthening one is their call, not a review fix.
 6. **Body-margin layout defect** (04-03). Neither `index.css` nor the legacy artifact declared a
    `body` rule, so `body` keeps the UA default `margin: 8px`; every screen is `100vh` inside it, so
    the page is 8px taller than the viewport and acquires a scrollbar. Inherited, not introduced —
@@ -137,6 +128,15 @@ Requirements R13, R14, R15, R16 all close.
 10. **Cache expiry cost.** The measured `+$0.087` >5-minute-pause penalty was not reproduced; reads
     held at 15,490 throughout 04-05.
 
+11. **Hard constraint 8 understates what the code guarantees — developer decision.** `CLAUDE.md:46`
+    says `determineUniqueSkill()` "does not receive `WORLD_LORE`" and forbids adding *lore* access.
+    The code is stronger: it sends **no `system` parameter at all** (`routes/uniqueSkill.ts:169`
+    `useSystem: false`, pinned by `anthropic.test.ts:286-293`). As literally written, a future
+    session could add `WORLD_SYSTEM_PROMPT` — not lore — to that route and believe it complied,
+    which would flip `useSystem` to `true` and change the exact prompt that survived the Tier 0
+    adversarial tests. The design log now carries the corrected, stronger claim. **The constraint
+    text itself was deliberately NOT edited**: hard constraints are the developer's, and
+    strengthening one is their call, not a review fix.
 ## Files
 
 - `legacy/souldbound-world.jsx` — **deleted** (recoverable at `3d01fa5`)

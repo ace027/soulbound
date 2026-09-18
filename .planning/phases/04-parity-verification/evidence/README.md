@@ -5,7 +5,9 @@ re-checked without re-spending on the API. Added during the Phase 4 review cycle
 the only paid, unrepeatable run in the project had committed prose and no raw evidence — the same
 failure retro AI-5 exists for, and which plan 04-03 fixed for layout in this very phase.
 
-**No API key appears in any file here.** Verified: `grep -ric 'sk-ant' .` → 0 across the directory.
+**No API key appears in any file here.** Verified: `grep -ric 'sk-ant' . --exclude=README.md` → 0
+across the directory. (The `--exclude` is needed because this README quotes the needle — without it
+the command reports a match against this very line, which is not a key.)
 
 | File | What it is |
 |---|---|
