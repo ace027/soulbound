@@ -35,7 +35,7 @@ Initially the developer and their playtester. Then self-hosting deployers who su
 - **R12** — Fix three bugs found during research: `window.innerWidth` computed during render with no resize listener (legacy line 1348); Google Fonts `@import` re-injected per render in six places; missing `response.ok` checks on all three calls
 
 **Verification**
-- **R13** — All seven `CLAUDE.md` hard constraints preserved, tracked as an explicit checklist
+- **R13** — All eight `CLAUDE.md` hard constraints preserved, tracked as an explicit checklist
 - **R14** — End-to-end playthrough verified in-sandbox; `cache_read_input_tokens > 0` confirmed from the second World Engine call onward
 - **R16** — Vitest contract test (fixture parses against the shared type, malformed fails loudly) and save/load round-trip tests
 - **R15** — `docs/` move so `CLAUDE.md`'s own references resolve; `CLAUDE.md` and `design-decisions-log.md` updated in the same change that makes the model split
@@ -57,9 +57,9 @@ Initially the developer and their playtester. Then self-hosting deployers who su
 3. Scrollable panels need `min-height: 0` on every flex ancestor; never use a Fragment as a flex/scroll container
 4. World Voice JSON response contract field names preserved exactly; prompt and parser never drift apart
 5. `max_tokens` >= 2000 on all three World Voice calls
-6. The MUST NOT rule list in `WORLD_SYSTEM_PROMPT` is load-bearing for balance — additions are cheap, removals need explicit confirmation
+6. The MUST NOT rule list in `WORLD_SYSTEM_PROMPT` is load-bearing for balance — additions are cheap, removals need explicit confirmation (guarded since the Phase 4 review by `backend/src/__tests__/prompts.test.ts`, which fails on a deleted rule and passes on an added one)
 7. Lore facts live in `WORLD_LORE`, behavioral/reveal constraints in `WORLD_SYSTEM_PROMPT` — do not merge
-8. `determineUniqueSkill()` is deliberately lore-blind (in fact it sends no `system` param at all — preserve this)
+8. `determineUniqueSkill()` is deliberately **system-blind** — it sends no `system` param at all (not `WORLD_LORE`, not `WORLD_SYSTEM_PROMPT`); strengthened from "lore-blind" in the Phase 4 review
 
 **API constraints**
 - Assistant prefill returns HTTP 400 on Sonnet 5 and Opus 5 (the artifact uses none — keep it that way)
@@ -84,7 +84,7 @@ Initially the developer and their playtester. Then self-hosting deployers who su
 | `determineUniqueSkill` stays on Sonnet 5 | Its prompt is the adversarially-validated surface, and it sends no system blocks so it has no cache to share | Unchanged from the artifact |
 | `max_tokens` 2000 → 16000 | Constraint #5 is a floor; raising is aligned with it and with current non-streaming guidance | Applied to all three routes |
 | Legacy artifact retained during the port | `design-decisions-log.md` treats the code as source of truth for current behavior — it is the parity oracle | `legacy/souldbound-world.jsx`, deleted once playable |
-| Codebase map skipped | This session already produced a more detailed structural map than a generic indexer would, and the legacy file is about to be deleted | Run `/legion:map` after the migration lands |
+| Codebase map generated 2026-09-18, refreshed after Phase 4 | Deferred through Phases 1-3 because the legacy file dominated the tree; run once the migration landed, as planned | `.planning/CODEBASE.md` + `.planning/codebase/` — refreshed at `3288223` (54 chunks, 125 symbols, fingerprint `29353e65f863b7d1`) once `legacy/` was deleted |
 | Workflow: Autonomous / Standard depth / Balanced cost | Matches the developer's stated by-feel working style; deep analysis already lives in the exploration doc | Opus 5 orchestrates; Sonnet 5 and Haiku 4.5 do delegated work |
 
 ## Architecture Influences

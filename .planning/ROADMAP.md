@@ -5,7 +5,7 @@
 - [x] **Phase 1: Foundation & Contract** — scaffold, Docker, and the shared World Voice contract
 - [x] **Phase 2: Backend & World Voice** — three routes on the official SDK, structured outputs, caching verified
 - [x] **Phase 3: Frontend Port** — components, screens, game logic, saves
-- [ ] **Phase 4: Parity & Verification** — end-to-end playthrough, constraint audit, doc updates
+- [x] **Phase 4: Parity & Verification** — end-to-end playthrough, constraint audit, doc updates
 
 ## Phase Details
 
@@ -64,7 +64,11 @@ structure don't permit fewer. Architecture chosen from three competing proposals
 - `CLAUDE.md` updated: model split recorded, stale "auth is an OPEN DECISION" note pointed at its resolution in `MIGRATION-PLAN.md`
 - `design-decisions-log.md` updated: the Opus 5 model split and its rationale, plus the correction that `determineUniqueSkill` sends no `system` param at all (the log currently says only that it lacks `WORLD_LORE`)
 - `legacy/souldbound-world.jsx` deleted once parity is confirmed (git history preserves it)
-**Plans**: 3
+**Plans**: 6 (planned 2026-09-18 — revised up from 3. R16 turned out to be already satisfied by
+Phase 2's `contract.test.ts` and Phase 3's save round-trip tests, so it became a verification plan;
+but R15's real scope (CLAUDE.md's stale "OPEN DECISION" auth heading, and a design log with zero
+mentions of the model split), the retro's committed-Playwright-guard item, and the 69 legacy
+citations that deletion would strand each earned their own plan. Only one plan spends money.)
 
 ## Progress
 
@@ -72,6 +76,6 @@ structure don't permit fewer. Architecture chosen from three competing proposals
 |-------|-------|-----------|--------|
 | 1. Foundation & Contract | 6 | 6 | **Shipped** 2026-09-17 — review passed (2 cycles) · [PR #1](https://github.com/DeanItServices/soulbound/pull/1) |
 | 2. Backend & World Voice | 5 | 5 | **Shipped** 2026-09-17 — review passed (3 cycles) · [PR #1](https://github.com/DeanItServices/soulbound/pull/1) |
-| 3. Frontend Port | 10 | 10 | **Shipped** 2026-09-18 — review passed (2 cycles, 3-reviewer panel) · [PR #2](https://github.com/DeanItServices/soulbound/pull/2) |
-| 4. Parity & Verification | 3 | 0 | Not started |
-| **Total** | **24** | **21** | 88% |
+| 3. Frontend Port | 10 | 10 | **Shipped** 2026-09-18 — review passed (2 cycles, 3-reviewer panel) · [PR #2](https://github.com/DeanItServices/soulbound/pull/2) (merged) |
+| 4. Parity & Verification | 6 | 6 | **Shipped** 2026-09-18 — review passed (3 cycles, 3-reviewer panel) · [PR #3](https://github.com/DeanItServices/soulbound/pull/3) |
+| **Total** | **27** | **27** | 100% |

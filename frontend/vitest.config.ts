@@ -28,6 +28,13 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     // Same defense in depth as the backend: never pick up a built copy of a
     // test out of dist/ alongside its own source file.
-    exclude: ['**/node_modules/**', '**/dist/**'],
+    //
+    // `e2e/**` is excluded because this list REPLACES Vitest's default
+    // excludes rather than extending them, and Vitest's default `include`
+    // matches any `*.spec.ts`. Without this line `vitest run` picks up
+    // e2e/smoke.spec.ts, tries to execute Playwright's runner inside jsdom and
+    // fails the whole suite. `npm test` stays fast and jsdom-only; the browser
+    // suite runs under the separate `test:e2e` script (plan 04-03).
+    exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
   },
 });

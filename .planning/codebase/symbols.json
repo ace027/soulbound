@@ -1,0 +1,388 @@
+{
+  "map_schema_version": 1,
+  "generated_at": "2026-09-18",
+  "analyzed_commit": "32882234ac659e7fa19cb91cbb6ddf3057477315",
+  "symbol_count": 125,
+  "symbols": {
+    "ALLOWED_HOSTS": [
+      "backend/src/config.ts"
+    ],
+    "ActionBar": [
+      "frontend/src/components/ActionBar.tsx"
+    ],
+    "ActionBarProps": [
+      "frontend/src/components/ActionBar.tsx"
+    ],
+    "ApiClientError": [
+      "frontend/src/lib/api.ts"
+    ],
+    "ApiClientErrorCode": [
+      "frontend/src/lib/api.ts"
+    ],
+    "App": [
+      "frontend/src/App.tsx"
+    ],
+    "AppConfig": [
+      "backend/src/server.ts"
+    ],
+    "ApplyWorldUpdateResult": [
+      "frontend/src/game/applyWorldUpdate.ts"
+    ],
+    "CONTRACT_FIELD_NAMES": [
+      "shared/src/worldVoice.ts"
+    ],
+    "CallWorldVoiceArgs": [
+      "backend/src/anthropic.ts"
+    ],
+    "Character": [
+      "shared/src/gameState.ts"
+    ],
+    "FRONTEND_ORIGIN": [
+      "backend/src/config.ts"
+    ],
+    "GameState": [
+      "shared/src/gameState.ts"
+    ],
+    "IntroSceneRequest": [
+      "frontend/src/lib/api.ts"
+    ],
+    "IntroSceneRequestBody": [
+      "backend/src/routes/introScene.ts"
+    ],
+    "IntroSceneRequestSchema": [
+      "backend/src/routes/introScene.ts"
+    ],
+    "LoadingScreen": [
+      "frontend/src/screens/LoadingScreen.tsx"
+    ],
+    "LoadingScreenProps": [
+      "frontend/src/screens/LoadingScreen.tsx"
+    ],
+    "LogEntry": [
+      "shared/src/gameState.ts"
+    ],
+    "MAX_LOG_SAVED": [
+      "shared/src/gameState.ts"
+    ],
+    "MAX_NARRATIVE_NOTES": [
+      "shared/src/gameState.ts"
+    ],
+    "MOBILE_BREAKPOINT": [
+      "frontend/src/hooks/useIsMobile.ts"
+    ],
+    "MODELS": [
+      "backend/src/config.ts"
+    ],
+    "NarrativeEntity": [
+      "shared/src/worldVoice.ts"
+    ],
+    "NarrativeEntitySchema": [
+      "shared/src/worldVoice.ts"
+    ],
+    "NarrativeMemory": [
+      "shared/src/gameState.ts"
+    ],
+    "NarrativeMemoryUpdates": [
+      "shared/src/worldVoice.ts"
+    ],
+    "NarrativeMemoryUpdatesSchema": [
+      "shared/src/worldVoice.ts"
+    ],
+    "NewSkillGranted": [
+      "shared/src/worldVoice.ts"
+    ],
+    "NewSkillGrantedSchema": [
+      "shared/src/worldVoice.ts"
+    ],
+    "PORT": [
+      "backend/src/config.ts"
+    ],
+    "Phase": [
+      "frontend/src/App.tsx"
+    ],
+    "QUESTIONS": [
+      "frontend/src/data/questions.ts"
+    ],
+    "Question": [
+      "shared/src/gameState.ts"
+    ],
+    "QuestionnaireAnswers": [
+      "shared/src/gameState.ts"
+    ],
+    "QuestionnaireScreen": [
+      "frontend/src/screens/QuestionnaireScreen.tsx"
+    ],
+    "QuestionnaireScreenProps": [
+      "frontend/src/screens/QuestionnaireScreen.tsx"
+    ],
+    "RACES": [
+      "frontend/src/data/races.ts"
+    ],
+    "Race": [
+      "shared/src/gameState.ts"
+    ],
+    "RaceIntrinsic": [
+      "shared/src/gameState.ts"
+    ],
+    "RaceScreen": [
+      "frontend/src/screens/RaceScreen.tsx"
+    ],
+    "RaceScreenProps": [
+      "frontend/src/screens/RaceScreen.tsx"
+    ],
+    "SAVE_INDEX_KEY": [
+      "shared/src/gameState.ts"
+    ],
+    "SAVE_PREFIX": [
+      "shared/src/gameState.ts"
+    ],
+    "SAVE_SCHEMA_VERSION": [
+      "shared/src/gameState.ts"
+    ],
+    "SaveIndexEntry": [
+      "shared/src/gameState.ts"
+    ],
+    "SaveSlot": [
+      "shared/src/gameState.ts"
+    ],
+    "SimulationScreen": [
+      "frontend/src/screens/SimulationScreen.tsx"
+    ],
+    "SimulationScreenProps": [
+      "frontend/src/screens/SimulationScreen.tsx"
+    ],
+    "Skill": [
+      "shared/src/gameState.ts"
+    ],
+    "SkillCard": [
+      "frontend/src/components/SkillCard.tsx"
+    ],
+    "SkillCardProps": [
+      "frontend/src/components/SkillCard.tsx"
+    ],
+    "SkillEvolution": [
+      "shared/src/worldVoice.ts"
+    ],
+    "SkillEvolutionSchema": [
+      "shared/src/worldVoice.ts"
+    ],
+    "SkillMasteryChange": [
+      "shared/src/worldVoice.ts"
+    ],
+    "SkillMasteryChangeSchema": [
+      "shared/src/worldVoice.ts"
+    ],
+    "SkillTier": [
+      "shared/src/worldVoice.ts"
+    ],
+    "SkillTierSchema": [
+      "shared/src/worldVoice.ts"
+    ],
+    "SoulCodexContents": [
+      "frontend/src/components/SoulCodexContents.tsx"
+    ],
+    "SoulCodexContentsProps": [
+      "frontend/src/components/SoulCodexContents.tsx"
+    ],
+    "SoulRewriteEntry": [
+      "shared/src/gameState.ts"
+    ],
+    "StateUpdates": [
+      "shared/src/worldVoice.ts"
+    ],
+    "StateUpdatesSchema": [
+      "shared/src/worldVoice.ts"
+    ],
+    "SubAbility": [
+      "shared/src/gameState.ts"
+    ],
+    "TIER_STYLE": [
+      "shared/src/gameState.ts"
+    ],
+    "TitleScreen": [
+      "frontend/src/screens/TitleScreen.tsx"
+    ],
+    "TitleScreenProps": [
+      "frontend/src/screens/TitleScreen.tsx"
+    ],
+    "UNIQUE_SKILL_JSON_SCHEMA": [
+      "shared/src/worldVoice.ts"
+    ],
+    "UNTRUSTED_TAGS": [
+      "backend/src/untrustedText.ts"
+    ],
+    "UniqueSkillDetermination": [
+      "shared/src/worldVoice.ts"
+    ],
+    "UniqueSkillDeterminationSchema": [
+      "shared/src/worldVoice.ts"
+    ],
+    "UniqueSkillOrigin": [
+      "shared/src/gameState.ts"
+    ],
+    "UniqueSkillRequest": [
+      "frontend/src/lib/api.ts"
+    ],
+    "UniqueSkillRequestBody": [
+      "backend/src/routes/uniqueSkill.ts"
+    ],
+    "UniqueSkillRequestSchema": [
+      "backend/src/routes/uniqueSkill.ts"
+    ],
+    "UniqueSubAbility": [
+      "shared/src/worldVoice.ts"
+    ],
+    "UniqueSubAbilitySchema": [
+      "shared/src/worldVoice.ts"
+    ],
+    "UntrustedTag": [
+      "backend/src/untrustedText.ts"
+    ],
+    "WORLD_LORE": [
+      "backend/src/data/worldLore.ts"
+    ],
+    "WORLD_SYSTEM_PROMPT": [
+      "backend/src/data/worldSystemPrompt.ts"
+    ],
+    "WORLD_VOICE_JSON_SCHEMA": [
+      "shared/src/worldVoice.ts"
+    ],
+    "WorldEngineRequest": [
+      "frontend/src/lib/api.ts"
+    ],
+    "WorldEngineRequestBody": [
+      "backend/src/routes/worldEngine.ts"
+    ],
+    "WorldEngineRequestSchema": [
+      "backend/src/routes/worldEngine.ts"
+    ],
+    "WorldEvent": [
+      "shared/src/worldVoice.ts"
+    ],
+    "WorldEventSchema": [
+      "shared/src/worldVoice.ts"
+    ],
+    "WorldLog": [
+      "frontend/src/components/WorldLog.tsx"
+    ],
+    "WorldLogProps": [
+      "frontend/src/components/WorldLog.tsx"
+    ],
+    "WorldVoiceCallError": [
+      "backend/src/anthropic.ts"
+    ],
+    "WorldVoiceErrorCode": [
+      "backend/src/anthropic.ts"
+    ],
+    "WorldVoiceResponse": [
+      "shared/src/worldVoice.ts"
+    ],
+    "WorldVoiceResponseSchema": [
+      "shared/src/worldVoice.ts"
+    ],
+    "WorldVoiceRoute": [
+      "backend/src/anthropic.ts"
+    ],
+    "applyWorldUpdate": [
+      "frontend/src/game/applyWorldUpdate.ts"
+    ],
+    "assertWorldVoiceContract": [
+      "shared/src/worldVoice.ts"
+    ],
+    "buildApp": [
+      "backend/src/server.ts"
+    ],
+    "buildSystemBlocks": [
+      "backend/src/anthropic.ts"
+    ],
+    "callWorldEngine": [
+      "frontend/src/lib/api.ts"
+    ],
+    "callWorldVoice": [
+      "backend/src/anthropic.ts"
+    ],
+    "defineConfig": [
+      "backend/vitest.config.ts",
+      "frontend/playwright.config.ts",
+      "frontend/vite.config.ts",
+      "frontend/vitest.config.ts"
+    ],
+    "deleteSave": [
+      "frontend/src/lib/saves.ts"
+    ],
+    "determineUniqueSkill": [
+      "frontend/src/lib/api.ts"
+    ],
+    "extractContractFieldPaths": [
+      "shared/src/worldVoice.ts"
+    ],
+    "extractPromptContractFieldPaths": [
+      "shared/src/worldVoice.ts"
+    ],
+    "fmtDate": [
+      "frontend/src/lib/saves.ts"
+    ],
+    "generateIntroScene": [
+      "frontend/src/lib/api.ts"
+    ],
+    "getAnthropicApiKey": [
+      "backend/src/config.ts"
+    ],
+    "isHostAllowed": [
+      "backend/src/server.ts"
+    ],
+    "listSaves": [
+      "frontend/src/lib/saves.ts"
+    ],
+    "loadSave": [
+      "frontend/src/lib/saves.ts"
+    ],
+    "main": [
+      "backend/src/server.ts"
+    ],
+    "newSlotId": [
+      "frontend/src/lib/saves.ts"
+    ],
+    "redact": [
+      "backend/src/config.ts"
+    ],
+    "renderIntroScenePrompt": [
+      "backend/src/routes/introScene.ts"
+    ],
+    "renderUniqueSkillPrompt": [
+      "backend/src/routes/uniqueSkill.ts"
+    ],
+    "renderWorldEnginePrompt": [
+      "backend/src/routes/worldEngine.ts"
+    ],
+    "router": [
+      "backend/src/routes/introScene.ts",
+      "backend/src/routes/uniqueSkill.ts",
+      "backend/src/routes/worldEngine.ts"
+    ],
+    "sharedBg": [
+      "frontend/src/screens/sharedBg.ts"
+    ],
+    "stripDelimiters": [
+      "backend/src/untrustedText.ts"
+    ],
+    "stubCallWorldEngine": [
+      "frontend/src/lib/apiStub.ts"
+    ],
+    "stubDetermineUniqueSkill": [
+      "frontend/src/lib/apiStub.ts"
+    ],
+    "stubGenerateIntroScene": [
+      "frontend/src/lib/apiStub.ts"
+    ],
+    "useIsMobile": [
+      "frontend/src/hooks/useIsMobile.ts"
+    ],
+    "wrapUntrusted": [
+      "backend/src/untrustedText.ts"
+    ],
+    "writeSave": [
+      "frontend/src/lib/saves.ts"
+    ]
+  }
+}

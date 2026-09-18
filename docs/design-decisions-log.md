@@ -1,6 +1,6 @@
 # The Soulbound Chronicles — Design Decisions Log
 
-This document captures *why* the system is built the way it is, not just what it does. The code (soulbound-world.jsx) is the source of truth for current behavior — this file exists so future changes don't accidentally undo deliberate tradeoffs.
+This document captures *why* the system is built the way it is, not just what it does. The migrated app — `frontend/`, `backend/`, `shared/` — is the source of truth for current behavior; the original `legacy/souldbound-world.jsx` artifact (note the spelling — the original filename transposed two letters) was retired at the end of Phase 4 (see "Legacy artifact retired" below). This file exists so future changes don't accidentally undo deliberate tradeoffs.
 
 ## Core Concept
 A Tensura-inspired (Tensei Shitara Slime Datta Ken) text RPG where Claude acts as "The World Voice" — an AI game master running an entire original fantasy world (Vaeltharion) inside a single React artifact, calling the Anthropic API directly from the browser. Skills are "remembered by the soul" rather than learned — power emerges from who a character is and what they do, not from leveling mechanics in the traditional sense.
@@ -82,9 +82,21 @@ The world previously had only a sketch (6 kingdoms, 8 races) with no authored ba
 
 **Bug found and fixed during this change:** `generateIntroScene()` was previously concatenating `WORLD_SYSTEM_PROMPT` directly into the user-role prompt string instead of passing it via the `system` parameter — meaning it never benefited from caching even before `WORLD_LORE` existed, and would have had no path to receive `WORLD_LORE` at all without this fix. It now uses `buildSystemBlocks()` the same way `callWorldEngine()` does.
 
-**Deliberately left out of lore access:** `determineUniqueSkill()` was NOT given access to `WORLD_LORE`. Its job is soul-reading from questionnaire answers, not world-consistency, and keeping it lore-blind keeps that call cheap and focused. This was an explicit choice, not an oversight — flagged and confirmed with the user before implementation.
+**Deliberately left out of system access entirely — not just lore access (corrected):** this was previously recorded as "`determineUniqueSkill()` was NOT given access to `WORLD_LORE`," which understates what the code actually does. The call sends **no `system` parameter at all** — not `WORLD_LORE`, not `WORLD_SYSTEM_PROMPT`, no system blocks of any kind. `backend/src/routes/uniqueSkill.ts:169` passes `useSystem: false`, and `backend/src/anthropic.ts:471` applies it as a conditional spread that omits the `system` key from the request object rather than sending `system: undefined` — a materially different request shape, and the distinction is pinned by a test at `backend/src/__tests__/anthropic.test.ts:286-293` asserting `'system' in request === false`. So the property to preserve is system-blind, which is strictly stronger than lore-blind. The reasoning is unchanged: its job is soul-reading from questionnaire answers, not world-consistency, and sending it neither block keeps the call cheap, focused, and byte-identical to the prompt that survived the Tier 0 adversarial tests below. This was an explicit choice, not an oversight — flagged and confirmed with the user before implementation.
 
-**Verification note:** cache behavior should be confirmed in live testing by checking for `cache_creation_input_tokens` / `cache_read_input_tokens` in the API response on the second call onward. If caching silently isn't engaging, the app still functions correctly — it just won't see the token savings — so this is worth checking but isn't a functional blocker.
+**Verification note:** cache behavior should be confirmed in live testing by checking for `cache_creation_input_tokens` / `cache_read_input_tokens` in the API response on the second call onward. If caching silently isn't engaging, the app still functions correctly — it just won't see the token savings — so this is worth checking but isn't a functional blocker. (This has since been confirmed live — see the model split below.)
+
+## Model Split — Sonnet 5 for soul-reading, Opus 5 for the world
+
+**This reverses the earlier all-Sonnet decision, and the reversal was the point.** The migration originally put every World Voice call on one Sonnet model, on the reasoning that one model everywhere is one fewer thing to keep consistent. It no longer holds: the world engine loop and intro scene generation run on `claude-opus-5`, and only `determineUniqueSkill()` stays on `claude-sonnet-5`. This was flagged *as a reversal of a logged decision* before it was made, and the developer chose it deliberately with that in front of them. A later session that finds "all Sonnet" in an older note is looking at superseded material, not at drift to correct back. Model IDs live in exactly one place — `backend/src/config.ts`'s `MODELS` — never as a literal at a call site, so the split can't quietly diverge per route.
+
+**Intro scene joined Opus 5 for the cache, not for the prose.** Prompt caches are scoped to a model. `callWorldEngine()` and `generateIntroScene()` send byte-identical system blocks (see "Prompt Caching" above), so on the *same* model they share one cache namespace and whichever call arrives second reads back what the first wrote. Split across two models, each writes into its own namespace and neither ever reads the other's — the intro scene would have paid full price for a prefix the world engine had already cached, and the write it made would have been stranded in the Sonnet namespace where nothing else could ever read it. That is the same shape of waste as the `generateIntroScene()` system-parameter bug recorded above, just moved from the prompt layer down to the model layer. So "the two Opus routes must stay on the same model" is a cache-economics constraint, not a quality preference.
+
+**It was measured, not assumed.** In the live run on 2026-09-17: the first world-engine call wrote the prefix (`cache_creation_input_tokens` 15,132), the second world-engine call read exactly 15,132 back, and then the intro-scene call — a different route — read the same 15,132 from the same namespace. The cross-route read is the part that had never been tested and is the specific evidence the shared namespace exists.
+
+**The 15,132 figure is now stale; the shape it proves is not.** Two lines were later added to `WORLD_SYSTEM_PROMPT` (the prompt-injection data-not-instructions rule and the `state_updates.world_events` shape spec in RESPONSE FORMAT), and that block sits inside the cached prefix, so the token count has moved. Re-deriving it is free — `POST /v1/messages/count_tokens` isn't billed — while re-proving that caching *engages* costs real API calls. Re-measured live in Phase 4 at **15,490** (`.planning/phases/04-parity-verification/evidence/usage-lines.log`), with the direction reversed: intro-scene wrote the prefix and the world-engine calls read it, so the shared namespace is now observed in both directions. So: quote 15,490, re-derive with `count_tokens` if the prompt changes again, and don't spend money re-running the proof. Write-once-then-read-thereafter, shared across the two Opus routes, is the property that matters, and editing a prompt doesn't change it.
+
+**`determineUniqueSkill()` stays on Sonnet 5, and that is also deliberate.** It is the adversarially stress-tested surface (see "Tier 0 stress tests" below), and that testing note already warns that the resilience observed there is partly a property of the model's training rather than purely the prompt's wording — so moving this call to another model is a decision to re-run those tests, not a free swap. It also has nothing to gain from the Opus routes' warm cache: it sends no `system` parameter at all, so it has no cached prefix to share with anything (see the correction above).
 
 ## Questionnaire Design
 Originally multiple-choice (5 options per question). Changed to fully open-ended free-text per the explicit reasoning that richer, longer answers produce a better-defined Unique Skill before the player ever enters the world. Each question has a `hint` line for guidance but no character limit. The Continue button is disabled until something is written, with a Back button to revise prior answers.
@@ -114,12 +126,65 @@ Desktop uses a fixed side-by-side layout (240px Soul Codex sidebar + flexible Wo
 
 **Known flexbox bug pattern, already fixed once, worth remembering**: a scrollable region needs `min-height: 0` on every flex ancestor in the chain, or content can overflow the container instead of triggering scroll — this is a non-obvious CSS flexbox trap (flex children default to `min-height: auto`) and caused a real bug where the Soul Codex panel's "All Skills" section couldn't be scrolled to past the Unique Skill card. Also: a React Fragment (`<>...</>`) is not a real DOM element, so applying flex/overflow properties expecting it to act as a scroll container will not work — wrap shared sub-components in an actual `<div>` if they need their own scroll behavior.
 
-## Architecture Constraints Discovered
+## Legacy artifact retired
+
+`legacy/souldbound-world.jsx` — the original 1,440-line Claude.ai artifact — was deleted at the
+close of Phase 4, once parity was confirmed against a live playthrough (R14: real backend, real
+models, cross-route cache read observed, save/reload/load verified field by field).
+
+**It served as the parity oracle for four phases and is still readable.** The content is preserved
+in git history at commit **`3d01fa5`**, the last commit containing it (also tagged `parity-oracle`, though that tag is not yet on the remote — see the note below):
+
+```
+# Works in any clone that has this branch — 3d01fa5 is one of its ancestors:
+git show 3d01fa5:legacy/souldbound-world.jsx            # read it
+git show 3d01fa5:legacy/souldbound-world.jsx | sed -n '913,1031p'   # a cited range
+
+# Preferred once the tag is pushed — it is LOCAL-ONLY today, see the note below:
+# git show parity-oracle:legacy/souldbound-world.jsx
+```
+
+**Why this note exists.** 25 migrated source files carry 69 citations of the form `legacy 787-802`
+or `legacy 1022-1027` in their docstrings (files: `grep -rl 'legacy [0-9]\|legacy/souldbound' frontend/src shared/src backend/src | wc -l` → 25;
+citations: `grep -rhoE 'legacy [0-9]+(-[0-9]+)?' frontend/src shared/src | wc -l` → 69 — the two
+commands deliberately use different scopes, so neither number reproduces the other). Those citations are
+load-bearing documentation — they are how a reader learns that `autoSave`-inside-`setLog` is
+deliberate, that `|| 5` is a falsy-coalesce on purpose, that the dead `changed` Set is kept for
+fidelity. They were deliberately **not** rewritten to name the SHA inline: that would have churned
+the docstrings of every ported file at phase close, a large diff with real risk and no behavioural
+gain. They resolve against the command above instead.
+
+**Residual risk, stated rather than discovered later.** Parity was confirmed against the criteria
+ROADMAP names, but several behaviours were never exercised live and the artifact was the oracle for
+them: Soul Rewrite, the 80-entry log cap, the 40-note memory cap, and sub-ability emergence actually
+*firing* at 25/60/100 (the live run only confirmed it correctly does not fire below 25). If one of
+those turns out to have drifted, the comparison is `git show 3d01fa5:legacy/souldbound-world.jsx`,
+not a lost file.
+
+> **The `parity-oracle` tag is local-only right now.** It could not be pushed from the environment
+> that created it (`git push origin parity-oracle` fails with `remote end hung up`; the branch pushes
+> fine, so it is a tag-ref permission, not a network fault). **Until someone pushes it**, a fresh
+> clone has no such tag and must use the raw SHA, which IS on the pushed branch:
+> `git show 3d01fa5:legacy/souldbound-world.jsx`. Pushing the tag is worth doing — see the rationale
+> below — but the SHA is what works today.
+
+The tag exists because a bare SHA is not a durable handle in *this* repo specifically: every commit
+was re-SHA'd once already by a `rebase --exec ... --reset-author` (`.planning/STATE.md` records it),
+and an unreferenced commit is garbage-collectable. A tag keeps the object reachable and survives
+rewrites of later history. Sixty-nine citations depend on it.
+
+## Architecture Constraints Discovered (artifact era — superseded)
+
+> **Historical.** Both constraints below were real inside the Claude.ai artifact and are no longer
+> true of this app. The backend now holds the key (see `CLAUDE.md`'s auth section), and Phase 4 ran
+> a live end-to-end playthrough from the sandbox against the real models — the exact self-test the
+> first bullet says is impossible. Kept as the record of why the migration happened.
+
 - This sandbox's bash tool CAN reach `api.anthropic.com` over the network (it's allowlisted), but has no `x-api-key` credential — authenticated calls only work from inside the artifact's own browser runtime, where Anthropic injects auth automatically tied to the user's account/session. This means Claude cannot self-test the live API from outside the artifact; live testing requires the user to run the artifact and relay results back.
 - If this artifact is shared/published, it will run under whichever Claude account opens it — API usage is billed to the viewer, not the original creator. This is a crude form of "bring your own Claude account" rather than true BYOK or a real distribution/monetization model.
 
 ## Product Direction (for context on long-term architecture decisions)
-- **Current phase**: solo artifact experience, Anthropic API via the artifact's built-in auth, localStorage saves, single-player only.
+- **Phase at time of writing**: solo artifact experience, Anthropic API via the artifact's built-in auth, localStorage saves, single-player only. **Now**: the API key is held by the backend and read from the environment; `localStorage` saves and single-player are unchanged.
 - **Monetization paths considered** (not yet built): BYOK (zero cost to creator, high friction), credit/token economy (requires backend + auth + Stripe), flat subscription (cleanest UX, requires same backend), or eventually a persistent shared multiplayer world.
 - **Long-term hardware vision**: a 3-node cluster of AMD Ryzen AI Max 395+ mini PCs (128GB unified memory each, ~384GB total across the cluster) for self-hosted local inference, eventually running the persistent shared-world version where player actions have lasting cross-player consequences (a dungeon one player clears stays cleared for others, etc.). Likely stack: Ollama/llama.cpp/vLLM with ROCm backend, Ray or simple Nginx load balancing for clustering, Postgres for world state, Llama 3.3 70B or Mistral as candidate local models. This is explicitly a future-phase vision, not a near-term build — sequencing was agreed as: validate the solo product first, then add a single local node for dev/testing, then scale to the full cluster once concurrent users justify it.
 - **Fine-tuning**: discussed as a later-stage tool (LoRA/QLoRA via Unsloth or Axolotl) for if/when a local model breaks World Voice behavior (JSON discipline, staying in-world) in ways prompt engineering alone can't fix — explicitly NOT needed yet since the Anthropic-API-backed version is working well.

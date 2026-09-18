@@ -37,13 +37,31 @@ docker compose up
   - `PROJECT-BACKGROUND.md` — full vision and roadmap
   - `MIGRATION-PLAN.md` — current migration state
   - `design-decisions-log.md` — detailed rationale for game systems
-- **`legacy/`** — Original single-file artifact (`souldbound-world.jsx`, 1,440 lines) retained as a parity reference during migration
 - **`package.json`** — Monorepo root with workspace declarations
 - **`tsconfig.base.json`** — Shared TypeScript configuration
 
-## Legacy Artifact
+## Legacy Artifact — retired
 
-`legacy/souldbound-world.jsx` is the pre-migration artifact—a complete, playable game in 1,440 lines of React. It serves as the parity oracle for this migration. No game behavior changes unless explicitly requested; this repo validates that migration produces identical gameplay under the new architecture.
+`legacy/souldbound-world.jsx` was the pre-migration artifact: a complete, playable game in 1,440
+lines of React, and the parity oracle for this migration. **It was deleted at the close of Phase 4**,
+once parity had been confirmed against a live end-to-end playthrough. The directory no longer exists.
+
+Docstrings across `frontend/src` and `shared/src` still cite it by line number (`legacy 787-802`,
+`legacy 1022-1027`, and 67 others). Those citations still resolve — read the file from the tag:
+
+```bash
+# The SHA is on the pushed branch, so this works in any clone that has it:
+git show 3d01fa5:legacy/souldbound-world.jsx                        # the whole file
+git show 3d01fa5:legacy/souldbound-world.jsx | sed -n '1022,1027p'  # a cited range
+
+# Preferred once the tag is pushed (it is local-only today — see the design log):
+git show parity-oracle:legacy/souldbound-world.jsx
+```
+
+See `docs/design-decisions-log.md` → "Legacy artifact retired" for the full reasoning.
+
+No game behavior changes unless explicitly requested; this repo validates that migration produces
+identical gameplay under the new architecture.
 
 ## Architecture
 

@@ -1,17 +1,40 @@
 # Project State
 
 ## Current Position
-- **Phase**: 3 of 4 (complete)
-- **Status**: Phase 3 shipped — 10 plans, review passed in 2 cycles, PR #2 open against `main`.
-- **Last Activity**: Phase 3 ship (2026-09-18)
+- **Phase**: 4 of 4 (complete)
+- **Status**: **All four phases complete and shipped.** Phase 4 review PASSED after 3 cycles (3-reviewer panel, 29 findings, 0 blockers); shipped as [PR #3](https://github.com/DeanItServices/soulbound/pull/3), 15 commits / 48 files / +4,757−1,474. R13, R14, R15, R16 close. The legacy artifact is deleted — recover it with `git show 3d01fa5:legacy/souldbound-world.jsx` (the `parity-oracle` tag is local-only and cannot be pushed from this environment; the SHA is on the branch and works everywhere).
+  ⚠️ **Correction**: this file previously said PR #2 was "open against `main`". It was **merged** 2026-09-18T01:49Z (head `5147bd8`). That is why Phase 4 needed a new PR rather than additions to #2.
+- **Last Activity**: Phase 4 shipped as PR #3 (2026-09-18)
+- **Next Action**: `/legion:retro` to capture the review's process findings, and `/legion:map --refresh` — deleting `legacy/` changed the codebase fingerprint.
+
+### Two things to carry into any next phase
+1. **A fix is a claim, and carries the same derivation burden as a finding.** All three review cycles
+   closed their findings and each fix commit seeded a new, smaller instance of the same defect class,
+   because findings were derived while fixes were reasoned about.
+2. **Retaining raw evidence pays immediately.** The screenshots committed to close one finding caught
+   a wrong number in the very summary they were filed under, on their first use.
+
+### Known environment limit
+`git push origin <tag>` fails here (`remote end hung up`) while branch pushes succeed — a tag-ref
+permission. Any durability scheme must survive without tags.
 
 ## Progress
 ```
-[██████████████████░░] 88% — 21/24 plans complete
+[████████████████████] 100% — 27/27 plans complete
 ```
 
 ## Ship record
-- **PR #2** — https://github.com/DeanItServices/soulbound/pull/2 (base `main`, head `claude/admiring-wright-hfmugk`)
+- **PR #3** — https://github.com/DeanItServices/soulbound/pull/3 (base `main`, head `claude/admiring-wright-hfmugk`)
+  Phase 4 — 15 commits, 48 files, +4,757/−1,474. Pre-ship gate **6/6**, the first phase where gate 3a
+  (build completeness) holds as literally specified: all 6 plans produced SUMMARY.md files, which was
+  retro AI-6's purpose. Tests 115 backend + 139 frontend + 5 e2e, three typechecks clean, build clean,
+  working tree clean, review PASSED (3 cycles).
+  ⚠️ **Not rebased, deliberately.** `3d01fa5` is referenced 9 times across README, the design log, the
+  constraint audit and this file — it is the recovery handle for 69 legacy citations. A rebase rewrites
+  it and silently breaks the recovery path. The branch descends cleanly from PR #2's merged head
+  (`5147bd8` is an ancestor) and `main` carries no independent work, so there is no conflict to resolve.
+
+- **PR #2** — https://github.com/DeanItServices/soulbound/pull/2 — **MERGED** 2026-09-18T01:49Z (head `5147bd8`)
   Phase 3 — 14 commits, 46 files, +7,653/-28. Pre-ship gate: tests 237/237, shared+backend+frontend
   builds clean, working tree clean, review PASSED (2 cycles).
   ⚠️ **PR #1 was already merged** (`38cb2c9`, head `eed43ec`), so this is a NEW pull request — a
@@ -36,7 +59,11 @@
 
 ## Recent Decisions
 - **Design source**: `.planning/explorations/2026-09-17-soulbound-artifact-to-app-design.md` (committed `e56f400`)
-- **Codebase map**: skipped — this session produced a more detailed structural map of the single legacy file than a generic indexer would, and that file is about to be deleted. Run `/legion:map` after the migration, against `frontend/` + `backend/` + `shared/`.
+- **Codebase map**: ✅ refreshed 2026-09-18 at commit `3288223` — `.planning/CODEBASE.md` plus the
+  `.planning/codebase/` dataset (**54 chunks, 125 symbols, fingerprint `29353e65f863b7d1`**).
+  The Phase 4 invalidation is resolved: `legacy/souldbound-world.jsx` is deleted and no longer
+  indexed, and the map now covers the Playwright e2e domain and the three new constraint guards.
+  Previous dataset was `8a9f165` / `55cdb963eeca5ba7`.
 - **Scope**: full migration to playable, not a scaffold or vertical slice
 - **Language**: TypeScript both sides; the World Voice contract lives in `shared/` so prompt/parser drift becomes a compile error
 - **JSON contract**: structured outputs (`output_config.format`), field names unchanged
@@ -47,7 +74,46 @@
 
 ## Next Action
 
-**Phase 3 is shipped** ([PR #2](https://github.com/DeanItServices/soulbound/pull/2)). Run `/legion:plan 4` to plan Parity & Verification.
+**Phase 4 is planned** — 6 plans across 4 waves. Run `/legion:build` to execute it.
+
+### Phase 4 Plans
+| Plan | Wave | Deliverable | Agent | Cost |
+|---|---|---|---|---|
+| 01 | 1 | R13 — eight-constraint audit; corrects R13's own "seven" | QA Verification | free |
+| 02 | 1 | R16 — close with evidence from the existing suite | Test Results Analyzer | free |
+| 03 | 1 | Retro AI-5 — committed Playwright smoke test | Frontend Dev | free |
+| 04 | 2 | R15 — CLAUDE.md auth note; design-log model split | Technical Writer | free |
+| 05 | 3 | R14 — live playthrough + cache proof | orchestrator | **~$0.25** |
+| 06 | 4 | Legacy deletion + 69 citations + cross-plan re-verification | orchestrator | free |
+
+Wave 1's three plans are file-disjoint (verified) and run in parallel. **Only plan 05 spends
+money**, isolated so the phase completes without a key — in which case R14 is reported UNTESTED.
+
+### Five facts derived while planning that revised ROADMAP's 3-plan estimate
+1. **R16 is already satisfied.** `backend/src/__tests__/contract.test.ts` has all five cases R16
+   asks for (valid passes; rename, missing field and unparseable JSON each throw loudly), and save
+   round-trip tests exist at `saves.test.ts:163`. R16 became a verification plan, not a build plan.
+2. **R13's text is stale**: PROJECT.md:38 says "seven" constraints; CLAUDE.md has **eight**. The
+   audit covers 8 and 04-01 corrects the wording.
+3. **R15 is half-done and half-wrong**: CLAUDE.md:49-54 already records the model split, but
+   CLAUDE.md:63 still says auth is an "OPEN DECISION, resolve before scaffolding a backend" — the
+   backend is shipped and merged. And `docs/design-decisions-log.md` has **zero** occurrences of
+   "opus" or "sonnet"; the split was never logged there at all.
+4. **Deleting legacy breaks 69 citations across 25 files** (`grep -rhoE 'legacy [0-9]+(-[0-9]+)?'`).
+   Git history preserves the file; the docstring references stop resolving. 04-06 decides this
+   before deleting, not after.
+5. **R14's two blockers are already diagnosed** — the `SOULBOUND_ANTHROPIC_KEY` env var and the CA
+   mount for containerized calls. Both are written into 04-05 so they are not rediscovered.
+
+### Planning-gate decisions
+- **The inherited `currentSlotId` closure race stays unfixed** — offered at the gate and declined.
+  It is legacy 913-1031 behaviour, so fixing it would deviate from the artifact. Recorded as a
+  decision, not an oversight. A plan that "helpfully" repairs it is reversing a developer call.
+- **Every Phase 4 plan writes a `SUMMARY.md`** (retro AI-6). Three phases recorded outcomes only in
+  commit messages, which is why the ship gate's build-completeness check could not hold as
+  specified. That ends this phase.
+- Architecture proposals and the spec pipeline skipped — this is a verification phase against
+  already-shipped code, not a design problem.
 
 ### Phase 3 execution record
 | Plan | Wave | Commit |

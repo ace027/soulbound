@@ -27,3 +27,24 @@ verification: 6/6 gates passed; 108/108 tests; containerized re-check 1 commit s
 note: Review found 2 blockers, both in code already reported as done — server.ts untested, and a
   security fix that 403'd every API call under Compose while the container reported healthy.
   Lesson: a passing healthcheck does not mean the app is reachable the way users reach it.
+
+## Phase 4 — Shipped 2026-09-18
+task_type: ship
+agent: ship-pipeline
+result: success
+pr: https://github.com/DeanItServices/soulbound/pull/3
+verification: 6/6 gates passed; 115 backend + 139 frontend + 5 e2e; 3 typechecks; build clean
+note: First phase where gate 3a (build completeness) held as specified — all 6 plans wrote
+  SUMMARY.md files, closing retro AI-6. Review took 3 cycles, 29 findings, 0 blockers; every
+  fix commit seeded a smaller instance of the defect it closed, which produced the rule
+  "a fix is a claim, and carries the same derivation burden as a finding".
+
+## Phase 4 — Retrospective 2026-09-18
+task_type: retrospective
+agent: orchestrator
+result: success
+note: 7 of 7 prior action items closed (first time; AI-5 and AI-6 had each been carried).
+  Central new finding: every fix commit seeded a smaller instance of the defect it closed,
+  because findings were derived while fixes were reasoned about. Rule adopted — a fix is a
+  claim, and carries the same derivation burden as a finding.
+

@@ -6,7 +6,7 @@
 Read these before doing substantial work:
 - `docs/PROJECT-BACKGROUND.md` — full project vision, current state, long-term roadmap
 - `docs/design-decisions-log.md` — **why** systems work the way they do. Read before touching skill tiers, mastery thresholds, Soul Rewrite, sub-ability emergence, the save system, or questionnaire design. These are deliberate tradeoffs from real iteration (including adversarial prompt testing), not oversights.
-- `docs/MIGRATION-PLAN.md` — the plan and open decisions for moving from artifact → Dockerized app
+- `docs/MIGRATION-PLAN.md` — the plan for moving from artifact → Dockerized app, and the record of decisions already settled (auth is settled — don't re-open it)
 
 ## Working style for this project
 The developer iterates **by feel**: they test in the running app, describe what feels wrong in plain language, and want you to diagnose root cause and fix it directly — not run a long design discussion before every change. Keep change summaries concise. Put deep rationale in `docs/design-decisions-log.md`, not repeated at length in chat/PR descriptions.
@@ -43,7 +43,7 @@ Before making any change:
 
 7. **World lore facts live in `WORLD_LORE`; behavioral/reveal constraints live in `WORLD_SYSTEM_PROMPT`'s MUST NOT list.** This split was deliberate (lore = static reference material, cacheable; behavior = rules, kept together with other narration rules) — don't merge them back together or split reveal constraints out into the lore block.
 
-8. **`determineUniqueSkill()` is deliberately lore-blind** — it does not receive `WORLD_LORE`. Its job is soul-reading from questionnaire answers, not world-consistency, and this keeps that call cheap and focused. This was an explicit choice, not an oversight — don't "fix" it by adding lore access without confirming first.
+8. **`determineUniqueSkill()` is deliberately system-blind** — it sends **no `system` parameter at all**: not `WORLD_LORE`, not `WORLD_SYSTEM_PROMPT`, no system blocks of any kind. `backend/src/routes/uniqueSkill.ts` passes `useSystem: false`, and `backend/src/anthropic.ts` applies it as a conditional spread that omits the key entirely rather than sending `system: undefined` — a materially different request shape, pinned by `backend/src/__tests__/anthropic.test.ts` asserting `'system' in request === false`. Its job is soul-reading from questionnaire answers, not world-consistency, and sending it neither block keeps that call cheap, focused, and byte-identical to the prompt that survived the Tier 0 adversarial tests. This was an explicit choice, not an oversight — don't "fix" it by giving it *any* system access without confirming first. (Strengthened from "lore-blind" in the Phase 4 review, with the developer's approval: the old wording forbade only lore, so attaching `WORLD_SYSTEM_PROMPT` alone would have read as compliant while changing the validated prompt.)
 
 ## Model & API pattern
 - **Models are split — this is deliberate, and the split is load-bearing.**
@@ -52,7 +52,13 @@ Before making any change:
   Defined in one place, `backend/src/config.ts`'s `MODELS` — never as a literal at a call site.
   **The two Opus routes MUST stay on the same model.** Prompt caches are model-scoped, so
   moving either one off `claude-opus-5` silently strands the other's cache warmth — measured
-  2026-09-17: intro-scene read back the exact 15,132 tokens the world-engine call wrote.
+  twice: 2026-09-17 the intro-scene call read back the exact 15,132 tokens the world-engine call
+  wrote, and 2026-09-18 the same shared namespace was observed in the reverse direction at
+  **15,490** (intro-scene wrote; every subsequent world-engine call read it — five of them, across
+  two sessions, in `.planning/phases/04-parity-verification/evidence/usage-lines.log`). **Quote
+  15,490; 15,132 is the superseded Phase 2 figure.** The number moves whenever
+  `WORLD_SYSTEM_PROMPT` or `WORLD_LORE` changes — re-derive it with `count_tokens`, which is free.
+  The property, not the number, is what this constraint protects.
   `determineUniqueSkill` stays on Sonnet 5 because its prompt is the adversarially-validated
   surface and it sends no system blocks at all, so it has no cache to share (see #8).
   ⚠️ This reverses an older all-Sonnet decision, chosen deliberately by the developer after the
@@ -60,12 +66,13 @@ Before making any change:
 - `WORLD_SYSTEM_PROMPT` and `WORLD_LORE` are both static per playthrough (and across playthroughs) and are sent as separate `system` blocks via a shared `buildSystemBlocks()` helper, with `cache_control: { type: "ephemeral" }` on the `WORLD_LORE` block, so their token cost is paid once via prompt caching rather than on every call.
 - Verify caching is actually engaging (`cache_creation_input_tokens` / `cache_read_input_tokens` in the API response) once this is running in a real environment with visibility into raw responses — this was previously hard to verify from inside an artifact.
 
-## Auth architecture — OPEN DECISION, resolve before scaffolding a backend
-Inside the Claude.ai artifact, calls to `api.anthropic.com` were authenticated automatically by the platform — that doesn't exist in a normal deployed app. Before writing backend code, confirm with the developer which model applies:
-- **Backend proxy holding the developer's own API key** — simplest, developer pays for usage, no per-user key handling.
-- **True BYOK (bring your own key)** — user supplies their own key per session; backend proxies the request through and does not persist the key (matches the "session-only, in-memory" approach already used in the artifact version).
+## Auth architecture — RESOLVED, do not re-litigate
+Inside the Claude.ai artifact, calls to `api.anthropic.com` were authenticated automatically by the platform — that doesn't exist in a normal deployed app. **Resolved: a backend proxy holding the deployer's own Anthropic API key**, read from the `ANTHROPIC_API_KEY` environment variable at startup (`backend/src/config.ts`), which `docker compose` populates from `.env` — a host-run backend needs the variable exported or `--env-file` passed, since nothing loads `.env` into the Node process itself. The key never reaches the browser bundle or any client-side `fetch()`. The backend is built and shipped on this model — don't re-open the question.
+- Usage runs on **Anthropic Console credits**. A Claude Max subscription does *not* include API access; a proxy converting API-key requests into OAuth calls against Max was raised and declined.
+- Deployment shape is **single-tenant self-hosting**: one deployer, one container, their own key, on their own trusted machine. So a self-hosting deployer does bring their own key — via `.env`, not via the UI.
+- **Paste-per-session BYOK** (session-only, in-memory, as in the artifact) is the documented *rejected* alternative, not a fallback to reach for. It assumes an untrusted host, which doesn't match this deployment shape.
 
-Do not default silently to one of these. If it's still unresolved when a session starts, ask. See `docs/MIGRATION-PLAN.md` for more detail.
+See `docs/MIGRATION-PLAN.md` for the full decision and all three rejected options.
 
 ## Current functional scope (as of migration)
 Character creation (race select → open-ended questionnaire → Unique Skill generation → intro scene), a live simulation loop, the full skill tier system (Intrinsic/Common/Extra/Unique/Ultimate) with mastery tracking and emergent sub-abilities at 25/60/100, Soul Rewrite, a persistent narrative-memory system (entity ledger + rolling notes) to prevent NPC/history drift, and a mobile-responsive two-tab layout with a Soul Codex sidebar. Full detail in `docs/PROJECT-BACKGROUND.md`.
