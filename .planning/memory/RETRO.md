@@ -255,3 +255,85 @@ on DOM text only. They were correct when finally viewed, but the claim preceded 
 - API spend: **$0** — every verification used a stub or a seeded save
 
 ---
+
+## Phase 4: Parity & Verification — 2026-09-18
+
+**PASSED after 3 cycles.** 29 findings, **0 blockers**. 6/6 plans. Shipped as PR #3.
+The project's final phase — all 27 plans across 4 phases complete.
+
+### Prior action items: 7 of 7 closed — a first
+
+| Prior AI | Status | Evidence |
+|---|---|---|
+| AI-1 mutating reviewer isolated or serial | **CLOSED, and it worked** | Zero contamination across 3 cycles / 4 agent runs, vs Phase 3's three-way misdiagnosis |
+| AI-2 don't write while a reviewer holds the tree | **CLOSED** | Edits queued until reviewers released; only pushes (tree-read-only) during runs |
+| AI-3 re-enter review after any fix cycle | **CLOSED, and it paid twice** | Cycles 2 and 3 each found real defects in the prior cycle's fixes |
+| AI-4 counts carry their derivation | **PARTIAL — see below** | Held for findings, failed for fixes |
+| AI-5 commit a Playwright smoke test | **CLOSED** | `frontend/e2e/smoke.spec.ts`, 5 tests, real geometry |
+| AI-6 produce SUMMARY.md files | **CLOSED** | All 6 plans; ship gate 3a held literally for the first time in 4 phases |
+| AI-7 view visual evidence yourself | **CLOSED, and it paid** | Committed screenshots then caught a wrong number in their own summary |
+
+AI-5 and AI-6 had each been carried forward unaddressed through a prior phase.
+
+### Key Findings
+
+**What went well**
+- Serial execution for tree-mutating agents is proven in both directions now: it fails loudly in
+  parallel (Phase 3), works silently in serial (Phase 4). Keep it; do not re-try parallel.
+- Independent re-derivation validated the substance. A reviewer reproduced the `WORLD_LORE`
+  byte-identity, the whole-prompt diff **at a wider slice than the audit used**, and the 9-name
+  contract diff; another re-ran four mutations and **matched the reported SHAs to the digit**.
+- Free derivation before paid verification: `count_tokens` predicted a 15,491-token prefix, the
+  live run measured 15,490. Zero cost, before spending anything.
+- An agent refused a wrong instruction in its own brief. The 04-04 briefing claimed BYOK "remains
+  the documented alternative"; `MIGRATION-PLAN.md:14` marks it *Superseded*. The agent wrote from
+  evidence, keeping a false claim out of the file every future session reads as instructions.
+- Mutation-first verification beat a green suite: 242 passing tests said constraints 1 and 2 were
+  guarded; one mutation said otherwise.
+
+**What didn't work — the central finding**
+**Every fix commit seeded a new, smaller instance of the defect class it was closing.** Three
+cycles, three times: cycle 1 fixed pointer drift and created pointer drift the other way; cycle 2
+corrected wrong numbers and reused a stale one as the new baseline; cycle 3 closed a guard gap with
+a rationale that measured false. Cycle 3's reviewer named the cause: *"the fixes were not
+re-checked against the same evidence standard applied to the original findings."* Findings were
+derived; fixes were reasoned about.
+
+Also:
+- Three cycles — the configured maximum — and cycle 3 still returned NEEDS WORK. The loop never
+  converged on its own.
+- Two factual errors in orchestrator briefings to agents (the BYOK claim; a `backend/src/lib/`
+  path that does not exist), both caught by the agents. Plan prose passed along as fact — the exact
+  failure AI-4 exists to prevent, committed while briefing agents about AI-4.
+- A durability mechanism was documented before being tested: the `parity-oracle` tag was created,
+  written into three files as the recovery path for 69 citations, and only then found unpushable
+  in this environment. For a window the docs instructed readers to run a command that fails in any
+  fresh clone.
+
+### Action Items
+
+| # | Action | Priority | Evidence |
+|---|---|---|---|
+| 1 | **A fix is a claim.** Before committing a fix, run the derivation that produced the finding — re-run the mutation, re-derive the count | High | 3 of 3 cycles seeded a new defect |
+| 2 | Re-read your own diff against the **evidence you just committed**, not against your reasoning | High | Mastery numbers contradicted screenshots in the same commit |
+| 3 | Derive every fact in an agent brief before sending it; cite file:line, never plan prose | High | BYOK claim and `lib/` path, both wrong, both caught by the agent |
+| 4 | Test durability mechanisms in the target environment **before** documenting them | High | The `parity-oracle` tag |
+| 5 | Keep serial execution for any tree-mutating agent; do not re-try parallel | High | 0 contamination vs 3 misdiagnoses in Phase 3 |
+| 6 | Commit raw evidence for paid/unrepeatable runs as a standing rule | Medium | Caught a real error on first use |
+| 7 | Audit which constraints have **no committed guard** at phase start, not at review | Medium | Constraints 1, 2 and 6 were all unguarded and all found late |
+
+### Environment limits learned
+- `git push origin <tag>` fails here (`remote end hung up`) while branch pushes succeed — a tag-ref
+  permission. **Any durability scheme must survive without tags.**
+- A merged PR cannot track new work. PR #2 merged mid-session while STATE.md still called it open;
+  Phase 4 needed PR #3. Check PR state before assuming, and **never rebase this branch** — nine
+  documents reference `3d01fa5` by name as the recovery handle for 69 legacy citations.
+
+### Metrics
+- Plans: 6/6 · Review: PASSED, 3 cycles, 29 findings, 0 blockers · Escalations: 0
+- First-pass review rate, project-wide: **0/4** (2, 3, 2, 3 cycles) — no phase has ever passed cycle 1
+- Agents: QA Verification, Test Results Analyzer, Frontend Developer, Technical Writer, orchestrator ×2
+- Ship: 15 commits, 48 files, +4,757/−1,474 · PR #3
+- Tests: 237 → 254, plus 5 e2e · Cost: ~$0.31 actual vs ~$0.25 budgeted (one harness bug, attributed)
+
+---
