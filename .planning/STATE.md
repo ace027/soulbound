@@ -36,7 +36,10 @@
 
 ## Recent Decisions
 - **Design source**: `.planning/explorations/2026-09-17-soulbound-artifact-to-app-design.md` (committed `e56f400`)
-- **Codebase map**: skipped — this session produced a more detailed structural map of the single legacy file than a generic indexer would, and that file is about to be deleted. Run `/legion:map` after the migration, against `frontend/` + `backend/` + `shared/`.
+- **Codebase map**: ✅ generated 2026-09-18 at commit `8a9f165` — `.planning/CODEBASE.md` plus the
+  `.planning/codebase/` dataset (51 chunks, 123 symbols, fingerprint `55cdb963eeca5ba7`).
+  ⚠️ Phase 4 plan 04-06 may delete `legacy/souldbound-world.jsx`, which changes the fingerprint —
+  run `/legion:map --refresh` after Phase 4 closes.
 - **Scope**: full migration to playable, not a scaffold or vertical slice
 - **Language**: TypeScript both sides; the World Voice contract lives in `shared/` so prompt/parser drift becomes a compile error
 - **JSON contract**: structured outputs (`output_config.format`), field names unchanged

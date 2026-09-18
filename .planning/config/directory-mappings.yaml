@@ -1,0 +1,66 @@
+# Directory → domain → preferred agent mappings for The Soulbound Chronicles.
+# Consumed by /legion:plan when recommending agents, and by /legion:build when
+# constructing execution prompts.
+map_schema_version: 1
+generated_at: "2026-09-18"
+
+mappings:
+  - path: shared/src
+    domain: contract
+    description: >-
+      The World Voice JSON contract as Zod schemas plus derived JSON Schema, and the
+      game-state types both sides share. Single source of truth for CLAUDE.md constraint #4.
+    preferred_agents: [engineering-backend-architect, orchestrator]
+    touch_with_care: true
+
+  - path: backend/src/data
+    domain: prompt-data
+    description: WORLD_SYSTEM_PROMPT and WORLD_LORE. Static, cacheable, balance-load-bearing.
+    preferred_agents: [engineering-ai-engineer]
+    touch_with_care: true
+
+  - path: backend/src/routes
+    domain: backend
+    description: Three World Voice routes, one shared helper. Drift between them is this repo's historical failure mode.
+    preferred_agents: [engineering-ai-engineer, engineering-backend-architect]
+
+  - path: backend/src
+    domain: backend
+    description: Anthropic client, config (models + key), Express app, untrusted-text guard.
+    preferred_agents: [engineering-backend-architect, engineering-security-engineer]
+
+  - path: frontend/src/lib
+    domain: frontend-io
+    description: Backend API client and localStorage saves. Save key names are byte-identical by requirement (R11).
+    preferred_agents: [engineering-frontend-developer]
+
+  - path: frontend/src/game
+    domain: game-logic
+    description: The pure turn logic. R10's balance rules live here and are mutation-tested.
+    preferred_agents: [orchestrator, engineering-frontend-developer]
+    touch_with_care: true
+
+  - path: frontend/src/screens
+    domain: frontend-screens
+    description: Five phase screens, ported verbatim from the artifact. Inline styles are intentional.
+    preferred_agents: [engineering-frontend-developer, design-ux-architect]
+
+  - path: frontend/src/components
+    domain: frontend-components
+    description: Four presentational components, ported verbatim. Prop-driven; none reach storage or the API.
+    preferred_agents: [engineering-frontend-developer]
+
+  - path: frontend/src/data
+    domain: static-data
+    description: RACES (9) and QUESTIONS (5), extracted verbatim from the artifact.
+    preferred_agents: [engineering-frontend-developer]
+
+  - path: legacy
+    domain: parity-oracle
+    description: >-
+      The original 1,440-line single-file artifact. NOT live source — nothing imports it, it is not
+      built and not tested. It is the parity oracle, and 25 files cite its line numbers in docstrings.
+      Scheduled for deletion in Phase 4 plan 04-06.
+    preferred_agents: []
+    touch_with_care: true
+    excluded_from_dependency_graph: true
