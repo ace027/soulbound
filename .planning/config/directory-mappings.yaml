@@ -2,7 +2,7 @@
 # Consumed by /legion:plan when recommending agents, and by /legion:build when
 # constructing execution prompts.
 map_schema_version: 1
-generated_at: "2026-09-18"
+generated_at: "2026-09-18"  # refreshed after Phase 4 (commit 3288223)
 
 mappings:
   - path: shared/src
@@ -55,12 +55,16 @@ mappings:
     description: RACES (9) and QUESTIONS (5), extracted verbatim from the artifact.
     preferred_agents: [engineering-frontend-developer]
 
-  - path: legacy
-    domain: parity-oracle
+  - path: frontend/e2e
+    domain: frontend-e2e
     description: >-
-      The original 1,440-line single-file artifact. NOT live source — nothing imports it, it is not
-      built and not tested. It is the parity oracle, and 25 files cite its line numbers in docstrings.
-      Scheduled for deletion in Phase 4 plan 04-06.
-    preferred_agents: []
-    touch_with_care: true
-    excluded_from_dependency_graph: true
+      Playwright smoke test — the ONLY place in this repo with a real layout engine. Asserts
+      geometry (overflow, scrolling, action-bar position, no collapsed panel) that jsdom cannot see.
+      Runs under `test:e2e`, not `npm test`, and nothing runs it automatically. Zero API calls by
+      design: it seeds a localStorage save. Never run `npx playwright install` in the sandbox.
+    preferred_agents: [engineering-frontend-developer]
+
+# REMOVED after Phase 4: the `legacy/` mapping. `legacy/souldbound-world.jsx` was the parity
+# oracle and was deleted once parity was confirmed. 25 files still cite its line numbers; those
+# resolve via `git show 3d01fa5:legacy/souldbound-world.jsx`. Do not re-add the directory, and do
+# not rebase this branch — nine documents reference that SHA by name.

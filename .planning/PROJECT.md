@@ -84,7 +84,7 @@ Initially the developer and their playtester. Then self-hosting deployers who su
 | `determineUniqueSkill` stays on Sonnet 5 | Its prompt is the adversarially-validated surface, and it sends no system blocks so it has no cache to share | Unchanged from the artifact |
 | `max_tokens` 2000 → 16000 | Constraint #5 is a floor; raising is aligned with it and with current non-streaming guidance | Applied to all three routes |
 | Legacy artifact retained during the port | `design-decisions-log.md` treats the code as source of truth for current behavior — it is the parity oracle | `legacy/souldbound-world.jsx`, deleted once playable |
-| Codebase map generated 2026-09-18 | Deferred through Phases 1-3 because the legacy file dominated the tree; run once the migration landed, as planned | `.planning/CODEBASE.md` + `.planning/codebase/` at commit `8a9f165`. Refresh after Phase 4 deletes `legacy/` |
+| Codebase map generated 2026-09-18, refreshed after Phase 4 | Deferred through Phases 1-3 because the legacy file dominated the tree; run once the migration landed, as planned | `.planning/CODEBASE.md` + `.planning/codebase/` — refreshed at `3288223` (54 chunks, 125 symbols, fingerprint `29353e65f863b7d1`) once `legacy/` was deleted |
 | Workflow: Autonomous / Standard depth / Balanced cost | Matches the developer's stated by-feel working style; deep analysis already lives in the exploration doc | Opus 5 orchestrates; Sonnet 5 and Haiku 4.5 do delegated work |
 
 ## Architecture Influences

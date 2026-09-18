@@ -1,8 +1,8 @@
 {
   "map_schema_version": 1,
   "generated_at": "2026-09-18",
-  "analyzed_commit": "8a9f165dba83f3d455398f5f7898214ba1579eb5",
-  "symbol_count": 123,
+  "analyzed_commit": "32882234ac659e7fa19cb91cbb6ddf3057477315",
+  "symbol_count": 125,
   "symbols": {
     "ALLOWED_HOSTS": [
       "backend/src/config.ts"
@@ -301,6 +301,12 @@
     "callWorldVoice": [
       "backend/src/anthropic.ts"
     ],
+    "defineConfig": [
+      "backend/vitest.config.ts",
+      "frontend/playwright.config.ts",
+      "frontend/vite.config.ts",
+      "frontend/vitest.config.ts"
+    ],
     "deleteSave": [
       "frontend/src/lib/saves.ts"
     ],
@@ -347,6 +353,11 @@
       "backend/src/routes/uniqueSkill.ts"
     ],
     "renderWorldEnginePrompt": [
+      "backend/src/routes/worldEngine.ts"
+    ],
+    "router": [
+      "backend/src/routes/introScene.ts",
+      "backend/src/routes/uniqueSkill.ts",
       "backend/src/routes/worldEngine.ts"
     ],
     "sharedBg": [
