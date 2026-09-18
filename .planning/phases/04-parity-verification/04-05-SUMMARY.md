@@ -104,7 +104,11 @@ Screenshots were **viewed, not merely captured** (retro AI-7). Observed across t
   bar, locked sub-abilities, and the intrinsic skills from the chosen race.
 - Mastery advances and is visible. Per-turn, read off the committed screenshots
   (`evidence/screenshots/04-turn{1,2,3}.png`): Kept Verdict **3 → 9 → 12**, Umbral Slip
-  **5 → 5 → 9**, Dark Sense **8 → 11 → 16**, starting from 0 / 5 / 16 at the intro scene.
+  **5 → 5 → 9**, Dark Sense **8 → 11 → 16**. At the intro scene (`03-intro.png`) Kept Verdict reads 0 and Umbral Slip 5;
+  **Dark Sense's mastery row is cut off below the 800px fold, so its intro value is not in the
+  committed evidence** and is not asserted here. (An earlier version of this correction said
+  "starting from 0 / 5 / 16" — 16 is turn 3's Dark Sense value, carried over from the very figures
+  being corrected. It cannot be the intro baseline: turn 1 shows 8, and mastery does not decrease.)
   **Corrected in review cycle 2.** This bullet previously read "Kept Verdict 0 → 12 → 19,
   Umbral Slip 5 → 9 → 10, Dark Sense 16 → 19", which sampled the intro scene, turn 3 and the
   *separate* reload session and presented them as one three-turn progression. The 19 / 10 / 19

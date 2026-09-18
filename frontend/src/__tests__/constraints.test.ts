@@ -7,7 +7,8 @@
  *
  *     window.confirm("Delete this save?"); window.alert("deleted"); onDeleteSave(id);
  *
- * in TitleScreen's delete branch left all 242 tests green.
+ * in TitleScreen's delete branch left all 242 tests green — 108 backend + 129 frontend
+ * + 5 e2e, the totals at that commit, before this file existed.
  *
  * ── Why a source scan rather than a behavioural test ─────────────────────────
  * Constraints 1 and 2 are absence properties: "this API appears nowhere". No
@@ -82,12 +83,20 @@ describe('CLAUDE.md constraint 1 — no window.confirm / alert / prompt', () => 
    * jsdom itself printed "Not implemented: Window's confirm() method" — proof the
    * native call was reached.
    *
-   * `prompt` is deliberately NOT in this list. It is a common identifier in this
-   * codebase (the World Voice prompts), and a bare-word rule would fire on
-   * `prompt(` in unrelated code. It stays covered by the `window.`-prefixed test
-   * above, which is the form CLAUDE.md constraint 1 literally names.
+   * All three banned APIs are listed. An earlier version excluded `prompt` on the
+   * reasoning that it is a common identifier here (the World Voice prompts) and would
+   * false-positive. That was asserted, not measured, and it was wrong: review cycle 3
+   * ran the rule and found **zero** matches for any of the three across the scanned
+   * files, because every `prompt` mention in this codebase sits in a comment and
+   * `stripComments` removes it before matching. The exclusion had left a real hole —
+   * a bare `prompt("...")` in the delete branch passed all 138 tests while jsdom
+   * printed "Not implemented: Window's prompt() method".
+   *
+   * Derivation, re-runnable:
+   *   grep -rnE '(^|[^.\w$])(confirm|alert|prompt)\s*\(' --include=*.ts --include=*.tsx \
+   *     frontend/src | grep -v __tests__     # -> no matches
    */
-  it.each(['confirm', 'alert'])('no bare %s( call in any source file', (api) => {
+  it.each(['confirm', 'alert', 'prompt'])('no bare %s( call in any source file', (api) => {
     const pattern = new RegExp(`(^|[^.\\w$])${api}\\s*\\(`, 'm');
     const offenders = FILES.filter((f) => pattern.test(stripComments(readFileSync(f, 'utf8'))));
     expect(offenders).toEqual([]);

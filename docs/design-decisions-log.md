@@ -133,11 +133,15 @@ close of Phase 4, once parity was confirmed against a live playthrough (R14: rea
 models, cross-route cache read observed, save/reload/load verified field by field).
 
 **It served as the parity oracle for four phases and is still readable.** The content is preserved
-in git history under the annotated tag **`parity-oracle`**; the last commit containing it is `3d01fa5`:
+in git history at commit **`3d01fa5`**, the last commit containing it (also tagged `parity-oracle`, though that tag is not yet on the remote — see the note below):
 
 ```
-git show parity-oracle:legacy/souldbound-world.jsx            # read it
-git show parity-oracle:legacy/souldbound-world.jsx | sed -n '913,1031p'   # a cited range
+# Works in any clone that has this branch — 3d01fa5 is one of its ancestors:
+git show 3d01fa5:legacy/souldbound-world.jsx            # read it
+git show 3d01fa5:legacy/souldbound-world.jsx | sed -n '913,1031p'   # a cited range
+
+# Preferred once the tag is pushed — it is LOCAL-ONLY today, see the note below:
+# git show parity-oracle:legacy/souldbound-world.jsx
 ```
 
 **Why this note exists.** 25 migrated source files carry 69 citations of the form `legacy 787-802`
@@ -154,7 +158,7 @@ gain. They resolve against the command above instead.
 ROADMAP names, but several behaviours were never exercised live and the artifact was the oracle for
 them: Soul Rewrite, the 80-entry log cap, the 40-note memory cap, and sub-ability emergence actually
 *firing* at 25/60/100 (the live run only confirmed it correctly does not fire below 25). If one of
-those turns out to have drifted, the comparison is `git show parity-oracle:legacy/souldbound-world.jsx`,
+those turns out to have drifted, the comparison is `git show 3d01fa5:legacy/souldbound-world.jsx`,
 not a lost file.
 
 > **The `parity-oracle` tag is local-only right now.** It could not be pushed from the environment
