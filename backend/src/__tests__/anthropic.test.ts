@@ -219,7 +219,10 @@ describe('callWorldVoice request construction', () => {
   it('sets output_config.effort to the chosen named value', async () => {
     const request = await callAndCapture(false, TestSchema, { answer: 'x' });
     const outputConfig = request.output_config as Record<string, unknown>;
-    expect(outputConfig.effort).toBe('high');
+    // callAndCapture drives the uniqueSkill route (useSystem: false), which
+    // runs 'medium' — it sends no system blocks, so it shares no cache and its
+    // effort is deliberately independent of the other two.
+    expect(outputConfig.effort).toBe('medium');
     expect(['low', 'medium', 'high', 'xhigh', 'max']).toContain(outputConfig.effort);
   });
 

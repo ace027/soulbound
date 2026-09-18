@@ -112,31 +112,40 @@ export function buildSystemBlocks(): TextBlockParam[] {
 const MAX_TOKENS = 16000;
 
 /**
- * `output_config.effort` — deliberately set, not left to Opus 5's default.
+ * `output_config.effort` — deliberately set per route, not left to the model
+ * default.
  *
- * Opus 5 runs adaptive thinking on by default, and that reasoning draws from
- * the same `max_tokens` budget raised to 16000 to prevent truncation: a
- * higher effort value means more of that budget goes to thinking rather than
- * to the narration + JSON the frontend actually needs, which pushes back
- * toward the truncation problem `max_tokens` was already raised once to fix.
+ * Adaptive thinking draws from the same `max_tokens` budget raised to 16000 to
+ * prevent truncation: a higher effort value means more of that budget goes to
+ * thinking rather than to the narration + JSON the frontend actually needs.
  *
- * All three World Voice calls need reliable adherence to two hard,
- * balance-load-bearing constraints at once: a large "MUST NOT" rule list
- * (CLAUDE.md #6 — no Ultimate Skills outside one path, no player-requested
- * skills, permanent Sovereign ambiguities, etc.) and a strict JSON schema via
- * `output_config.format`. That argues for more than the "unset" default. But
- * 'xhigh' and 'max' spend materially more of the turn budget for a task that
- * is rule-adherence and prose generation, not open-ended multi-step
- * reasoning — and the phase's ~$0.04/turn, ~$2.10/50-turn-session cost
- * estimate (02-CONTEXT.md) didn't budget for either of those.
+ * All three calls need reliable adherence to two hard, balance-load-bearing
+ * constraints at once: the "MUST NOT" rule list (CLAUDE.md #6) and a strict
+ * JSON schema via `output_config.format`. That argues for more than the unset
+ * default. 'xhigh' and 'max' spend materially more of the turn budget on
+ * reasoning depth this task does not need.
  *
- * 'high' is the middle ground: more thinking budget than the default gets
- * spent on holding the rule list and the schema together, without paying for
- * reasoning depth this task doesn't need. One value for all three call
- * sites — see the cache-namespace note on `callWorldVoice` below for why
- * that uniformity also isn't optional.
+ * ── Why this is per-route, and what the real constraint is ─────────────────
+ * The uniformity requirement is narrower than an earlier version of this
+ * comment claimed. `worldEngine` and `introScene` share a cache namespace, so
+ * they must send byte-identical `output_config` — same `format` shape AND the
+ * same `effort` — or the shared prefix stops matching. They are both 'high'.
+ *
+ * `uniqueSkill` is NOT part of that pair: it sends no `system` parameter at
+ * all, so it has no cached prefix to match and its effort is free to differ.
+ * It runs 'medium' — it is one short soul-read from five questionnaire
+ * answers, not rule-adherence over a 15k-token prompt.
+ *
+ * So: the two entries below that share a cache MUST stay equal to each other;
+ * `uniqueSkill` may vary independently.
  */
-const EFFORT = 'high' as const;
+const EFFORT: Record<WorldVoiceRoute, 'low' | 'medium' | 'high' | 'xhigh' | 'max'> = {
+  // These two share a cache namespace — keep them equal to each other.
+  worldEngine: 'high',
+  introScene: 'high',
+  // Independent: no system blocks, no cached prefix, no coupling.
+  uniqueSkill: 'medium',
+};
 
 // ─── Error mapping ───────────────────────────────────────────────────────────
 
@@ -434,13 +443,18 @@ export interface CallWorldVoiceArgs<Schema extends z.ZodType> {
  * Cache-namespace note (ties to CLAUDE.md #7 / #8 and the original
  * `generateIntroScene` bug this module exists to prevent): prompt caches are
  * model-scoped, and world-engine and intro-scene share one cache namespace
- * only because they share Opus 5 *and* send byte-identical system blocks
- * *and* byte-identical `output_config` (same `format` shape, same `effort`).
- * All three of those come from this one shared helper today. If a future
- * change gives one route its own schema, its own effort value, or bypasses
- * this helper, it silently strands the other route's cache warmth — the same
- * shape of bug as the original drift this module was built to prevent, just
- * moved from the system-prompt layer to the `output_config` layer.
+ * only because they are on the SAME model as each other *and* send
+ * byte-identical system blocks *and* byte-identical `output_config` (same
+ * `format` shape, same `effort`). All three of those come from this one shared
+ * helper today. If a future change gives one of those two its own schema, its
+ * own effort value, its own model, or bypasses this helper, it silently
+ * strands the other's cache warmth — the same shape of bug as the original
+ * drift this module was built to prevent, just moved from the system-prompt
+ * layer to the `output_config` layer.
+ *
+ * The pair is currently Sonnet 5; it has also been Opus 5. WHICH model they
+ * share is a cost/quality choice. THAT they share one is the invariant.
+ * `uniqueSkill` sits outside this entirely — no system blocks, no cache.
  */
 export async function callWorldVoice<Schema extends z.ZodType>({
   route,
@@ -463,7 +477,7 @@ export async function callWorldVoice<Schema extends z.ZodType>({
     messages: [{ role: 'user' as const, content }],
     output_config: {
       format,
-      effort: EFFORT,
+      effort: EFFORT[route],
       // No `budget_tokens` here either — also a 400 on both models.
     },
     // The no-system path must omit the key entirely, not send `system:

@@ -86,7 +86,46 @@ The world previously had only a sketch (6 kingdoms, 8 races) with no authored ba
 
 **Verification note:** cache behavior should be confirmed in live testing by checking for `cache_creation_input_tokens` / `cache_read_input_tokens` in the API response on the second call onward. If caching silently isn't engaging, the app still functions correctly — it just won't see the token savings — so this is worth checking but isn't a functional blocker. (This has since been confirmed live — see the model split below.)
 
-## Model Split — Sonnet 5 for soul-reading, Opus 5 for the world
+## Model Split — revised 2026-09-18: Sonnet 5 on the world, Opus 5 on soul-reading
+
+**This reverses the entry below, and the reversal was again the point.** The arrangement is now
+`claude-sonnet-5` on `callWorldEngine()` and `generateIntroScene()` at `effort: 'high'`, and
+`claude-opus-5` on `determineUniqueSkill()` at `effort: 'medium'` — the inverse of what the
+previous entry describes. The developer chose it deliberately, with the earlier reversal in view,
+to see how it plays.
+
+**The cache invariant is preserved, and that is what made the swap safe.** The constraint was never
+"use Opus" — it is that `callWorldEngine()` and `generateIntroScene()` stay on the *same* model as
+each other, because they are the only two routes that send system blocks and therefore the only two
+that share a cache namespace. Moving them *together* keeps that intact; they now share a Sonnet
+namespace instead of an Opus one. `determineUniqueSkill()` sends no `system` parameter at all, so
+it has no cached prefix and could move independently without touching the pair.
+
+That invariant is no longer only a comment. `backend/src/__tests__/config.test.ts` asserts
+`MODELS.worldEngine === MODELS.introScene`, verified by mutation: splitting the pair fails the test.
+
+**Effort became per-route in the same change.** It had been a single constant across all three
+calls, with a comment claiming that uniformity "also isn't optional". That was overstated — the
+byte-identical `output_config` requirement binds only the two routes sharing a cache. The pair
+stays equal at `'high'`; `uniqueSkill` runs `'medium'`, since it is one short soul-read from five
+questionnaire answers rather than rule-adherence over a 15k-token prompt.
+
+**Projected cost at constant tokens**, from Phase 4's committed usage log: a cached turn drops from
+$0.072 to **$0.029** (~60% cheaper), creation from $0.147 to **$0.072**, and a 50-turn session from
+$3.74 to **~$1.51**. Those are projections holding token counts fixed — real output length will
+shift with the model, so re-derive from `[anthropic:usage]` lines after a live session rather than
+quoting these.
+
+**What to watch.** `determineUniqueSkill`'s prompt is the adversarially-validated surface (see the
+Tier 0 stress tests below) and those tests were run against Sonnet; it now runs Opus at lower
+effort, so the resilience observed there is not automatically inherited. The world-engine's job is
+holding the MUST NOT rule list and a strict JSON schema together over a large prompt — the thing
+`effort: 'high'` was chosen to protect — and it is now doing that on a smaller model. Both are
+worth watching in play rather than assuming.
+
+---
+
+## Model Split (superseded 2026-09-17 entry) — Sonnet 5 for soul-reading, Opus 5 for the world
 
 **This reverses the earlier all-Sonnet decision, and the reversal was the point.** The migration originally put every World Voice call on one Sonnet model, on the reasoning that one model everywhere is one fewer thing to keep consistent. It no longer holds: the world engine loop and intro scene generation run on `claude-opus-5`, and only `determineUniqueSkill()` stays on `claude-sonnet-5`. This was flagged *as a reversal of a logged decision* before it was made, and the developer chose it deliberately with that in front of them. A later session that finds "all Sonnet" in an older note is looking at superseded material, not at drift to correct back. Model IDs live in exactly one place — `backend/src/config.ts`'s `MODELS` — never as a literal at a call site, so the split can't quietly diverge per route.
 

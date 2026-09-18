@@ -214,12 +214,29 @@ function readAllowedHosts(): readonly string[] {
 export const ALLOWED_HOSTS: readonly string[] = readAllowedHosts();
 
 /**
- * Model IDs, centralized here so Phase 2's three World Voice routes don't
- * scatter literals across files. Exactly these strings per CLAUDE.md and the
- * Plan 01-03 contract — never append a date suffix.
+ * Model IDs, centralized here so the three World Voice routes don't scatter
+ * literals across files. Exactly these strings — never append a date suffix.
+ *
+ * ── The split, and why it is shaped this way (revised 2026-09-18) ──────────
+ * `worldEngine` and `introScene` MUST stay on the SAME model as each other.
+ * Prompt caches are model-scoped, and those two are the only routes that send
+ * system blocks — they share one cache namespace, so whichever runs first pays
+ * the ~15.5k-token cache write and the rest read it ~12x cheaper. Moving only
+ * one of them strands the other's cache warmth, with a bill as the only
+ * symptom. Pinned by a test in config.test.ts. WHICH model they share is a
+ * cost/quality choice; THAT they share one is the invariant.
+ *
+ * `uniqueSkill` is independent. It sends no `system` parameter at all
+ * (CLAUDE.md #8), so it has no cached prefix and nothing to share with
+ * anything. Its model and effort move freely without touching the pair.
+ *
+ * History: all-Sonnet, then Opus on the two system-block routes, now Sonnet on
+ * the pair with Opus on uniqueSkill — the developer's deliberate call each
+ * time, made with the prior reversal in view. Do not "correct" it back to an
+ * earlier arrangement; see docs/design-decisions-log.md.
  */
 export const MODELS = {
-  uniqueSkill: 'claude-sonnet-5',
-  worldEngine: 'claude-opus-5',
-  introScene: 'claude-opus-5',
+  uniqueSkill: 'claude-opus-5',
+  worldEngine: 'claude-sonnet-5',
+  introScene: 'claude-sonnet-5',
 } as const;
