@@ -2,8 +2,8 @@
 
 ## Current Position
 - **Phase**: 3 of 4 (complete)
-- **Status**: Phase 3 complete — all 10 plans executed, review passed in 2 cycles (3-reviewer panel, then a scoped re-review of the fix commit).
-- **Last Activity**: Phase 3 review (2026-09-17)
+- **Status**: Phase 3 shipped — 10 plans, review passed in 2 cycles, PR #2 open against `main`.
+- **Last Activity**: Phase 3 ship (2026-09-18)
 
 ## Progress
 ```
@@ -11,6 +11,19 @@
 ```
 
 ## Ship record
+- **PR #2** — https://github.com/DeanItServices/soulbound/pull/2 (base `main`, head `claude/admiring-wright-hfmugk`)
+  Phase 3 — 14 commits, 46 files, +7,653/-28. Pre-ship gate: tests 237/237, shared+backend+frontend
+  builds clean, working tree clean, review PASSED (2 cycles).
+  ⚠️ **PR #1 was already merged** (`38cb2c9`, head `eed43ec`), so this is a NEW pull request — a
+  merged PR cannot track new work. No rebase was done: `eed43ec` is an ancestor of `origin/main`, so
+  the branch descends cleanly from merged history with no divergence, and rebasing would have
+  rewritten 14 SHAs that STATE.md and 03-REVIEW.md reference by name. This repo already lost a full
+  set of SHA references to a history rewrite once (see "Committer email" below).
+  ⚠️ **Gate 3a (build completeness) does not hold as literally specified** — this project has never
+  produced `SUMMARY.md` files; all three phases recorded plan outcomes in commit messages. Every one
+  of the 10 plans has a commit and the plan→commit table below is the evidence. Recorded rather than
+  marked green.
+
 - **PR #1** — https://github.com/DeanItServices/soulbound/pull/1 (base `main`, head `claude/admiring-wright-hfmugk`)
   Covers **both** Phase 1 and Phase 2: `main` had not received Phase 1 either.
 - Pre-ship gate: 6/6. Tests 108/108, build clean, working tree clean.
@@ -34,7 +47,7 @@
 
 ## Next Action
 
-**Phase 3 is complete.** Run `/legion:plan 4` to plan Parity & Verification.
+**Phase 3 is shipped** ([PR #2](https://github.com/DeanItServices/soulbound/pull/2)). Run `/legion:plan 4` to plan Parity & Verification.
 
 ### Phase 3 execution record
 | Plan | Wave | Commit |
