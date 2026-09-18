@@ -1,10 +1,21 @@
 # Project State
 
 ## Current Position
-- **Phase**: 4 of 4 (executed, pending review)
-- **Status**: Phase 4 executed — all 6 plans complete. R13, R14, R15, R16 close. The legacy artifact is deleted (recoverable at `3d01fa5`). Phase 3 shipped (PR #2, open against `main`).
-- **Last Activity**: Phase 4 execution (2026-09-18) — live playthrough verified R14 against real models; cross-route cache read observed (intro-scene wrote 15,490, world-engine read 15,490)
-- **Next Action**: `/legion:review` to verify Phase 4
+- **Phase**: 4 of 4 (complete)
+- **Status**: **All four phases complete.** Phase 4 review PASSED after 3 cycles (3-reviewer panel, 29 findings, 0 blockers). R13, R14, R15, R16 close. The legacy artifact is deleted — recover it with `git show 3d01fa5:legacy/souldbound-world.jsx` (the `parity-oracle` tag is local-only; it cannot be pushed from this environment). Phase 3 shipped (PR #2, open against `main`); Phase 4 is not yet in a PR.
+- **Last Activity**: Phase 4 review passed (2026-09-18)
+- **Next Action**: `/legion:ship` to open a PR for Phase 4, or `/legion:retro` to capture the review's process findings.
+
+### Two things to carry into any next phase
+1. **A fix is a claim, and carries the same derivation burden as a finding.** All three review cycles
+   closed their findings and each fix commit seeded a new, smaller instance of the same defect class,
+   because findings were derived while fixes were reasoned about.
+2. **Retaining raw evidence pays immediately.** The screenshots committed to close one finding caught
+   a wrong number in the very summary they were filed under, on their first use.
+
+### Known environment limit
+`git push origin <tag>` fails here (`remote end hung up`) while branch pushes succeed — a tag-ref
+permission. Any durability scheme must survive without tags.
 
 ## Progress
 ```
