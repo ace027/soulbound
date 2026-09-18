@@ -59,7 +59,10 @@ Before making any change:
   wrote, and 2026-09-18 the same shared namespace was observed in the reverse direction at
   **15,490** (intro-scene wrote; every subsequent world-engine call read it — five of them, across
   two sessions, in `.planning/phases/04-parity-verification/evidence/usage-lines.log`). **Quote
-  15,490; 15,132 is the superseded Phase 2 figure.** The number moves whenever
+  ~15,522; 15,490 and 15,132 are superseded.** The 15,490 was measured live on 2026-09-18 and
+  then invalidated the same day by the narration-length edit to `WORLD_SYSTEM_PROMPT`; re-derived
+  free with `count_tokens`, system-only went 13,669 -> 13,701, so the prefix is ~15,522 pending a
+  live run to confirm. The number moves whenever
   `WORLD_SYSTEM_PROMPT` or `WORLD_LORE` changes — re-derive it with `count_tokens`, which is free.
   The property, not the number, is what this constraint protects.
   `determineUniqueSkill` is independent of that pair: it sends no system blocks at all, so it has

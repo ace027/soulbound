@@ -111,7 +111,7 @@ Each call only gives you the last 5 raw actions, not the full playthrough — so
 You must ALWAYS respond with a JSON object. No prose outside the JSON. Structure:
  
 {
-  "narration": "The world's response to the action, 2-5 paragraphs, rich prose, second person.",
+  "narration": "The world's response to the action, 2-3 paragraphs, rich prose, second person. Do not pad to length — if the moment is resolved in two, stop there rather than restating what was already said.",
   "state_updates": {
     "skill_mastery_changes": [
       {"skill_name": "Keen Eye", "tier": "Common", "old_mastery": 12, "new_mastery": 18, "note": "optional flavor reason"}
