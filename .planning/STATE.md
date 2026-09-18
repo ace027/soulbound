@@ -1,9 +1,9 @@
 # Project State
 
 ## Current Position
-- **Phase**: 3 of 4 (complete)
-- **Status**: Phase 3 shipped — 10 plans, review passed in 2 cycles, PR #2 open against `main`.
-- **Last Activity**: Phase 3 ship (2026-09-18)
+- **Phase**: 4 of 4 (planned)
+- **Status**: Phase 4 planned — 6 plans across 4 waves. Phase 3 shipped (PR #2, open against `main`).
+- **Last Activity**: Phase 4 planning (2026-09-18)
 
 ## Progress
 ```
@@ -47,7 +47,46 @@
 
 ## Next Action
 
-**Phase 3 is shipped** ([PR #2](https://github.com/DeanItServices/soulbound/pull/2)). Run `/legion:plan 4` to plan Parity & Verification.
+**Phase 4 is planned** — 6 plans across 4 waves. Run `/legion:build` to execute it.
+
+### Phase 4 Plans
+| Plan | Wave | Deliverable | Agent | Cost |
+|---|---|---|---|---|
+| 01 | 1 | R13 — eight-constraint audit; corrects R13's own "seven" | QA Verification | free |
+| 02 | 1 | R16 — close with evidence from the existing suite | Test Results Analyzer | free |
+| 03 | 1 | Retro AI-5 — committed Playwright smoke test | Frontend Dev | free |
+| 04 | 2 | R15 — CLAUDE.md auth note; design-log model split | Technical Writer | free |
+| 05 | 3 | R14 — live playthrough + cache proof | orchestrator | **~$0.25** |
+| 06 | 4 | Legacy deletion + 69 citations + cross-plan re-verification | orchestrator | free |
+
+Wave 1's three plans are file-disjoint (verified) and run in parallel. **Only plan 05 spends
+money**, isolated so the phase completes without a key — in which case R14 is reported UNTESTED.
+
+### Five facts derived while planning that revised ROADMAP's 3-plan estimate
+1. **R16 is already satisfied.** `backend/src/__tests__/contract.test.ts` has all five cases R16
+   asks for (valid passes; rename, missing field and unparseable JSON each throw loudly), and save
+   round-trip tests exist at `saves.test.ts:163`. R16 became a verification plan, not a build plan.
+2. **R13's text is stale**: PROJECT.md:38 says "seven" constraints; CLAUDE.md has **eight**. The
+   audit covers 8 and 04-01 corrects the wording.
+3. **R15 is half-done and half-wrong**: CLAUDE.md:49-54 already records the model split, but
+   CLAUDE.md:63 still says auth is an "OPEN DECISION, resolve before scaffolding a backend" — the
+   backend is shipped and merged. And `docs/design-decisions-log.md` has **zero** occurrences of
+   "opus" or "sonnet"; the split was never logged there at all.
+4. **Deleting legacy breaks 69 citations across 25 files** (`grep -rhoE 'legacy [0-9]+(-[0-9]+)?'`).
+   Git history preserves the file; the docstring references stop resolving. 04-06 decides this
+   before deleting, not after.
+5. **R14's two blockers are already diagnosed** — the `SOULBOUND_ANTHROPIC_KEY` env var and the CA
+   mount for containerized calls. Both are written into 04-05 so they are not rediscovered.
+
+### Planning-gate decisions
+- **The inherited `currentSlotId` closure race stays unfixed** — offered at the gate and declined.
+  It is legacy 913-1031 behaviour, so fixing it would deviate from the artifact. Recorded as a
+  decision, not an oversight. A plan that "helpfully" repairs it is reversing a developer call.
+- **Every Phase 4 plan writes a `SUMMARY.md`** (retro AI-6). Three phases recorded outcomes only in
+  commit messages, which is why the ship gate's build-completeness check could not hold as
+  specified. That ends this phase.
+- Architecture proposals and the spec pipeline skipped — this is a verification phase against
+  already-shipped code, not a design problem.
 
 ### Phase 3 execution record
 | Plan | Wave | Commit |

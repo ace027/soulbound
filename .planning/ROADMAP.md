@@ -64,7 +64,11 @@ structure don't permit fewer. Architecture chosen from three competing proposals
 - `CLAUDE.md` updated: model split recorded, stale "auth is an OPEN DECISION" note pointed at its resolution in `MIGRATION-PLAN.md`
 - `design-decisions-log.md` updated: the Opus 5 model split and its rationale, plus the correction that `determineUniqueSkill` sends no `system` param at all (the log currently says only that it lacks `WORLD_LORE`)
 - `legacy/souldbound-world.jsx` deleted once parity is confirmed (git history preserves it)
-**Plans**: 3
+**Plans**: 6 (planned 2026-09-18 — revised up from 3. R16 turned out to be already satisfied by
+Phase 2's `contract.test.ts` and Phase 3's save round-trip tests, so it became a verification plan;
+but R15's real scope (CLAUDE.md's stale "OPEN DECISION" auth heading, and a design log with zero
+mentions of the model split), the retro's committed-Playwright-guard item, and the 69 legacy
+citations that deletion would strand each earned their own plan. Only one plan spends money.)
 
 ## Progress
 
