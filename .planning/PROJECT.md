@@ -35,7 +35,7 @@ Initially the developer and their playtester. Then self-hosting deployers who su
 - **R12** — Fix three bugs found during research: `window.innerWidth` computed during render with no resize listener (legacy line 1348); Google Fonts `@import` re-injected per render in six places; missing `response.ok` checks on all three calls
 
 **Verification**
-- **R13** — All seven `CLAUDE.md` hard constraints preserved, tracked as an explicit checklist
+- **R13** — All eight `CLAUDE.md` hard constraints preserved, tracked as an explicit checklist
 - **R14** — End-to-end playthrough verified in-sandbox; `cache_read_input_tokens > 0` confirmed from the second World Engine call onward
 - **R16** — Vitest contract test (fixture parses against the shared type, malformed fails loudly) and save/load round-trip tests
 - **R15** — `docs/` move so `CLAUDE.md`'s own references resolve; `CLAUDE.md` and `design-decisions-log.md` updated in the same change that makes the model split
