@@ -86,7 +86,46 @@ The world previously had only a sketch (6 kingdoms, 8 races) with no authored ba
 
 **Verification note:** cache behavior should be confirmed in live testing by checking for `cache_creation_input_tokens` / `cache_read_input_tokens` in the API response on the second call onward. If caching silently isn't engaging, the app still functions correctly — it just won't see the token savings — so this is worth checking but isn't a functional blocker. (This has since been confirmed live — see the model split below.)
 
-## Model Split — Sonnet 5 for soul-reading, Opus 5 for the world
+## Model Split — revised 2026-09-18: Sonnet 5 on the world, Opus 5 on soul-reading
+
+**This reverses the entry below, and the reversal was again the point.** The arrangement is now
+`claude-sonnet-5` on `callWorldEngine()` and `generateIntroScene()` at `effort: 'high'`, and
+`claude-opus-5` on `determineUniqueSkill()` at `effort: 'medium'` — the inverse of what the
+previous entry describes. The developer chose it deliberately, with the earlier reversal in view,
+to see how it plays.
+
+**The cache invariant is preserved, and that is what made the swap safe.** The constraint was never
+"use Opus" — it is that `callWorldEngine()` and `generateIntroScene()` stay on the *same* model as
+each other, because they are the only two routes that send system blocks and therefore the only two
+that share a cache namespace. Moving them *together* keeps that intact; they now share a Sonnet
+namespace instead of an Opus one. `determineUniqueSkill()` sends no `system` parameter at all, so
+it has no cached prefix and could move independently without touching the pair.
+
+That invariant is no longer only a comment. `backend/src/__tests__/config.test.ts` asserts
+`MODELS.worldEngine === MODELS.introScene`, verified by mutation: splitting the pair fails the test.
+
+**Effort became per-route in the same change.** It had been a single constant across all three
+calls, with a comment claiming that uniformity "also isn't optional". That was overstated — the
+byte-identical `output_config` requirement binds only the two routes sharing a cache. The pair
+stays equal at `'high'`; `uniqueSkill` runs `'medium'`, since it is one short soul-read from five
+questionnaire answers rather than rule-adherence over a 15k-token prompt.
+
+**Projected cost at constant tokens**, from Phase 4's committed usage log: a cached turn drops from
+$0.072 to **$0.029** (~60% cheaper), creation from $0.147 to **$0.072**, and a 50-turn session from
+$3.74 to **~$1.51**. Those are projections holding token counts fixed — real output length will
+shift with the model, so re-derive from `[anthropic:usage]` lines after a live session rather than
+quoting these.
+
+**What to watch.** `determineUniqueSkill`'s prompt is the adversarially-validated surface (see the
+Tier 0 stress tests below) and those tests were run against Sonnet; it now runs Opus at lower
+effort, so the resilience observed there is not automatically inherited. The world-engine's job is
+holding the MUST NOT rule list and a strict JSON schema together over a large prompt — the thing
+`effort: 'high'` was chosen to protect — and it is now doing that on a smaller model. Both are
+worth watching in play rather than assuming.
+
+---
+
+## Model Split (superseded 2026-09-17 entry) — Sonnet 5 for soul-reading, Opus 5 for the world
 
 **This reverses the earlier all-Sonnet decision, and the reversal was the point.** The migration originally put every World Voice call on one Sonnet model, on the reasoning that one model everywhere is one fewer thing to keep consistent. It no longer holds: the world engine loop and intro scene generation run on `claude-opus-5`, and only `determineUniqueSkill()` stays on `claude-sonnet-5`. This was flagged *as a reversal of a logged decision* before it was made, and the developer chose it deliberately with that in front of them. A later session that finds "all Sonnet" in an older note is looking at superseded material, not at drift to correct back. Model IDs live in exactly one place — `backend/src/config.ts`'s `MODELS` — never as a literal at a call site, so the split can't quietly diverge per route.
 
@@ -94,7 +133,7 @@ The world previously had only a sketch (6 kingdoms, 8 races) with no authored ba
 
 **It was measured, not assumed.** In the live run on 2026-09-17: the first world-engine call wrote the prefix (`cache_creation_input_tokens` 15,132), the second world-engine call read exactly 15,132 back, and then the intro-scene call — a different route — read the same 15,132 from the same namespace. The cross-route read is the part that had never been tested and is the specific evidence the shared namespace exists.
 
-**The 15,132 figure is now stale; the shape it proves is not.** Two lines were later added to `WORLD_SYSTEM_PROMPT` (the prompt-injection data-not-instructions rule and the `state_updates.world_events` shape spec in RESPONSE FORMAT), and that block sits inside the cached prefix, so the token count has moved. Re-deriving it is free — `POST /v1/messages/count_tokens` isn't billed — while re-proving that caching *engages* costs real API calls. Re-measured live in Phase 4 at **15,490** (`.planning/phases/04-parity-verification/evidence/usage-lines.log`), with the direction reversed: intro-scene wrote the prefix and the world-engine calls read it, so the shared namespace is now observed in both directions. So: quote 15,490, re-derive with `count_tokens` if the prompt changes again, and don't spend money re-running the proof. Write-once-then-read-thereafter, shared across the two Opus routes, is the property that matters, and editing a prompt doesn't change it.
+**The 15,132 figure is now stale; the shape it proves is not.** Two lines were later added to `WORLD_SYSTEM_PROMPT` (the prompt-injection data-not-instructions rule and the `state_updates.world_events` shape spec in RESPONSE FORMAT), and that block sits inside the cached prefix, so the token count has moved. Re-deriving it is free — `POST /v1/messages/count_tokens` isn't billed — while re-proving that caching *engages* costs real API calls. Re-measured live in Phase 4 at **15,490** (`.planning/phases/04-parity-verification/evidence/usage-lines.log`), with the direction reversed: intro-scene wrote the prefix and the world-engine calls read it, so the shared namespace is now observed in both directions. It went stale again within hours: the 2026-09-18 narration-length edit (2-5 -> 2-3 paragraphs, plus an anti-padding clause) sits inside the cached prefix, and `count_tokens` puts system-only at 13,701 against 13,669 before — so the prefix is now **~15,522**, pending a live run to confirm. That is the third figure in two days, which is the point: **re-derive with `count_tokens` before quoting it, and don't spend money re-running the engagement proof.** Write-once-then-read-thereafter, shared across the two Opus routes, is the property that matters, and editing a prompt doesn't change it.
 
 **`determineUniqueSkill()` stays on Sonnet 5, and that is also deliberate.** It is the adversarially stress-tested surface (see "Tier 0 stress tests" below), and that testing note already warns that the resilience observed there is partly a property of the model's training rather than purely the prompt's wording — so moving this call to another model is a decision to re-run those tests, not a free swap. It also has nothing to gain from the Opus routes' warm cache: it sends no `system` parameter at all, so it has no cached prefix to share with anything (see the correction above).
 

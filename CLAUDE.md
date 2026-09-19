@@ -47,22 +47,36 @@ Before making any change:
 
 ## Model & API pattern
 - **Models are split — this is deliberate, and the split is load-bearing.**
-  - `claude-sonnet-5` on unique-skill determination (`/api/unique-skill`)
-  - `claude-opus-5` on the world engine loop AND intro scene generation
+  - `claude-opus-5` on unique-skill determination (`/api/unique-skill`), at `effort: 'medium'`
+  - `claude-sonnet-5` on the world engine loop AND intro scene generation, both at `effort: 'high'`
   Defined in one place, `backend/src/config.ts`'s `MODELS` — never as a literal at a call site.
-  **The two Opus routes MUST stay on the same model.** Prompt caches are model-scoped, so
-  moving either one off `claude-opus-5` silently strands the other's cache warmth — measured
+  **World-engine and intro-scene MUST stay on the same model as each other** — they are the
+  only two routes that send system blocks, so they share one cache namespace. Prompt caches are
+  model-scoped, so moving only one of them silently strands the other's cache warmth. WHICH model
+  the pair shares is a cost/quality choice; THAT they share one is the invariant, and it is pinned
+  by a test in `backend/src/__tests__/config.test.ts`. Measured
   twice: 2026-09-17 the intro-scene call read back the exact 15,132 tokens the world-engine call
   wrote, and 2026-09-18 the same shared namespace was observed in the reverse direction at
   **15,490** (intro-scene wrote; every subsequent world-engine call read it — five of them, across
   two sessions, in `.planning/phases/04-parity-verification/evidence/usage-lines.log`). **Quote
-  15,490; 15,132 is the superseded Phase 2 figure.** The number moves whenever
+  15,523; 15,522, 15,490 and 15,132 are superseded.** The 15,490 was measured live on 2026-09-18
+  and then invalidated the same day by the narration-length edit to `WORLD_SYSTEM_PROMPT`;
+  re-derived free with `count_tokens`, system-only went 13,669 -> 13,701, projecting ~15,522 —
+  which two live runs on 2026-09-19 then confirmed at **15,523**, one token off the free
+  derivation (`.planning/experiments/2026-09-19-sonnet-split/` and
+  `.planning/experiments/2026-09-19-cache-ttl-break/`). Re-derive rather than re-measure. The
+  number moves whenever
   `WORLD_SYSTEM_PROMPT` or `WORLD_LORE` changes — re-derive it with `count_tokens`, which is free.
   The property, not the number, is what this constraint protects.
-  `determineUniqueSkill` stays on Sonnet 5 because its prompt is the adversarially-validated
-  surface and it sends no system blocks at all, so it has no cache to share (see #8).
-  ⚠️ This reverses an older all-Sonnet decision, chosen deliberately by the developer after the
-  reversal was flagged. Do not "correct" it back.
+  `determineUniqueSkill` is independent of that pair: it sends no system blocks at all, so it has
+  no cached prefix and nothing to share with anything (see #8). Its model and effort move freely.
+  It runs Opus 5 at `medium` — one short soul-read from five questionnaire answers, not
+  rule-adherence over a 15k-token prompt.
+  ⚠️ **This arrangement has reversed twice, each time deliberately.** It began all-Sonnet, moved to
+  Opus on the two system-block routes (2026-09-17), and moved to Sonnet on that pair with Opus on
+  unique-skill (2026-09-18) — the developer's call each time, made with the prior reversal in view.
+  Do not "correct" it back to an earlier arrangement. The rationale for each move is in
+  `docs/design-decisions-log.md`.
 - `WORLD_SYSTEM_PROMPT` and `WORLD_LORE` are both static per playthrough (and across playthroughs) and are sent as separate `system` blocks via a shared `buildSystemBlocks()` helper, with `cache_control: { type: "ephemeral" }` on the `WORLD_LORE` block, so their token cost is paid once via prompt caching rather than on every call.
 - Verify caching is actually engaging (`cache_creation_input_tokens` / `cache_read_input_tokens` in the API response) once this is running in a real environment with visibility into raw responses — this was previously hard to verify from inside an artifact.
 

@@ -237,8 +237,16 @@ including unregistering every route and replacing the whole cached prefix with j
   `actionHistory` echoing player text back undelimited a turn later). Both closed and pinned.
 
 ### ⚠️ Carry into Phase 3/4 planning
-- **Cost**: a cached world-engine turn is **$0.0499**, not $0.04; a 50-turn session **~$2.65**,
-  not $2.10. Output tokens dominate (~77%). A >5-min pause costs **+$0.087** on the next call.
+- **Cost — superseded by the Phase 4 measurement.** Phase 2 recorded $0.0499 per cached
+  world-engine turn and ~$2.65 per 50-turn session. Re-derived from Phase 4's committed usage log
+  (`.planning/phases/04-parity-verification/evidence/usage-lines.log`) at current published rates:
+  a cached turn is **$0.063-$0.080, mean $0.072** (n=5), and a 50-turn session is **~$3.74**.
+  Creation is **$0.147** — $0.006 for unique-skill on Sonnet plus $0.141 for intro-scene, of which
+  **$0.097 is the one-time cache write**, not the prose. Output tokens dominate at **80%** of a
+  cached turn, so narration length is what moves the bill. A >5-min pause re-pays that $0.097
+  write instead of the $0.008 read. Derive costs from the usage log, never restate a per-turn
+  figure — the $0.31 first reported for the Phase 4 run was the Phase 2 rate restated; the real
+  total was $0.51.
 - **The 15,132-token figure is stale** — cycle 2 added two lines to `WORLD_SYSTEM_PROMPT`.
   Re-derive with `count_tokens` (free). Only re-proving cache engagement costs money.
 - **`WORLD_SYSTEM_PROMPT` is no longer byte-identical to the legacy artifact** (two deliberate,

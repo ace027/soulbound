@@ -119,9 +119,31 @@ describe('MODELS', () => {
   it('names exactly the three call sites, with no date-suffixed model IDs', async () => {
     const { MODELS } = await import('../config.js');
     expect(MODELS).toEqual({
-      uniqueSkill: 'claude-sonnet-5',
-      worldEngine: 'claude-opus-5',
-      introScene: 'claude-opus-5',
+      uniqueSkill: 'claude-opus-5',
+      worldEngine: 'claude-sonnet-5',
+      introScene: 'claude-sonnet-5',
     });
+  });
+
+  /**
+   * The invariant, asserted separately from the current values above so that a
+   * future model change has to break it deliberately rather than by accident.
+   *
+   * worldEngine and introScene are the only two routes that send system blocks,
+   * so they share one model-scoped prompt cache. Whichever runs first pays the
+   * ~15.5k-token write; the rest read it ~12x cheaper. Splitting them across
+   * models strands the other's cache warmth and produces no error — only a
+   * bill. WHICH model they share is a free choice; THAT they share one is not.
+   */
+  it('keeps worldEngine and introScene on the same model — they share a cache', async () => {
+    const { MODELS } = await import('../config.js');
+    expect(MODELS.worldEngine).toBe(MODELS.introScene);
+  });
+
+  it('never appends a date suffix to any model ID', async () => {
+    const { MODELS } = await import('../config.js');
+    for (const id of Object.values(MODELS)) {
+      expect(id).not.toMatch(/-\d{8}$/);
+    }
   });
 });

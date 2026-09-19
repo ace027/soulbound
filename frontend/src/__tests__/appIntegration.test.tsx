@@ -415,3 +415,120 @@ describe('App — the 80-entry log cap', () => {
     expect(persisted.log.map((e) => e.text)).not.toContain('Seeded 6');
   });
 });
+
+/**
+ * ── Character creation seeds the entity ledger ──────────────────────────────
+ *
+ * The regression this guards is not in `applyWorldUpdate` — that function
+ * merged entities correctly the whole time. It was in App.tsx's creation path,
+ * which built its initial GameState with a hardcoded
+ * `narrativeMemory: { entities: {}, notes: [] }` and discarded the intro
+ * scene's `narrative_memory_updates` entirely.
+ *
+ * That is invisible to every pure-function test, and its symptom is not an
+ * empty ledger but a FALSE one: `renderWorldEnginePrompt` interpolates the
+ * ledger as an assertion ("KNOWN ENTITIES ...: (none yet)"), so turn 1 was
+ * told as ground truth that the NPC the intro had just introduced did not
+ * exist. Observed live — see
+ * `.planning/experiments/2026-09-19-cache-ttl-break/`.
+ *
+ * So this drives the real creation flow with both endpoints mocked, and reads
+ * the ledger back out of the autosave the flow writes.
+ */
+describe('App — character creation seeds narrative memory from the intro scene', () => {
+  function mockCreationFetch() {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+        const body = url.includes('/api/unique-skill')
+          ? {
+              skill_name: 'The Labelled Drawer',
+              tier: 'Unique',
+              description: 'A power of held judgment.',
+              soul_resonance: 'He condemns too early.',
+              etching_text: 'Something wooden and cool slides open.',
+            }
+          : {
+              narration: 'You come to yourself in the Sortage.',
+              state_updates: {
+                skill_mastery_changes: [],
+                new_skills_granted: [],
+                skill_evolutions: [],
+                unique_sub_ability_unlocked: null,
+                world_events: [
+                  {
+                    type: 'scene_set',
+                    location: 'The Sortage, Ashenveil',
+                    scene_summary: 'Sorting condemned correspondence at the burn-pit.',
+                    description: null,
+                  },
+                ],
+              },
+              narrative_memory_updates: {
+                new_entities: [
+                  { name: 'the Ledger-Warden', description: 'Masked overseer, brass tally-chain.' },
+                  { name: 'The Sortage', description: "Ashenveil's sorting-yard beneath the undercroft." },
+                ],
+                note: 'A bundle of letters refuses the burn-pit.',
+              },
+              gm_note: null,
+            };
+        return new Response(JSON.stringify(body), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }),
+    );
+  }
+
+  async function createCharacter() {
+    render(<App />);
+    fireEvent.click(await screen.findByText(/Begin/));
+    fireEvent.change(await screen.findByPlaceholderText('What are you called?'), {
+      target: { value: 'Yulen Marr' },
+    });
+    fireEvent.click(screen.getByText('Shadeveil'));
+    fireEvent.click(screen.getByRole('button', { name: /Enter the World Voice/i }));
+
+    // Five open questions; the last button is worded differently.
+    for (let i = 0; i < 5; i++) {
+      const box = await screen.findByPlaceholderText('Write freely...');
+      fireEvent.change(box, { target: { value: `answer ${i}` } });
+      fireEvent.click(
+        screen.getByRole('button', { name: i < 4 ? /Continue/i : /Speak to the World Voice/i }),
+      );
+    }
+    await screen.findByPlaceholderText('What do you do?');
+  }
+
+  it('writes the intro scene\'s entities and note into the first autosave', async () => {
+    mockCreationFetch();
+    await createCharacter();
+
+    const persisted = await waitFor(() => {
+      const raw = localStorage.getItem(SAVE_INDEX_KEY);
+      expect(raw).toBeTruthy();
+      const idx = JSON.parse(raw!) as Array<{ id: string }>;
+      expect(idx).toHaveLength(1);
+      const slot = JSON.parse(localStorage.getItem(SAVE_PREFIX + idx[0].id)!) as SaveSlot;
+      expect(slot.gameState.narrativeMemory).toBeTruthy();
+      return slot;
+    });
+
+    const nm = persisted.gameState.narrativeMemory;
+
+    // The assertion the old code failed: the ledger is NOT empty.
+    expect(Object.keys(nm.entities)).toHaveLength(2);
+    expect(nm.entities['the Ledger-Warden']).toEqual({
+      name: 'the Ledger-Warden',
+      description: 'Masked overseer, brass tally-chain.',
+    });
+    expect(nm.entities['The Sortage'].description).toMatch(/sorting-yard/);
+    expect(nm.notes).toEqual(['A bundle of letters refuses the burn-pit.']);
+
+    // And the rest of creation still works.
+    expect(persisted.gameState.location).toBe('The Sortage, Ashenveil');
+    expect(persisted.gameState.skills.some((s) => s.name === 'The Labelled Drawer')).toBe(true);
+  });
+});

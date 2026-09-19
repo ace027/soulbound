@@ -137,7 +137,7 @@ describe('buildSystemBlocks', () => {
 
     expect(first).toHaveLength(2);
     expect(first[0]).not.toHaveProperty('cache_control');
-    expect(first[1]).toMatchObject({ cache_control: { type: 'ephemeral' } });
+    expect(first[1]).toMatchObject({ cache_control: { type: 'ephemeral', ttl: '1h' } });
 
     // Byte-stable: two independent calls must produce JSON.stringify-identical
     // output. Any per-request variation here (timestamp, request id,
@@ -155,7 +155,7 @@ describe('buildSystemBlocks', () => {
     expect(blocks[1]).toEqual({
       type: 'text',
       text: WORLD_LORE,
-      cache_control: { type: 'ephemeral' },
+      cache_control: { type: 'ephemeral', ttl: '1h' },
     });
 
     // ORDER, explicitly: a swap keeps both texts present and every
@@ -219,7 +219,10 @@ describe('callWorldVoice request construction', () => {
   it('sets output_config.effort to the chosen named value', async () => {
     const request = await callAndCapture(false, TestSchema, { answer: 'x' });
     const outputConfig = request.output_config as Record<string, unknown>;
-    expect(outputConfig.effort).toBe('high');
+    // callAndCapture drives the uniqueSkill route (useSystem: false), which
+    // runs 'medium' — it sends no system blocks, so it shares no cache and its
+    // effort is deliberately independent of the other two.
+    expect(outputConfig.effort).toBe('medium');
     expect(['low', 'medium', 'high', 'xhigh', 'max']).toContain(outputConfig.effort);
   });
 
@@ -305,7 +308,9 @@ describe('callWorldVoice request construction', () => {
     expect(system[0]!.text).toBe(WORLD_SYSTEM_PROMPT);
     expect(system[1]!.text).toBe(WORLD_LORE);
     expect(system[0]).not.toHaveProperty('cache_control');
-    expect(system[1]!.cache_control).toEqual({ type: 'ephemeral' });
+    // 1-hour TTL: bought for the gaps between turns, not for continuous play.
+    // See the rationale on buildSystemBlocks.
+    expect(system[1]!.cache_control).toEqual({ type: 'ephemeral', ttl: '1h' });
   });
 
   it('passes model through verbatim', async () => {

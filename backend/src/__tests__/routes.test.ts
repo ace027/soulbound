@@ -253,7 +253,7 @@ describe('World Voice routes (mocked SDK boundary)', () => {
   });
 
   describe('POST /api/unique-skill', () => {
-    it('calls claude-sonnet-5 with the unique-skill schema and no system key', async () => {
+    it('calls claude-opus-5 with the unique-skill schema and no system key', async () => {
       createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5', validUniqueSkillPayload));
       const res = await httpRequest(port, {
         method: 'POST',
@@ -266,7 +266,10 @@ describe('World Voice routes (mocked SDK boundary)', () => {
       expect(createSpy).toHaveBeenCalledTimes(1);
 
       const request = createSpy.mock.calls[0]![0] as Record<string, unknown>;
-      expect(request.model).toBe('claude-sonnet-5');
+      // Pins the WIRING: this route calls ITS configured model. The literal
+      // values live in config.test.ts, so a deliberate model change updates
+      // one place, not five.
+      expect(request.model).toBe(config.MODELS.uniqueSkill);
       expect('system' in request).toBe(false);
 
       expect(schemaPropertyNames(request).sort()).toEqual(
@@ -276,7 +279,7 @@ describe('World Voice routes (mocked SDK boundary)', () => {
   });
 
   describe('POST /api/world-engine', () => {
-    it('calls claude-opus-5 with the World Voice schema and system blocks present', async () => {
+    it('calls claude-sonnet-5 with the World Voice schema and system blocks present', async () => {
       createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5', validWorldVoicePayload));
       const res = await httpRequest(port, {
         method: 'POST',
@@ -288,7 +291,7 @@ describe('World Voice routes (mocked SDK boundary)', () => {
       expect(res.bodyJson).toEqual(validWorldVoicePayload);
 
       const request = createSpy.mock.calls[0]![0] as Record<string, unknown>;
-      expect(request.model).toBe('claude-opus-5');
+      expect(request.model).toBe(config.MODELS.worldEngine);
       expect('system' in request).toBe(true);
       expect(Array.isArray(request.system)).toBe(true);
       expect((request.system as unknown[]).length).toBe(2);
@@ -300,7 +303,7 @@ describe('World Voice routes (mocked SDK boundary)', () => {
   });
 
   describe('POST /api/intro-scene', () => {
-    it('calls claude-opus-5 with the World Voice schema and system blocks present', async () => {
+    it('calls claude-sonnet-5 with the World Voice schema and system blocks present', async () => {
       createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5', validWorldVoicePayload));
       const res = await httpRequest(port, {
         method: 'POST',
@@ -312,7 +315,7 @@ describe('World Voice routes (mocked SDK boundary)', () => {
       expect(res.bodyJson).toEqual(validWorldVoicePayload);
 
       const request = createSpy.mock.calls[0]![0] as Record<string, unknown>;
-      expect(request.model).toBe('claude-opus-5');
+      expect(request.model).toBe(config.MODELS.introScene);
       expect('system' in request).toBe(true);
     });
   });
