@@ -94,11 +94,30 @@ function getClient(apiKey: string): Anthropic {
  * symptom of that is a bill, not an error — so this function takes no
  * arguments and reads nothing but the two static constants. Two calls must
  * produce `JSON.stringify`-identical output.
+ *
+ * ── Why `ttl: '1h'` and not the 5-minute default (2026-09-19) ─────────────
+ * A cache READ refreshes the entry's timer for free on either TTL, so during
+ * continuous play the 5-minute default stays warm indefinitely and the longer
+ * TTL buys nothing. The 1-hour TTL is bought for the GAPS — a player who steps
+ * away mid-session.
+ *
+ * The trade, measured against this prefix (15,523 tokens on Sonnet 5 input at
+ * \$2/MTok): a 1-hour write costs 2x input (\$0.0621) versus 1.25x for the
+ * 5-minute write (\$0.0388) — \$0.0233 more up front. But under the 5-minute
+ * TTL every pause longer than five minutes forces a fresh write instead of a
+ * \$0.0031 read, costing \$0.0357 each time. Break-even is 0.65 pauses, so the
+ * 1-hour TTL is ahead from the FIRST bathroom break and never falls behind
+ * again within the hour.
+ *
+ * This is workload-specific, not a general rule: it wins because this is a
+ * human-paced game with long thinking gaps and one big static prefix. Re-run
+ * the arithmetic if the prefix size, the model, or the pacing changes. Pauses
+ * beyond an hour are cold either way.
  */
 export function buildSystemBlocks(): TextBlockParam[] {
   return [
     { type: 'text', text: WORLD_SYSTEM_PROMPT },
-    { type: 'text', text: WORLD_LORE, cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: WORLD_LORE, cache_control: { type: 'ephemeral', ttl: '1h' } },
   ];
 }
 
