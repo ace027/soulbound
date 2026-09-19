@@ -57,7 +57,6 @@
  */
 
 import {
-  MAX_NARRATIVE_NOTES,
   type GameState,
   type LogEntry,
   type Skill,
@@ -65,6 +64,7 @@ import {
   type UniqueSubAbility,
   type WorldVoiceResponse,
 } from '@soulbound/shared';
+import { mergeNarrativeMemory } from './narrativeMemory';
 
 export interface ApplyWorldUpdateResult {
   /** The next game state. Never mutates the input. */
@@ -174,15 +174,13 @@ export function applyWorldUpdate(
   }
 
   // ── Merge narrative memory ───────────────────────────────────────────────
-  const nmUpdates = result.narrative_memory_updates ?? {};
-  const prevMemory = gameState.narrativeMemory ?? { entities: {}, notes: [] };
-  const mergedEntities = { ...prevMemory.entities };
-  (nmUpdates.new_entities ?? []).forEach((e) => {
-    if (e?.name) mergedEntities[e.name] = { name: e.name, description: e.description || '' };
-  });
-  const mergedNotes = nmUpdates.note
-    ? [...prevMemory.notes, nmUpdates.note].slice(-MAX_NARRATIVE_NOTES)
-    : prevMemory.notes;
+  // Moved to game/narrativeMemory.ts unchanged, so character creation folds
+  // the intro scene's entities in with the SAME rules instead of starting the
+  // ledger empty. See that module's header for the drift this caused.
+  const narrativeMemory = mergeNarrativeMemory(
+    gameState.narrativeMemory,
+    result.narrative_memory_updates,
+  );
 
   const newState: GameState = {
     ...gameState,
@@ -190,7 +188,7 @@ export function applyWorldUpdate(
     // Uncapped, as legacy has it. The backend caps actionHistory at 2000 and
     // the body at 512kb; 03-CONTEXT.md records that trip point as knowingly shipped.
     actionHistory: [...gameState.actionHistory, action],
-    narrativeMemory: { entities: mergedEntities, notes: mergedNotes },
+    narrativeMemory,
   };
 
   const sceneEvent = (updates.world_events ?? []).find((e) => e.type === 'scene_set');

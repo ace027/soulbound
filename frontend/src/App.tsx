@@ -87,6 +87,7 @@ import {
 import { callWorldEngine, determineUniqueSkill, generateIntroScene } from './lib/api';
 import { deleteSave, listSaves, loadSave, newSlotId, writeSave } from './lib/saves';
 import { applyWorldUpdate } from './game/applyWorldUpdate';
+import { mergeNarrativeMemory } from './game/narrativeMemory';
 
 import TitleScreen from './screens/TitleScreen';
 import RaceScreen from './screens/RaceScreen';
@@ -240,7 +241,14 @@ export default function App() {
         location: sceneEvent?.location || 'The Crossroads of Vaeltharion',
         currentScene: sceneEvent?.scene_summary || 'The world begins.',
         actionHistory: [],
-        narrativeMemory: { entities: {}, notes: [] },
+        // Seed the ledger from the intro scene instead of starting it empty.
+        // /api/intro-scene returns a full WorldVoiceResponse, and the model is
+        // instructed to record any named NPC/place/faction it introduces — so
+        // an empty ledger here silently discarded the opening scene's cast.
+        // renderWorldEnginePrompt states the ledger as fact ("KNOWN ENTITIES:
+        // (none yet)"), so turn 1 was being told the NPC it had just been
+        // shown did not exist. See game/narrativeMemory.ts.
+        narrativeMemory: mergeNarrativeMemory(undefined, intro.narrative_memory_updates),
       };
 
       const newId = newSlotId();
