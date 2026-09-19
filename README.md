@@ -9,14 +9,33 @@ A Tensura-inspired text RPG set in the original fantasy world of Vaeltharion, wh
    cp .env.example .env
    ```
 
-2. Add your Anthropic API key to `.env`:
+2. Add your Anthropic API key to `.env`, using the `SOULBOUND_` name:
    ```bash
    # Edit .env and paste your key from https://console.anthropic.com/account/keys
-   ANTHROPIC_API_KEY=your-key-here
+   SOULBOUND_ANTHROPIC_KEY=your-key-here
+   ```
+
+   **Prefer `SOULBOUND_ANTHROPIC_KEY` over `ANTHROPIC_API_KEY`.** Claude Code uses an
+   `ANTHROPIC_API_KEY` it finds in the environment in preference to a Pro/Max subscription, so
+   the plain name would quietly move your own Claude Code usage onto billed API credits.
+   `docker-compose.yml` maps the `SOULBOUND_` variable into the container as
+   `ANTHROPIC_API_KEY`, which is what the backend reads — only the host-side name differs. Set
+   one or the other; `SOULBOUND_ANTHROPIC_KEY` wins if both are present.
+
+   A Claude Pro or Max subscription does **not** include API access. Anthropic bills the API
+   separately through Console credits.
+
+3. Restrict the file to your own account:
+   ```bash
    chmod 600 .env
    ```
 
-3. The key is now readable only by the owner and passed securely to the backend container.
+   The key is now readable only by the owner, and reaches the backend container at run time —
+   never the browser bundle, and never an image layer.
+
+Running the backend directly on the host rather than through Compose? Nothing loads `.env` into
+the Node process, so export the variable yourself (`export ANTHROPIC_API_KEY=...`) or pass
+`--env-file .env`.
 
 ## Run
 
