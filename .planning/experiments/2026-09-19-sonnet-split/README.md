@@ -52,6 +52,8 @@ the prompt-injection rule behaving as written.
 
 ## Limits of this run — do not over-read it
 
+> Three of these were closed later the same day by `../2026-09-19-cache-ttl-break/`: the Plundering / Extra-Skill-prerequisite / Soul-Rewrite rules were probed, save/reload was re-run on the newer build, and the 1-hour TTL replaced the 1.25x write rate noted below. The rest still stand.
+
 - **n=3 turns, one sample.** Not a distribution.
 - **One adversarial probe, three rules.** Plundering, the Extra-Skill 80+ prerequisite, and Soul
   Rewrite are still unprobed on Sonnet. This is not the Tier 0 suite.
