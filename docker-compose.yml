@@ -62,12 +62,12 @@ services:
       # reverse proxy in front, and this list must change with it.
       - ALLOWED_HOSTS=localhost:3001,127.0.0.1:3001,[::1]:3001,backend:3001
     ports:
-      # Loopback by default. The backend holds the API key and has no
-      # application-level auth, so binding 0.0.0.0 on a host with a public IP
-      # would expose it — and from Phase 2 that means an unmetered Anthropic
-      # proxy for anyone who finds the port. Exposing it beyond this host is an
-      # affirmative choice: change this, and put a reverse proxy and auth in
-      # front of it.
+      # Loopback by default. The backend now requires the passphrase on /api
+      # (Phase 5's access gate), but it still holds the API key and speaks
+      # plain HTTP, so it stays off the network unless you decide otherwise.
+      # Vite reaches it over the compose network and needs no exposure.
+      # Exposing it beyond this host is an affirmative choice: change this,
+      # and put TLS in front of it.
       - "127.0.0.1:3001:3001"
     # Runtime hardening. The backend holds the API key and proxies paid calls, so
     # it gets the tightest posture the service can actually run under:

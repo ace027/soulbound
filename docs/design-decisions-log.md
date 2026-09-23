@@ -123,6 +123,77 @@ holding the MUST NOT rule list and a strict JSON schema together over a large pr
 `effort: 'high'` was chosen to protect — and it is now doing that on a smaller model. Both are
 worth watching in play rather than assuming.
 
+## Access gate for published images (2026-09-23)
+
+**The problem.** Phase 5 publishes a Docker image anyone can pull. Until then the only thing
+protecting the backend was the loopback bind in `docker-compose.yml`. A deployer who published the
+port, on purpose or by accident, put an unmetered proxy for their own Anthropic key on the network.
+
+**Options, and the choice.** The developer chose option 2, a deployer-set access gate, on
+2026-09-23:
+1. Docs-only warnings. Rejected: safety would depend on every deployer reading them.
+2. A deployer-set passphrase on every paid route. **Chosen.**
+3. Real user accounts. Rejected as out of scope: they belong with multiplayer.
+
+**What shipped.** Every `/api/*` route except `/api/health` requires
+`Authorization: Bearer <SOULBOUND_PASSPHRASE>` (`backend/src/accessGate.ts`,
+`backend/src/server.ts`). A missing or wrong value gets 401 `PASSPHRASE_REQUIRED` with
+`WWW-Authenticate: Bearer realm="soulbound"`. A per-client rate limit (default 30/min,
+`RATE_LIMIT_PER_MINUTE`, 1-600) runs **before** the passphrase check and before any body parsing,
+so guesses are throttled and an unauthenticated body is never parsed. Over the limit gets 429
+`TOO_MANY_REQUESTS` plus `Retry-After`. The comparison hashes both sides with SHA-256, then uses
+`crypto.timingSafeEqual`. The passphrase is required at boot, redacted from logs like the key, and
+deleted from `process.env` once read (`backend/src/config.ts`). `/api/health` stays open because
+the compose healthchecks call it with no credentials.
+
+In the browser, `frontend/src/components/AccessGate.tsx` wraps `<App/>` in
+`frontend/src/main.tsx`. Before the title screen it calls `GET /api/access` (204 means in). On 401
+`PASSPHRASE_REQUIRED` it shows an inline form: no `window.prompt` (constraint #1). The trimmed value
+is stored in `localStorage` under `sbc-access-passphrase` and sent as the Bearer header on every
+call. A later `PASSPHRASE_REQUIRED` clears it and asks again. `App.tsx` is unchanged.
+
+**This is not the rejected paste-per-session BYOK.** CLAUDE.md rejects BYOK, where players paste an
+Anthropic key into the browser. Here the deployer issues the passphrase and the player never holds
+an Anthropic key. The key architecture is unchanged: the backend holds the deployer's key from
+`.env`. The gate is access control on that proxy, not a re-opening of the auth decision.
+
+**New error codes, on purpose.** Upstream Anthropic failures already use 401
+`AUTHENTICATION_FAILED` and 429 `RATE_LIMITED` (`backend/src/anthropic.ts`). The frontend decides by
+**code**, never by status, so a bad deployer key never wipes a player's correct passphrase.
+
+**Printable ASCII only, 12+ characters.** Browsers refuse to send characters outside Latin-1 in a
+header. An accented or emoji passphrase would let the UI open and then fail every call silently,
+so the backend refuses to boot on one instead.
+
+**One image, and a departure from the earlier proxy note.** The architecture was chosen from three
+competing proposals: "Pragmatic + 2 from Clean". The backend serves the built frontend when
+`STATIC_DIR` is set, so the browser and API are same-origin on one port, with no proxy and no CORS
+change. `/api/*` never returns `index.html`, and paths with a file extension never get the page
+fallback. This **departs** from an earlier STATE note recommending a reverse proxy that forwards
+`/api`: serving the bundle from the backend gives the same same-origin property without one. The
+rejected alternative was an nginx front end with two images, a better fit for a future world
+server but a second container every deployer pays for today. `backend/Dockerfile` stages:
+`builder` → `frontend-build` (on `$BUILDPLATFORM`) → `api` (no bundle; the dev compose targets it)
+→ `runtime` (the published image). The frontend's old `serve -s` runtime stage was deleted.
+
+**Accepted gaps.**
+- If the backend is down when the page loads, the UI opens anyway. A creation that later hits a 401
+  still strands on the loading screen (`App.tsx:267-269`). That needs two rare conditions, and
+  fixing it would mean editing `App.tsx`.
+- The historical evidence scripts (`.planning/phases/02-backend-world-voice/evidence/live-verification.mjs`,
+  `.planning/phases/04-parity-verification/evidence/playthrough.mjs`, and the two
+  `.planning/experiments/2026-09-19-*/playthrough.mjs`) send no header, so they get 401 if re-run.
+  They are historical evidence and stay as they are.
+- Failed-passphrase requests share a rate-limit bucket with real players from the same address.
+- Behind the dev compose, all LAN players share one bucket: they all arrive via the Vite container.
+- It is plain HTTP. TLS termination is out of scope.
+
+**Release.** `.github/workflows/release.yml` runs on manual `workflow_dispatch` only: test, smoke,
+then publish `ghcr.io/deanitservices/soulbound:{version}` and `:latest` for `linux/amd64` and
+`linux/arm64`. It refuses when the four `package.json` versions disagree and refuses to overwrite
+an existing version tag; that check fails closed. CI runs `scripts/smoke-image.sh` on every push.
+The first real GHCR publish is **untested** until someone dispatches it after merge.
+
 ---
 
 ## Model Split (superseded 2026-09-17 entry) — Sonnet 5 for soul-reading, Opus 5 for the world

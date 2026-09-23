@@ -86,6 +86,8 @@ Inside the Claude.ai artifact, calls to `api.anthropic.com` were authenticated a
 - Deployment shape is **single-tenant self-hosting**: one deployer, one container, their own key, on their own trusted machine. So a self-hosting deployer does bring their own key — via `.env`, not via the UI.
 - **Paste-per-session BYOK** (session-only, in-memory, as in the artifact) is the documented *rejected* alternative, not a fallback to reach for. It assumes an untrusted host, which doesn't match this deployment shape.
 
+Published images (Phase 5) add a **deployer-set access gate**: every `/api/*` route except `/api/health` requires `Authorization: Bearer <SOULBOUND_PASSPHRASE>`, behind a per-client rate limit (`backend/src/accessGate.ts`). This is access control on the proxy, not a re-opening of the decision above — the key architecture is unchanged, and the backend still holds the deployer's key from `.env`. It is **not** the rejected BYOK: the passphrase is issued by the deployer, and players never hold an Anthropic key. See `docs/design-decisions-log.md` → "Access gate for published images (2026-09-23)".
+
 See `docs/MIGRATION-PLAN.md` for the full decision and all three rejected options.
 
 ## Current functional scope (as of migration)
