@@ -1,7 +1,9 @@
 # Project State
 
 ## Current Position
-- **Phase**: 5 of 5 (executed, pending review)
+- **Phase**: 5 of 5 (under review — cycle 1/3 fixes applied, cycle 2 re-review next)
+- **Review cycle 1** (3-reviewer panel: Security, QA, Infra): NEEDS WORK — 1 blocker (self-host healthcheck 403 on any non-default port), 6 warnings, 12 suggestions. Fixed: `8e382e0`..`3f64eb3` (healthcheck proven healthy on :3999; release perms scoped to publish, main-only, smoke the pushed build, runbook, unpublished-image note, timeouts; AccessGate non-ASCII + unreachable-server recovery; wrong-passphrase test; real e2e submit; length-mismatch mutation recorded as caught). Not taken: CSP/anti-framing headers (CSP is out of scope in PROJECT.md — developer decision), SHA-pinning `docker/*` actions, build/npm caches.
+  ⚠️ **A real `SOULBOUND_ANTHROPIC_KEY` from this sandbox's environment was printed into one fix agent's session transcript** (not into any file or commit — exact-match checked). Rotation recommended to the developer.
 - **Phase 5 results**: 05-01 ✅ `5c45340`, `421d896` — passphrase required at boot, config readers, shared contract; backend tests 117 → 146, 3/3 mutations caught
   05-02 ✅ `846d7e8`..`95609ae` — rate limiter + gate before body parsing, `/api/access`; independent Security Engineer review (orchestrator-run) PASS WITH FIXES → all fixed (map sweep + 10k cap, `/api`-scoped JSON parsing, TRUST_PROXY Docker warning, test gaps); backend tests 146 → 180; mutations 5/6 caught, 1 behaviourally-equivalent (`===` vs timingSafeEqual) recorded
   05-03 ✅ `0f16655`..`aa886bf` — passphrase store, Bearer header + `checkAccess`, `AccessGate` wrapping `App` in `main.tsx`; `App.tsx` byte-identical; frontend tests 150 → 184; e2e 6/6 (guard narrowed to `/api/access` only); mutations 2/2 caught
