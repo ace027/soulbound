@@ -2,18 +2,22 @@
 
 ```yaml
 map_schema_version: 1
-generated_at: "2026-09-18"
-analyzed_commit: 32882234ac659e7fa19cb91cbb6ddf3057477315
-source_file_count: 54
-source_fingerprint: 29353e65f863b7d1
+generated_at: "2026-09-23"
+analyzed_commit: 1506c3ada62ac101c9b83828f449e1df73dae787
+source_file_count: 56
+source_fingerprint: 9ff2babb3c9f807f
+source_fingerprint_kind: sha256(sorted git blob hashes of tracked .ts/.tsx outside .planning/)[:16]
 scope: full-project
-symbol_count: 125
-chunk_count: 54
+symbol_count: 127
+chunk_count: 56
 ```
 
-> **Refreshed after Phase 4.** The previous map (`8a9f165`, fingerprint `55cdb963eeca5ba7`) indexed
-> `legacy/souldbound-world.jsx`, which Phase 4 deleted. It also predates the Playwright harness and
-> two new constraint guards. All counts below are derived; each carries its command.
+> **Refreshed after PR #4 / #5 (2026-09-23).** The previous map (`3288223`, fingerprint
+> `29353e65f863b7d1`) predated PR #4's model swap, the 1-hour cache TTL, the narration-length edit
+> and the new `game/narrativeMemory.ts`. All counts below are derived; each carries its command.
+> One correction to the previous map: it said legacy citations span "25 files". They span **13**
+> source files, and did at `3288223` too (`git grep -lE 'legacy [0-9]+(-[0-9]+)?' 3288223 --
+> frontend/src shared/src backend/src | wc -l`).
 
 ---
 
@@ -45,30 +49,31 @@ requesting it.
 |---|---|---|
 | `shared/src/worldVoice.ts` (387) | contract | Zod schemas, derived JSON Schemas, `assertWorldVoiceContract` |
 | `shared/src/gameState.ts` (202) | contract | Race/Skill/GameState/LogEntry/SaveSlot, save keys, `TIER_STYLE` |
-| `backend/src/anthropic.ts` (497) | backend | `buildSystemBlocks()`, `callWorldVoice()`, typed error taxonomy |
-| `backend/src/config.ts` (226) | backend | `MODELS`, key loading + `redact()`, port/origin/host config |
+| `backend/src/anthropic.ts` (530) | backend | `buildSystemBlocks()` (1h TTL), per-route `EFFORT`, `callWorldVoice()`, typed error taxonomy |
+| `backend/src/config.ts` (243) | backend | `MODELS`, key loading + `redact()`, port/origin/host config |
 | `backend/src/server.ts` (297) | backend | `buildApp()`, Host allow-list, CORS, error handler |
 | `backend/src/routes/*.ts` (138–254) | backend | Three World Voice routes on one helper |
 | `backend/src/data/*.ts` (85, 158) | prompt-data | `WORLD_LORE`, `WORLD_SYSTEM_PROMPT` |
 | `backend/src/untrustedText.ts` (81) | backend | Player-text delimiting; prompt-injection guard |
-| `frontend/src/App.tsx` (368) | frontend-app | 16 `useState` + 1 `useRef`; all handlers; renders by phase |
-| `frontend/src/game/applyWorldUpdate.ts` (214) | game-logic | The pure turn logic (R10) |
+| `frontend/src/App.tsx` (376) | frontend-app | 16 `useState` + 1 `useRef`; all handlers; renders by phase |
+| `frontend/src/game/applyWorldUpdate.ts` (212) | game-logic | The pure turn logic (R10) |
+| `frontend/src/game/narrativeMemory.ts` (90) | game-logic | **New (PR #4).** `mergeNarrativeMemory` — the ONE entity-ledger/notes merge, shared by the turn path and character creation |
 | `frontend/src/lib/api.ts` (342) | frontend-io | Backend client; status + content-type gates |
 | `frontend/src/lib/saves.ts` (167) | frontend-io | `localStorage` saves on byte-identical keys |
 | `frontend/src/screens/*.tsx` (27–180) | frontend-screens | Five phase screens |
 | `frontend/src/components/*.tsx` (50–125) | frontend-components | Four presentational components |
-| `frontend/e2e/smoke.spec.ts` (549) | frontend-e2e | **New.** Real-layout guard — the only place with a layout engine |
+| `frontend/e2e/smoke.spec.ts` (556) | frontend-e2e | Real-layout guard — the only place with a layout engine |
 
 ## Dependency graph
 
-`shared/` is the hub: **18 of 33** non-test modules import `@soulbound/shared`, and it imports
+`shared/` is the hub: **19 of 34** non-test modules import `@soulbound/shared`, and it imports
 nothing internal. High fan-in by design.
 
 ```bash
 grep -rl '@soulbound/shared' --include=*.ts --include=*.tsx frontend/src backend/src shared/src \
-  | grep -vE '\.(test|spec)\.' | wc -l          # -> 18
+  | grep -vE '\.(test|spec)\.' | wc -l          # -> 19
 git ls-files '*.ts' '*.tsx' | grep -v '^\.planning/' | grep -vE '\.(test|spec)\.' \
-  | grep -v '^shared/' | wc -l                  # -> 33
+  | grep -v '^shared/' | wc -l                  # -> 34
 ```
 
 **One cycle exists and it is type-only**: `App.tsx` → `SimulationScreen.tsx` → `App.tsx`, and
@@ -82,18 +87,24 @@ and would remove the cycle entirely.
 
 | Route | Model | System blocks | Notes |
 |---|---|---|---|
-| `POST /api/unique-skill` | `claude-sonnet-5` | **none** | CLAUDE.md #8 — sends no `system` param at all |
-| `POST /api/world-engine` | `claude-opus-5` | `buildSystemBlocks()` | Shares one cache namespace with intro-scene |
-| `POST /api/intro-scene` | `claude-opus-5` | `buildSystemBlocks()` | Same namespace — either may write, the other reads |
+| `POST /api/unique-skill` | `claude-opus-5`, effort `medium` | **none** | CLAUDE.md #8 — sends no `system` param at all |
+| `POST /api/world-engine` | `claude-sonnet-5`, effort `high` | `buildSystemBlocks()` | Shares one cache namespace with intro-scene |
+| `POST /api/intro-scene` | `claude-sonnet-5`, effort `high` | `buildSystemBlocks()` | Same namespace — either may write, the other reads |
 | `GET /api/health` | — | — | Liveness only; does **not** prove reachability through the proxy |
 
-The two Opus routes must stay on the same model — caches are model-scoped, so moving either
-strands the other's warmth. Models live only in `backend/src/config.ts`'s `MODELS`.
+**PR #4 swapped the split** (it was Opus on the pair, Sonnet on unique-skill). The invariant is
+not which model: world-engine and intro-scene must stay on the **same** model *and* the same
+`effort`, because caches are model-scoped and `output_config` is part of the matched prefix.
+Pinned by `backend/src/__tests__/config.test.ts`. Models live only in `backend/src/config.ts`'s
+`MODELS`; effort only in `anthropic.ts`'s per-route `EFFORT`. This arrangement has reversed twice,
+deliberately — do not "correct" it back (CLAUDE.md, Model & API pattern).
 
-**Measured live 2026-09-18** (`.planning/phases/04-parity-verification/evidence/usage-lines.log`):
-intro-scene wrote a 15,490-token prefix and all five subsequent world-engine calls read it — a
-cross-route cache read, which is the property the split exists for. `unique-skill` shows zero on
-both cache counters, which is correct: no system blocks means no prefix to cache.
+**Cached prefix: 15,523 tokens**, confirmed live twice on 2026-09-19
+(`.planning/experiments/2026-09-19-sonnet-split/`, `.planning/experiments/2026-09-19-cache-ttl-break/`).
+It moves whenever `WORLD_SYSTEM_PROMPT` or `WORLD_LORE` changes — re-derive with `count_tokens`
+(free) rather than re-measuring. The `WORLD_LORE` block now carries `ttl: '1h'`; the break-even
+arithmetic is in `buildSystemBlocks()`'s docstring and is workload-specific. `unique-skill` shows
+zero on both cache counters, which is correct: no system blocks means no prefix to cache.
 
 ## Configuration
 
@@ -104,11 +115,13 @@ both cache counters, which is correct: no system blocks means no prefix to cache
 
 ## Test map
 
-**254 tests** — 115 backend (7 files), 139 frontend (10 files) — plus **5 Playwright e2e** in a
+**267 tests** — 117 backend (7 files), 150 frontend (11 files) — plus **5 Playwright e2e** in a
 separate suite. Counts derived by running `npm test` and `npx playwright test --list`, not restated.
 
 Every non-test module in `lib/`, `game/`, `hooks/`, `components/` and `screens/` has a paired
-`__tests__/` file. `App.tsx` has no unit test by design — it is covered by
+`__tests__/` file — including the new `game/__tests__/narrativeMemory.test.ts`. The
+entity-ledger-seeding fix is also pinned end-to-end in `appIntegration.test.tsx`, because the bug
+was a wiring omission in `App.tsx`, not a rule error. `App.tsx` has no unit test by design — it is covered by
 `frontend/src/__tests__/appIntegration.test.tsx`, which drives the real component because the
 wiring risk (a closure, not a rule) is structurally invisible to pure-function tests.
 
@@ -136,19 +149,20 @@ Three constraint guards added in Phase 4, each verified by mutation rather than 
 | Risk | Where | Why |
 |---|---|---|
 | **Verbatim-port docstrings are load-bearing** | `App.tsx`, `applyWorldUpdate.ts`, components, screens | They record why something that looks like a bug is deliberate — `autoSave` inside a `setLog` updater, `\|\| 5` as a falsy-coalesce, a dead `changed` Set kept for fidelity. An agent "cleaning" these reverses decisions. |
-| **69 citations point at a deleted file** | 25 files across `frontend/src`, `shared/src` | `legacy 787-802` and similar still resolve, but only through git. See "The retired oracle" below. |
+| **69 citations point at a deleted file** | 13 source files across `frontend/src`, `shared/src` | `legacy 787-802` and similar still resolve, but only through git. See "The retired oracle" below. |
 | **Inherited closure race, knowingly unfixed** | `App.tsx` `handleAction` / `handleManualSave` | Creating a save slot mid-turn lands that turn's autosave on the old slot. Present identically in the artifact; offered at the Phase 4 planning gate and **declined**. Do not fix without asking. |
 | **Nothing runs `test:e2e` in CI** | `.github/workflows/ci.yml` | CI runs `npm ci`, `npm run build`, `npm test` only. The layout guard runs when a human runs it. |
 | **Inherited 8px body-margin defect** | `frontend/src/index.css` | No `body` rule, so the UA default survives; every `100vh` screen overflows by 8px and the page gains a scrollbar. Present in the artifact too — invisible there because it rendered in an iframe whose host reset margins. The e2e spec encodes it as `BODY_MARGIN_OVERHANG_PX = 8`, which should drop to 0 when a reset lands. |
 | **Constraint 3's chains depend on `index.css` having no `#root` rule** | `frontend/src/index.css` | Add `display: flex` there and both layout roots become flex items inheriting `minHeight: 100vh` rather than `0`. jsdom cannot see it; the e2e spec can, and does. |
-| **`runtime` frontend image is non-deployable** | `frontend/Dockerfile` | `serve -s` answers `/api/*` with 200 + HTML. Dormant until something is served from it. |
+| **`runtime` frontend image is non-deployable** | `frontend/Dockerfile` | `serve -s` answers `/api/*` with 200 + HTML, and the game calls `/api/*` on every action. `lib/api.ts` surfaces it as `NON_JSON_RESPONSE`, but the container reports healthy. Compose sidesteps it by running the `builder` stage. Preferred fix: a same-origin reverse proxy for `/api` (see `docker-compose.yml` header). |
+| **Two callers, one merge** | `game/narrativeMemory.ts` | Character creation once built its ledger inline and dropped the intro scene's entities, so turn 1 denied the NPC it had just been shown. Any new path that constructs a `GameState` must go through `mergeNarrativeMemory`, not a literal. |
 | **A green healthcheck ≠ reachable** | `backend/src/server.ts` | The Host allow-list once 403'd every proxied call while the container reported healthy. Check the proxied path, not localhost. |
 | **Compose never exercised against live API calls** | `docker-compose.yml` | R14 ran host-run. The containerized path still needs `NODE_EXTRA_CA_CERTS` mounted and has never made a real call. |
 
 ## Conventions
 
 - **Single quotes** in `.ts`; **double quotes** in ported `.tsx` (legacy style, deliberate).
-- **Module headers explain *why***, and cite artifact line numbers. 69 such citations across 25 files.
+- **Module headers explain *why***, and cite artifact line numbers. 69 such citations across 13 source files.
 - **Counts and ranges are derived, never restated.** A number in prose carries its command.
 - **A fix is a claim**, and carries the same derivation burden as a finding. Adopted after Phase 4's
   review, where every fix commit seeded a smaller instance of the defect it was closing.
@@ -165,7 +179,8 @@ Three constraint guards added in Phase 4, each verified by mutation rather than 
 against. **It was deleted at the close of Phase 4**, once parity was confirmed against a live
 playthrough. Nothing imported it; it was never built, typechecked or tested.
 
-25 files still cite its line numbers in docstrings (69 citations). They resolve through git:
+13 source files still cite its line numbers in docstrings (69 citations —
+`git grep -hoE 'legacy [0-9]+(-[0-9]+)?' HEAD -- frontend/src shared/src backend/src | wc -l`). They resolve through git:
 
 ```bash
 git show 3d01fa5:legacy/souldbound-world.jsx                        # the whole file
@@ -182,7 +197,7 @@ and a rewrite silently breaks every one of them.
 ```bash
 npm install                          # workspace root
 npm run build -w @soulbound/shared   # required before either side typechecks
-npm test                             # 254 tests, jsdom only, no browser
+npm test                             # 267 tests, jsdom only, no browser
 cd frontend && npm run test:e2e      # 5 Playwright tests, real layout, zero API calls
 
 cd frontend && npx vite              # dev server, proxies /api to the backend

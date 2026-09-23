@@ -1,8 +1,8 @@
 {
   "map_schema_version": 1,
-  "generated_at": "2026-09-18",
-  "analyzed_commit": "32882234ac659e7fa19cb91cbb6ddf3057477315",
-  "symbol_count": 125,
+  "generated_at": "2026-09-23",
+  "analyzed_commit": "1506c3ada62ac101c9b83828f449e1df73dae787",
+  "symbol_count": 127,
   "symbols": {
     "ALLOWED_HOSTS": [
       "backend/src/config.ts"
@@ -36,6 +36,9 @@
     ],
     "Character": [
       "shared/src/gameState.ts"
+    ],
+    "EMPTY_NARRATIVE_MEMORY": [
+      "frontend/src/game/narrativeMemory.ts"
     ],
     "FRONTEND_ORIGIN": [
       "backend/src/config.ts"
@@ -339,6 +342,9 @@
     ],
     "main": [
       "backend/src/server.ts"
+    ],
+    "mergeNarrativeMemory": [
+      "frontend/src/game/narrativeMemory.ts"
     ],
     "newSlotId": [
       "frontend/src/lib/saves.ts"

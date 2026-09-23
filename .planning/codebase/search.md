@@ -40,11 +40,23 @@ collapsed panel. The two are complementary, not duplicates — pick by which que
 
 ## Staleness
 
-`CODEBASE.md` carries `source_fingerprint`. Recompute it (git blob hashes of tracked `.ts`/`.tsx`
-outside `.planning/`, sorted, SHA-256, first 16 chars) and compare. A mismatch means stale —
-recommend `/legion:map --refresh` rather than silently trusting the dataset.
+`CODEBASE.md` carries `source_fingerprint`. Recompute it and compare. A mismatch means stale —
+recommend `/legion:map --refresh` rather than silently trusting the dataset. The exact command —
+blob hashes sorted **by hash, not by path** (sorting whole lines by path gives a different value):
 
-Current fingerprint is `29353e65f863b7d1` at commit `3288223` (54 chunks, 125 symbols). The
-previous dataset (`55cdb963eeca5ba7`) indexed `legacy/souldbound-world.jsx`, which Phase 4 deleted;
-that invalidation is resolved and the oracle is **not** in this index. If a consumer needs it, it
+```bash
+git ls-tree -r HEAD --format='%(objectname) %(path)' | grep -E '\.(ts|tsx)$' \
+  | grep -v ' \.planning/' | awk '{print $1}' | sort | sha256sum | cut -c1-16
+```
+
+Current fingerprint is `9ff2babb3c9f807f` at commit `1506c3a` (56 chunks, 127 symbols). Previous:
+`29353e65f863b7d1` at `3288223` (54 / 125), before PR #4 added `game/narrativeMemory.ts` and swapped
+the model split. `legacy/souldbound-world.jsx` is **not** in this index; if a consumer needs it, it
 lives in git — see "The retired oracle" in `CODEBASE.md`.
+
+## Domain note for the entity ledger
+
+A query about "narrative memory", "entity ledger" or "KNOWN ENTITIES" should return
+`frontend/src/game/narrativeMemory.ts` first — it is the only merge. `applyWorldUpdate.ts` and
+`App.tsx` both call it; neither holds the rules any more. The prompt side that renders the ledger
+is `renderWorldEnginePrompt` in `backend/src/routes/worldEngine.ts`.

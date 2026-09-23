@@ -2,7 +2,7 @@
 # Consumed by /legion:plan when recommending agents, and by /legion:build when
 # constructing execution prompts.
 map_schema_version: 1
-generated_at: "2026-09-18"  # refreshed after Phase 4 (commit 3288223)
+generated_at: "2026-09-23"  # refreshed after PR #4/#5 (commit 1506c3a)
 
 mappings:
   - path: shared/src
@@ -36,7 +36,10 @@ mappings:
 
   - path: frontend/src/game
     domain: game-logic
-    description: The pure turn logic. R10's balance rules live here and are mutation-tested.
+    description: >-
+      The pure turn logic (applyWorldUpdate) and the single entity-ledger merge (narrativeMemory,
+      shared by the turn path and character creation). R10's balance rules live here and are
+      mutation-tested.
     preferred_agents: [orchestrator, engineering-frontend-developer]
     touch_with_care: true
 
