@@ -397,11 +397,21 @@ function scrollTopOf(page: Page): Promise<number> {
  */
 const offenders = new WeakMap<object, string[]>();
 
-test.beforeEach(({ page }) => {
+test.beforeEach(async ({ page }) => {
+  // Phase 5's AccessGate (R19) calls GET /api/access on mount, before the
+  // title screen — every test in this file now makes that one call. It never
+  // reaches Anthropic (it is answered here, not by a backend), so it is the
+  // ONE path exempted from the no-paid-call guard below. Registered before
+  // any `page.goto` (loadSave() below is the first one), since a route
+  // registered after navigation starts would miss the gate's mount-effect
+  // request.
+  await page.route('**/api/access', (route) => route.fulfill({ status: 204 }));
+
   const seen: string[] = [];
   offenders.set(page, seen);
   page.on('request', (req) => {
     const url = req.url();
+    if (/\/api\/access(\?|$)/.test(url)) return;
     if (/\/api\//.test(url) || /anthropic\.com/.test(url)) seen.push(`${req.method()} ${url}`);
   });
 });
@@ -552,4 +562,74 @@ test('resizing across the 700px breakpoint switches layout without a reload', as
     return { width: r.width };
   });
   expect(codexBox.width, 'mobile codex is rendered at sidebar width').toBeGreaterThan(240);
+});
+
+/**
+ * The AccessGate form itself (Phase 5, R19), the one new e2e test this plan
+ * adds. `/api/access` is overridden here to 401 `PASSPHRASE_REQUIRED` (the
+ * `beforeEach` route above always applies first; a route registered later
+ * takes priority for the same pattern), so the gate never resolves 'ok' and
+ * the form must render instead of the title screen. Nothing in `seedSaves`
+ * or `loadSave` is used — there is no game to reach behind a sealed gate.
+ *
+ * One test, both viewports (no reload between them — `setViewportSize` on the
+ * already-loaded page, same technique as the breakpoint-resize test above),
+ * so this file still gains exactly one new test and the suite's total goes
+ * 5 → 6, not 5 → 7.
+ */
+test('the passphrase form is visible, usable and on screen', async ({ page }) => {
+  await page.route('**/api/access', (route) =>
+    route.fulfill({
+      status: 401,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: { message: 'Passphrase required', code: 'PASSPHRASE_REQUIRED' },
+      }),
+    }),
+  );
+
+  async function assertFormOnScreen(atMobileWidth: boolean) {
+    const input = page.getByLabel('Passphrase');
+    const button = page.getByRole('button', { name: 'Enter' });
+
+    await expect(input).toBeVisible();
+    await expect(button).toBeVisible();
+
+    const vp = page.viewportSize()!;
+    const inputBox = await input.boundingBox();
+    const buttonBox = await button.boundingBox();
+    expect(inputBox, 'passphrase input has no layout box').not.toBeNull();
+    expect(buttonBox, 'submit button has no layout box').not.toBeNull();
+
+    for (const box of [inputBox!, buttonBox!]) {
+      expect(box.x, 'element starts left of the viewport').toBeGreaterThanOrEqual(0);
+      expect(box.y, 'element starts above the viewport').toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width, 'element extends right of the viewport').toBeLessThanOrEqual(
+        vp.width + 1,
+      );
+      expect(box.y + box.height, 'element extends below the viewport').toBeLessThanOrEqual(
+        vp.height + 1,
+      );
+    }
+
+    await input.focus();
+    await expect(input).toBeFocused();
+
+    if (atMobileWidth) {
+      // The keyboard margin: a mobile on-screen keyboard is roughly 300px
+      // tall, so the input must sit in the upper half of the viewport or a
+      // keyboard would cover it while the player types.
+      expect(
+        inputBox!.y,
+        'passphrase input is not in the upper half of the viewport',
+      ).toBeLessThan(vp.height / 2);
+    }
+  }
+
+  await page.setViewportSize(MOBILE);
+  await page.goto('/');
+  await assertFormOnScreen(true);
+
+  await page.setViewportSize(DESKTOP);
+  await assertFormOnScreen(false);
 });
