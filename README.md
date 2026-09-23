@@ -64,6 +64,19 @@ docker compose up
 The published image runs the whole game from one container on one port: the backend serves the
 built frontend itself, so there is no second service and no proxy to configure.
 
+**The first image is published by a manual release after merge — see [First
+release](#first-release) below.** Until then, `ghcr.io/deanitservices/soulbound` does not exist
+yet. Build it locally instead:
+
+```bash
+DOCKER_BUILDKIT=1 docker build -f backend/Dockerfile -t ghcr.io/deanitservices/soulbound:local .
+```
+
+then set `SOULBOUND_VERSION=local` in your `.env` (or `SOULBOUND_VERSION=local docker compose ...`)
+so compose runs that local tag instead of pulling. Both `linux/amd64` and `linux/arm64` are built
+by the release workflow once it has run, but only `amd64` is ever executed in CI or locally in this
+project's sandbox — `arm64` has not been run.
+
 1. Download [`compose.selfhost.yml`](compose.selfhost.yml) and create a `.env` beside it:
    ```bash
    SOULBOUND_ANTHROPIC_KEY=sk-ant-...     # your Anthropic Console key
@@ -111,6 +124,28 @@ file does this for you.
 
 **If the pull is denied.** GHCR packages can be private on first push. The repository owner makes
 the package public in its package settings on GitHub.
+
+### First release
+
+The release workflow (`.github/workflows/release.yml`) only ever runs by hand — there is no tag
+push or schedule that triggers it.
+
+1. **Dispatch it.** On GitHub, go to Actions → Release → Run workflow, and run it **on `main`**.
+   The `publish` job refuses to run on any other branch, since `:latest` is what
+   `compose.selfhost.yml` pulls by default and only reviewed `main` may move it.
+2. **If the existence check fails closed on a brand-new package,** read the printed `stderr` in
+   the "Refuse to overwrite an existing version" step. It fails closed (refuses to publish) unless
+   GHCR's response matches a known "genuinely absent" pattern (`not found`, `manifest unknown`,
+   `name unknown`). If the real wording for a brand-new package under `GITHUB_TOKEN` turns out to
+   be something else, widen the `grep -qiE` pattern in that step in a reviewed PR — never add a
+   bypass or treat an unrecognized response as "absent" to unblock a dispatch.
+3. **An org package-creation policy can block the first push.** Some GitHub organizations restrict
+   which actors or workflows may create new packages. If the push step itself fails (not the
+   existence check), check the organization's package settings (Settings → Packages) for a policy
+   blocking `GITHUB_TOKEN`-created packages, and adjust it there rather than in this workflow.
+4. **Make the package public afterwards.** A first GHCR push is often private by default; without
+   this step, self-hosters get "pull denied" (see above). Package settings on GitHub → Change
+   visibility → Public.
 
 **Behind a reverse proxy.** Set `TRUST_PROXY` (`loopback`, `uniquelocal`, or a hop count 1-5) only
 when a real reverse proxy (nginx, Caddy, a cloud load balancer) overwrites `X-Forwarded-For` on
