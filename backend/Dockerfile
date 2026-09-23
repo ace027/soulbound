@@ -49,8 +49,10 @@ RUN npm run build -w @soulbound/backend
 # static HTML/CSS/JS: identical regardless of the architecture it was built
 # on. Pinning this stage to $BUILDPLATFORM (the architecture actually running
 # the build, e.g. the CI runner's amd64) keeps it out of QEMU entirely on a
-# multi-platform build — only the backend's own `npm ci --omit=dev` and `tsc`
-# (in `api` below) run emulated for a non-native target platform.
+# multi-platform build. Everything else in this file still runs emulated for
+# a non-native target platform: both `builder` above (full `npm ci` with
+# devDependencies, then `tsc`, for the backend and shared workspaces) and
+# `api` below (`npm ci --omit=dev`).
 #
 # This stage runs as root (unlike frontend/Dockerfile's dev `builder`, which
 # runs as `node`): it is a throwaway build stage whose only output is the

@@ -6,8 +6,8 @@
 # boundary, with zero Anthropic spend: a bogus ANTHROPIC_API_KEY, a
 # throwaway passphrase, and RATE_LIMIT_PER_MINUTE=3 so the limiter can be
 # exercised in a handful of requests. Run the same way in CI (every push,
-# `ci.yml`'s `smoke-image` job) and locally before a release
-# (`release.yml`'s `smoke` job) — this file is the single definition of
+# `ci.yml`'s `smoke-image` job) and in `release.yml`'s `publish` job right
+# before the multi-platform push — this file is the single definition of
 # "the image works" that both share (spec: R21 deliverable table).
 #
 # `set -uo pipefail`, deliberately WITHOUT `-e`: every one of the 7 checks
@@ -81,7 +81,7 @@ BASE="http://127.0.0.1:${HOST_PORT}"
 # checks below can mean anything.
 HEALTHY=0
 for _ in $(seq 1 30); do
-  code="$(curl -s -o /dev/null -w '%{http_code}' "${BASE}/api/health" 2>/dev/null || true)"
+  code="$(curl -s --max-time 5 -o /dev/null -w '%{http_code}' "${BASE}/api/health" 2>/dev/null || true)"
   if [ "$code" = "200" ]; then
     HEALTHY=1
     break
@@ -108,12 +108,12 @@ record() {
 }
 
 # ─── Check 1: health ────────────────────────────────────────────────────
-code="$(curl -s -o /dev/null -w '%{http_code}' "${BASE}/api/health")"
+code="$(curl -s --max-time 5 -o /dev/null -w '%{http_code}' "${BASE}/api/health")"
 [ "$code" = "200" ]
 record $? "1: GET /api/health returns 200 (got $code)"
 
 # ─── Check 2: / returns 200 text/html ──────────────────────────────────
-resp="$(curl -s -D - -o /tmp/smoke-root-body.$$ "${BASE}/")"
+resp="$(curl -s --max-time 5 -D - -o /tmp/smoke-root-body.$$ "${BASE}/")"
 code="$(printf '%s' "$resp" | head -1 | awk '{print $2}')"
 ctype="$(printf '%s' "$resp" | tr -d '\r' | grep -i '^content-type:' | head -1)"
 ok=1
@@ -126,7 +126,7 @@ rm -f /tmp/smoke-root-body.$$
 # ─── Check 3: /api/access without a header -> 401 PASSPHRASE_REQUIRED ──
 # This is request #1 against the rate limiter (rateLimit runs before the
 # gate, and before express.json, per the spec's middleware order).
-body="$(curl -s -o /tmp/smoke-c3-body.$$ -w '%{http_code}' "${BASE}/api/access")"
+body="$(curl -s --max-time 5 -o /tmp/smoke-c3-body.$$ -w '%{http_code}' "${BASE}/api/access")"
 code="$body"
 c3_body="$(cat /tmp/smoke-c3-body.$$)"
 ok=1
@@ -138,13 +138,13 @@ rm -f /tmp/smoke-c3-body.$$
 
 # ─── Check 4: /api/access with the header -> 204 ───────────────────────
 # Request #2 against the limiter.
-code="$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${PASSPHRASE}" "${BASE}/api/access")"
+code="$(curl -s --max-time 5 -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${PASSPHRASE}" "${BASE}/api/access")"
 [ "$code" = "204" ]
 record $? "4: GET /api/access with the correct header returns 204 (got $code)"
 
 # ─── Check 5: /api/x with the header -> 404 application/json ───────────
 # Request #3 against the limiter — this exhausts RATE_LIMIT_PER_MINUTE=3.
-resp="$(curl -s -D - -o /tmp/smoke-c5-body.$$ -H "Authorization: Bearer ${PASSPHRASE}" "${BASE}/api/x")"
+resp="$(curl -s --max-time 5 -D - -o /tmp/smoke-c5-body.$$ -H "Authorization: Bearer ${PASSPHRASE}" "${BASE}/api/x")"
 code="$(printf '%s' "$resp" | head -1 | awk '{print $2}')"
 ctype="$(printf '%s' "$resp" | tr -d '\r' | grep -i '^content-type:' | head -1)"
 ok=1
@@ -159,13 +159,13 @@ rm -f /tmp/smoke-c5-body.$$
 # (checks 3, 4 and 5 above), exhausting RATE_LIMIT_PER_MINUTE=3. So the
 # FIRST of these four additional calls (request #4 overall in the window)
 # is expected to trip the limiter. We don't guess: we make all four calls
-# and assert that at least the first one got 429 with the right code and a
-# Retry-After header, recording exactly which attempt(s) tripped it.
+# and assert that at least one of them got 429 with the right code and a
+# Retry-After header, recording exactly which attempt first tripped it.
 tripped=0
 tripped_attempt=0
 retry_after_ok=0
 for attempt in 1 2 3 4; do
-  resp="$(curl -s -D - -o /tmp/smoke-c6-body.$$ -H "Authorization: Bearer ${PASSPHRASE}" "${BASE}/api/access")"
+  resp="$(curl -s --max-time 5 -D - -o /tmp/smoke-c6-body.$$ -H "Authorization: Bearer ${PASSPHRASE}" "${BASE}/api/access")"
   code="$(printf '%s' "$resp" | head -1 | awk '{print $2}')"
   body="$(cat /tmp/smoke-c6-body.$$)"
   retry_after="$(printf '%s' "$resp" | tr -d '\r' | grep -i '^retry-after:' | head -1 | sed 's/^[Rr]etry-[Aa]fter: *//')"
