@@ -72,6 +72,7 @@ describe('anthropic.ts module import', () => {
 // it is never valid, and it is never sent over the network (every `create`
 // call is intercepted by the spy).
 const FAKE_KEY = 'sk-ant-test-fake-key-never-sent-mocked-only';
+const FAKE_PASSPHRASE = 'test-passphrase-not-real';
 
 // A minimal schema, independent of the real World Voice contract, for tests
 // that only care about request shape (not response content).
@@ -184,6 +185,7 @@ describe('callWorldVoice request construction', () => {
 
   beforeAll(() => {
     process.env.ANTHROPIC_API_KEY = FAKE_KEY;
+    process.env.SOULBOUND_PASSPHRASE = FAKE_PASSPHRASE;
   });
 
   beforeEach(() => {
@@ -336,6 +338,7 @@ describe('callWorldVoice usage logging', () => {
 
   beforeAll(() => {
     process.env.ANTHROPIC_API_KEY = FAKE_KEY;
+    process.env.SOULBOUND_PASSPHRASE = FAKE_PASSPHRASE;
   });
 
   beforeEach(() => {
@@ -437,6 +440,7 @@ describe('callWorldVoice error mapping', () => {
 
   beforeAll(() => {
     process.env.ANTHROPIC_API_KEY = FAKE_KEY;
+    process.env.SOULBOUND_PASSPHRASE = FAKE_PASSPHRASE;
   });
 
   beforeEach(() => {

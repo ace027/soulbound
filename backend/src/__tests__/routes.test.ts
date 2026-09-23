@@ -43,6 +43,12 @@ import type { Message } from '@anthropic-ai/sdk/resources/messages';
 // it would reach `fetch`. See anthropic.test.ts's identical note.
 const FAKE_KEY = 'sk-ant-test-fake-key-never-sent-mocked-only';
 process.env.ANTHROPIC_API_KEY = FAKE_KEY;
+// config.ts now also requires a passphrase at module load (Phase 5's access
+// gate). This file drives the real pipeline through buildApp(), so its
+// requests must carry a matching Bearer header once the gate is wired in
+// 05-02 — that header isn't added by this plan.
+const FAKE_PASSPHRASE = 'test-passphrase-not-real';
+process.env.SOULBOUND_PASSPHRASE = FAKE_PASSPHRASE;
 // The server binds an ephemeral port here, so the Host header carries a port
 // this file cannot know in advance. A hostname-only allow-list entry matches
 // any port on that hostname — and exercising the ALLOWED_HOSTS env override is

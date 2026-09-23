@@ -30,8 +30,11 @@ const FAKE_KEY = 'sk-ant-test-fake-key-never-sent-mocked-only';
 /** A prompt whose RESPONSE FORMAT block renames one of the nine contract fields. */
 const DRIFTED_PROMPT = WORLD_SYSTEM_PROMPT.replace('"gm_note":', '"gm_notes":');
 
+const FAKE_PASSPHRASE = 'test-passphrase-not-real';
+
 function setStartupEnv(): void {
   process.env.ANTHROPIC_API_KEY = FAKE_KEY; // config.ts deletes it on read
+  process.env.SOULBOUND_PASSPHRASE = FAKE_PASSPHRASE; // config.ts deletes it on read
   process.env.PORT = '0'; // ephemeral, so a stray listen can never collide
   process.env.ALLOWED_HOSTS = '127.0.0.1';
 }
