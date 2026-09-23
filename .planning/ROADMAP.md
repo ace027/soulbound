@@ -6,6 +6,7 @@
 - [x] **Phase 2: Backend & World Voice** — three routes on the official SDK, structured outputs, caching verified
 - [x] **Phase 3: Frontend Port** — components, screens, game logic, saves
 - [x] **Phase 4: Parity & Verification** — end-to-end playthrough, constraint audit, doc updates
+- [ ] **Phase 5: Docker Image Publishing** — access gate, single image, GHCR release, self-host package
 
 ## Phase Details
 
@@ -70,6 +71,20 @@ but R15's real scope (CLAUDE.md's stale "OPEN DECISION" auth heading, and a desi
 mentions of the model split), the retro's committed-Playwright-guard item, and the 69 legacy
 citations that deletion would strand each earned their own plan. Only one plan spends money.)
 
+### Phase 5: Docker Image Publishing
+**Goal**: Publish one Docker image a self-hosting deployer can pull and run, without turning their Anthropic key into an open proxy for anyone who reaches the port.
+**Requirements**: R17 access gate, R18 rate limit, R19 frontend gate, R20 single deployable image, R21 release pipeline, R22 self-host package and records
+**Spec**: `.planning/specs/05-docker-image-publishing-spec.md` (critiqued once; REWORK → 12 findings applied)
+**Recommended Agents**: Backend Architect, Security Engineer, Frontend Developer, Infrastructure & DevOps Engineer, Technical Writer
+**Success Criteria**:
+- Every `/api/*` route except `/api/health` refuses requests without the deployer's passphrase (401 `PASSPHRASE_REQUIRED`), rate-limited before the check and before body parsing; the passphrase never appears in logs or responses (mutation-verified)
+- The browser asks for the passphrase inline before the title screen; `App.tsx` is byte-identical to `7856b7d`
+- One image serves the frontend and the API same-origin; no `/api` path can return `index.html`
+- `scripts/smoke-image.sh` passes locally and in CI on every push
+- `release.yml` publishes `{version}` + `latest` for amd64 + arm64 to GHCR on manual dispatch, refusing to overwrite (the first publish is UNTESTED until dispatched after merge)
+- `compose.selfhost.yml` runs on a non-default port end to end; README, design log, CLAUDE.md and PROJECT.md match what shipped; versions at `0.1.0`
+**Plans**: 6 (planned 2026-09-23 from the spec; serial waves per retro AI-5. Architecture chosen from three competing proposals: Pragmatic + 2 from Clean. See 05-CONTEXT.md.)
+
 ## Progress
 
 | Phase | Plans | Completed | Status |
@@ -78,4 +93,5 @@ citations that deletion would strand each earned their own plan. Only one plan s
 | 2. Backend & World Voice | 5 | 5 | **Shipped** 2026-09-17 — review passed (3 cycles) · [PR #1](https://github.com/DeanItServices/soulbound/pull/1) |
 | 3. Frontend Port | 10 | 10 | **Shipped** 2026-09-18 — review passed (2 cycles, 3-reviewer panel) · [PR #2](https://github.com/DeanItServices/soulbound/pull/2) (merged) |
 | 4. Parity & Verification | 6 | 6 | **Shipped** 2026-09-18 — review passed (3 cycles, 3-reviewer panel) · [PR #3](https://github.com/DeanItServices/soulbound/pull/3) |
-| **Total** | **27** | **27** | 100% |
+| 5. Docker Image Publishing | 6 | 0 | Planned 2026-09-23 |
+| **Total** | **33** | **27** | 81% |
