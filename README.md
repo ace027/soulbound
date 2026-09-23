@@ -34,8 +34,9 @@ A Tensura-inspired text RPG set in the original fantasy world of Vaeltharion, wh
    never the browser bundle, and never an image layer.
 
 Running the backend directly on the host rather than through Compose? Nothing loads `.env` into
-the Node process, so export the variable yourself (`export ANTHROPIC_API_KEY=...`) or pass
-`--env-file .env`.
+the Node process, so export both `ANTHROPIC_API_KEY` and `SOULBOUND_PASSPHRASE` yourself
+(`export ANTHROPIC_API_KEY=... SOULBOUND_PASSPHRASE=...`) or pass `--env-file .env`. The backend
+now refuses to boot without `SOULBOUND_PASSPHRASE` set, same as the key.
 
 ## Run
 

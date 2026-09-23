@@ -43,6 +43,10 @@ services:
       # Falls back to ANTHROPIC_API_KEY if SOULBOUND_ANTHROPIC_KEY is unset, so
       # a .env carrying either name works.
       - ANTHROPIC_API_KEY=${SOULBOUND_ANTHROPIC_KEY:-${ANTHROPIC_API_KEY}}
+      # Required (Phase 5's access gate). The `:?` form fails `docker compose
+      # up` immediately with this message if it's unset in .env, rather than
+      # letting the backend fall through to config.ts's own boot failure.
+      - SOULBOUND_PASSPHRASE=${SOULBOUND_PASSPHRASE:?Set SOULBOUND_PASSPHRASE in .env — see .env.example}
       - PORT=3001
       - FRONTEND_ORIGIN=http://localhost:5173
       # Host allow-list. MUST include the compose service name: the frontend
