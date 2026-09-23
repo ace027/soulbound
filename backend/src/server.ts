@@ -18,6 +18,7 @@
  */
 
 import type { Server } from 'node:http';
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import express, {
   type ErrorRequestHandler,
@@ -53,6 +54,12 @@ export interface AppConfig {
   checkPassphrase: (candidate: string) => boolean;
   RATE_LIMIT_PER_MINUTE: number;
   TRUST_PROXY: false | 'loopback' | 'uniquelocal' | number;
+  /**
+   * Absolute path to a pre-built frontend (its `index.html` at the root),
+   * served by this same process when set — the published image (Phase 5,
+   * R20). Undefined in dev, where Vite serves the frontend separately.
+   */
+  STATIC_DIR?: string;
   /**
    * Injectable clock for the rate limiter's tests; defaults to
    * `performance.now()`, not `Date.now()`. The limiter only ever compares two
@@ -156,8 +163,22 @@ function mapBodyParserError(err: ApiError): { statusCode: number; code: string }
  * `GET /api/health` (no credentials needed — the compose healthcheck calls
  * it), the `/api` rate limiter, the `/api` access gate, `/api`-scoped JSON
  * body parsing, `GET /api/access` (the frontend's pre-flight passphrase
- * check), the three World Voice routes, an `/api`-scoped JSON 404, a global
- * JSON 404, and the central sanitizing error handler.
+ * check), the three World Voice routes, an `/api`-scoped JSON 404, then
+ * (only when `STATIC_DIR` is set) the built frontend and its SPA fallback,
+ * then a global JSON 404, and finally the central sanitizing error handler.
+ *
+ * This is now the only server in the published image (Phase 5, R20): when
+ * `STATIC_DIR` points at a built frontend, this same process serves it
+ * same-origin, so there is no second container and no separate CORS/proxy
+ * story to keep in sync with this one. The ordering below is load-bearing
+ * for that: the `/api`-scoped JSON 404 is registered BEFORE the static
+ * middleware and its SPA fallback, so nothing under the `/api` mount can
+ * ever fall through to `index.html` — an unmatched `/api/*` path always gets
+ * JSON, in either mode, even for `/API/x` or `/api/../api/x` (Express 5's
+ * router normalizes these to `/api` before `app.use('/api', …)` ever sees
+ * them). With `STATIC_DIR` unset (dev, where Vite serves the frontend), no
+ * static middleware or fallback is registered at all, and the chain ends in
+ * the same global JSON 404 this app has always had.
  *
  * The limiter runs BEFORE the gate so a passphrase-guessing burst is
  * throttled even though every guess also gets rejected. Both run BEFORE
@@ -180,6 +201,7 @@ export function buildApp(config: AppConfig): Express {
     checkPassphrase,
     RATE_LIMIT_PER_MINUTE,
     TRUST_PROXY,
+    STATIC_DIR,
     now = () => performance.now(),
   } = config;
   const app = express();
@@ -263,11 +285,32 @@ export function buildApp(config: AppConfig): Express {
     },
   );
 
-  // Unmatched non-/api routes. Without this, Express answers with its
-  // default HTML error page, which a JSON client cannot parse. 05-04 will
-  // replace this with static serving + an SPA fallback when STATIC_DIR is
-  // set; until then, every route is under /api or unmatched, so this stays
-  // reachable only when STATIC_DIR is unset (today's behaviour).
+  // Serve the built frontend when STATIC_DIR is set (the published image,
+  // Phase 5/R20) — registered AFTER the /api JSON 404 above, so nothing
+  // under /api can ever reach this. express.static answers real files
+  // (index.html, /assets/*.js, etc.) directly. The GET fallback after it
+  // only ever answers a path with NO file extension (an SPA route like
+  // /some/deep/link): a path WITH an extension (a stale/renamed chunk after
+  // an upgrade, e.g. /assets/missing-chunk.js) falls through to the global
+  // JSON 404 below instead of getting index.html back — returning HTML for
+  // that case would silently blank the page instead of surfacing a 404 the
+  // client can detect and recover from (a cache-busted reload).
+  if (STATIC_DIR !== undefined) {
+    app.use(express.static(STATIC_DIR));
+    app.get(/.*/, (req: Request, res: Response, next: NextFunction) => {
+      if (path.extname(req.path) !== '') {
+        next();
+        return;
+      }
+      res.sendFile(path.join(STATIC_DIR, 'index.html'));
+    });
+  }
+
+  // Unmatched routes — either STATIC_DIR is unset (dev; every real route is
+  // under /api, so this is the only thing left to hit), or STATIC_DIR is set
+  // and this is an extensioned path express.static didn't recognize (a
+  // stale chunk). Without this, Express answers with its default HTML error
+  // page, which a JSON client cannot parse.
   app.use((_req: Request, res: Response) => {
     res.status(404).json({
       error: { message: 'Not found', code: 'NOT_FOUND' },

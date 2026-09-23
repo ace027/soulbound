@@ -27,9 +27,10 @@
  * the app with `fetch`; it mocks no SDK call, so nothing in it can reach one.
  */
 
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -1080,6 +1081,128 @@ describe('buildApp middleware', () => {
       await expect(res.json()).resolves.toEqual({
         error: { message: 'Not found', code: 'NOT_FOUND' },
       });
+    } finally {
+      server.close();
+    }
+  });
+});
+
+// ─── Static serving + SPA fallback (Phase 5, R20) ────────────────────────────
+// The backend now serves the built frontend itself when STATIC_DIR is set —
+// this is the trap `docker-compose.yml:14-23` describes: a naive catch-all
+// fallback would answer an unmatched /api/* path (or a stale asset chunk)
+// with index.html instead of a JSON 404 or a real 404. These tests drive a
+// real buildApp() pipeline with STATIC_DIR pointed at a temp fixture dir.
+describe('static serving (STATIC_DIR set)', () => {
+  let staticDir: string;
+
+  beforeAll(() => {
+    staticDir = mkdtempSync(path.join(os.tmpdir(), 'soulbound-static-'));
+    writeFileSync(path.join(staticDir, 'index.html'), '<!doctype html><title>app</title>');
+    mkdirSync(path.join(staticDir, 'assets'));
+    writeFileSync(path.join(staticDir, 'assets', 'app.js'), 'console.log("app");');
+  });
+
+  afterAll(() => {
+    rmSync(staticDir, { recursive: true, force: true });
+  });
+
+  function buildStaticTestApp() {
+    return buildApp({ ...config, RATE_LIMIT_PER_MINUTE: 600, STATIC_DIR: staticDir });
+  }
+
+  it('serves index.html for GET / and for a deep SPA link', async () => {
+    const app = buildStaticTestApp();
+    const { server, port } = await startServer(app);
+    try {
+      for (const reqPath of ['/', '/some/deep/link']) {
+        const res = await httpRequest(port, { method: 'GET', path: reqPath });
+        expect(res.status).toBe(200);
+        expect(res.headers['content-type']).toMatch(/text\/html/);
+        expect(res.bodyText).toContain('<title>app</title>');
+      }
+    } finally {
+      server.close();
+    }
+  });
+
+  it('serves a real static asset', async () => {
+    const app = buildStaticTestApp();
+    const { server, port } = await startServer(app);
+    try {
+      const res = await httpRequest(port, { method: 'GET', path: '/assets/app.js' });
+      expect(res.status).toBe(200);
+      expect(res.bodyText).toBe('console.log("app");');
+    } finally {
+      server.close();
+    }
+  });
+
+  it('returns a plain 404, never HTML, for a missing/stale asset chunk', async () => {
+    const app = buildStaticTestApp();
+    const { server, port } = await startServer(app);
+    try {
+      const res = await httpRequest(port, { method: 'GET', path: '/assets/missing-chunk.js' });
+      expect(res.status).toBe(404);
+      expect(res.headers['content-type']).toMatch(/application\/json/);
+      expect(res.headers['content-type']).not.toMatch(/text\/html/);
+    } finally {
+      server.close();
+    }
+  });
+
+  it('returns a JSON 404 for an unmatched /api path, both GET and POST', async () => {
+    const app = buildStaticTestApp();
+    const { server, port } = await startServer(app);
+    try {
+      const getRes = await httpRequest(port, { method: 'GET', path: '/api/nope' });
+      expect(getRes.status).toBe(404);
+      expect(getRes.headers['content-type']).toMatch(/application\/json/);
+      expect(getRes.bodyJson).toEqual({ error: { message: 'Not found', code: 'NOT_FOUND' } });
+
+      const postRes = await httpRequest(port, { method: 'POST', path: '/api/nope' });
+      expect(postRes.status).toBe(404);
+      expect(postRes.headers['content-type']).toMatch(/application\/json/);
+    } finally {
+      server.close();
+    }
+  });
+
+  it('returns a JSON 404 for a mixed-case /api path with a valid passphrase, never HTML', async () => {
+    const app = buildStaticTestApp();
+    const { server, port } = await startServer(app);
+    try {
+      const res = await httpRequest(port, { method: 'GET', path: '/API/nope' });
+      expect(res.status).toBe(404);
+      expect(res.headers['content-type']).toMatch(/application\/json/);
+      expect(res.headers['content-type']).not.toMatch(/text\/html/);
+    } finally {
+      server.close();
+    }
+  });
+
+  it('gates /api/nope before the 404 — no passphrase gets 401, not 404', async () => {
+    const app = buildStaticTestApp();
+    const { server, port } = await startServer(app);
+    try {
+      const res = await httpRequest(port, { method: 'GET', path: '/api/nope', noAuth: true });
+      expect(res.status).toBe(401);
+      expect(res.bodyJson).toEqual({
+        error: { message: 'Passphrase required', code: 'PASSPHRASE_REQUIRED' },
+      });
+    } finally {
+      server.close();
+    }
+  });
+
+  it('with STATIC_DIR unset, GET / returns the plain JSON 404 (unchanged behaviour)', async () => {
+    const app = buildTestApp();
+    const { server, port } = await startServer(app);
+    try {
+      const res = await httpRequest(port, { method: 'GET', path: '/' });
+      expect(res.status).toBe(404);
+      expect(res.headers['content-type']).toMatch(/application\/json/);
+      expect(res.bodyJson).toEqual({ error: { message: 'Not found', code: 'NOT_FOUND' } });
     } finally {
       server.close();
     }
