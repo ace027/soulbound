@@ -1,14 +1,22 @@
 # Project State
 
 ## Current Position
-- **Phase**: 4 of 4 (complete)
-- **Status**: **All four phases complete and shipped.** Phase 4 review PASSED after 3 cycles (3-reviewer panel, 29 findings, 0 blockers); shipped as [PR #3](https://github.com/DeanItServices/soulbound/pull/3), 15 commits / 48 files / +4,757−1,474. R13, R14, R15, R16 close. The legacy artifact is deleted — recover it with `git show 3d01fa5:legacy/souldbound-world.jsx` (the `parity-oracle` tag is local-only and cannot be pushed from this environment; the SHA is on the branch and works everywhere).
+- **Phase**: 5 of 5 (planned)
+- **Status**: **Phase 5 planned — 6 plans across 6 serial waves** (`.planning/phases/05-docker-image-publishing/`).
+  Spec critiqued once (REWORK → 12 findings applied), plans critiqued once (CAUTION → 29 findings
+  applied; see `05-CONTEXT.md` → Execution protocol). Zero Anthropic spend planned.
+- **Phases 1-4**: **All four phases complete and shipped.** Phase 4 review PASSED after 3 cycles (3-reviewer panel, 29 findings, 0 blockers); shipped as [PR #3](https://github.com/DeanItServices/soulbound/pull/3), 15 commits / 48 files / +4,757−1,474. R13, R14, R15, R16 close. The legacy artifact is deleted — recover it with `git show 3d01fa5:legacy/souldbound-world.jsx` (the `parity-oracle` tag is local-only and cannot be pushed from this environment; the SHA is on the branch and works everywhere).
   ⚠️ **Correction**: this file previously said PR #2 was "open against `main`". It was **merged** 2026-09-18T01:49Z (head `5147bd8`). That is why Phase 4 needed a new PR rather than additions to #2.
-- **Last Activity**: 2026-09-23 on `claude/legion-status-uxlaqo` (pushed, no PR yet): stale
-  `docker-compose.yml` comment fixed (`1506c3a`), codebase map refreshed (`7856b7d`), and the Phase 5
-  public-image auth question **decided — option 2, a deployer-set access gate** (see Next Action 2).
-- **Next Action**: `/legion:plan 5` — Docker image publishing, now unblocked by the auth decision.
-  See **Next Action** below.
+- **Last Activity**: Phase 5 planning (2026-09-23) on `claude/legion-status-uxlaqo` (pushed, no PR
+  yet). Earlier the same day: stale compose comment fixed (`1506c3a`), map refreshed (`7856b7d`),
+  auth decided — option 2, a deployer-set access gate (Next Action 2).
+  Planning decisions: GHCR; `workflow_dispatch`-only release; passphrase stored in `localStorage`;
+  architecture **Pragmatic + 2 from Clean** (one image, the backend serves the bundle; gate and
+  limiter before `express.json`; `Authorization: Bearer`), chosen from three read-only proposals.
+  Spec: `.planning/specs/05-docker-image-publishing-spec.md`. ROADMAP now lists Phase 5 (0/6).
+- **Next Action**: Run `/legion:build` to execute Phase 5: Docker Image Publishing.
+  ⚠️ Plan 05-01 makes `SOULBOUND_PASSPHRASE` **required at boot** — the dev stack will refuse to
+  start until `.env` has one (12+ printable ASCII characters).
 - **Branch**: work continues on `claude/legion-status-uxlaqo`, which descends from `origin/main`
   (`f70aa31`) and carries this session's commits. It needs a NEW pull request; #5 is merged and
   cannot track it.
