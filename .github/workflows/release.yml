@@ -1,4 +1,9 @@
 name: Release
+#
+# First release / first dispatch: see README.md → Self-hosting → "First
+# release" for the runbook (how to dispatch, what a failed-closed existence
+# check on a brand-new package looks like, the org package-creation policy,
+# making the package public afterwards).
 
 # workflow_dispatch ONLY (Phase 5, R21): tag pushes are unavailable from the
 # agent sandbox this project is developed in (STATE.md, Known environment
@@ -10,9 +15,10 @@ name: Release
 on:
   workflow_dispatch:
 
+# Workflow-level default is read-only; only the `publish` job below elevates
+# to `packages: write`, and only for as long as it needs to push to GHCR.
 permissions:
   contents: read
-  packages: write
 
 # Only one release can run at a time, so two dispatches can't race the
 # existence check (spec: Overwrite policy).
@@ -25,8 +31,20 @@ jobs:
   # release.yml self-contained and readable top to bottom.
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
+      # workflow_dispatch can run off any branch. publish (below, which also
+      # builds and smoke-tests the image) refuses to run off anything but
+      # main, since :latest is what compose.selfhost.yml pulls by default and
+      # only reviewed main may move it — but this test job still runs in
+      # full, so a branch dispatch is a real dry run of build+test.
+      - name: Warn if dispatched off main
+        if: github.ref != 'refs/heads/main'
+        run: echo "::notice::Dispatched from ${{ github.ref }}, not main — test will run, but the publish job (build, smoke, push) will be skipped."
+
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
@@ -42,26 +60,22 @@ jobs:
       - name: Test
         run: npm test
 
-  # Same smoke script as ci.yml's smoke-image job (scripts/smoke-image.sh):
-  # the image must prove itself again right before a release, not just on
-  # whatever push happened to be green last.
-  smoke:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build image
-        run: docker build -f backend/Dockerfile -t soulbound:release-smoke .
-
-      - name: Smoke test image
-        run: scripts/smoke-image.sh soulbound:release-smoke
-
   publish:
     runs-on: ubuntu-latest
-    needs: smoke
+    needs: test
+    timeout-minutes: 60
+    # :latest is what compose.selfhost.yml pulls by default, so only a
+    # reviewed main may move it. test (above) still runs on any branch, so a
+    # branch dispatch remains a real dry run of build+test — only the
+    # publish (and its own build/smoke/push) is skipped.
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       # Refuses to publish four package.json files that disagree with each
       # other about the version — a half-bumped repo should never reach
@@ -145,12 +159,48 @@ jobs:
             exit 1
           fi
 
+      # The pushed image must be the smoke-tested one (review finding: it
+      # wasn't). Build linux/amd64 only, load it into the local Docker
+      # daemon, and smoke it BEFORE anything is pushed. This replaces the
+      # separate top-level `smoke` job this workflow used to have: that job
+      # built its own image with a plain `docker build` sharing no cache
+      # with this one, so it proved a *different* set of bytes than the ones
+      # that ended up on GHCR — exactly this finding. One build, cached here
+      # and reused below, is both simpler and actually load-bearing.
+      - name: Build amd64 image for smoke test
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: soulbound:release-smoke
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test the amd64 image
+        run: scripts/smoke-image.sh soulbound:release-smoke
+
+      # Multi-platform push. The amd64 layers are pulled from the gha cache
+      # written above, so the amd64 bytes pushed here are byte-identical to
+      # the ones just smoke-tested — not merely "built the same way" but the
+      # same cache hit. arm64 is built fresh under QEMU in this step and is
+      # NEVER executed or smoke-tested, only built; that gap is accepted
+      # (spec: Open Question 1) until a real workflow_dispatch on an
+      # arm64 runner exists. `provenance: false`: the default build
+      # attestation shows as an extra "unknown/unknown" platform entry in
+      # GHCR's UI, which reads as a broken manifest to a deployer just
+      # pulling `:latest`; the OCI labels below already carry source,
+      # revision and version, so nothing about traceability is lost by
+      # turning it off.
       - uses: docker/build-push-action@v6
         with:
           context: .
           file: backend/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
+          provenance: false
+          cache-from: type=gha
           tags: |
             ${{ env.IMAGE }}:${{ env.VERSION }}
             ${{ env.IMAGE }}:latest
