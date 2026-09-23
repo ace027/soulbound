@@ -11,15 +11,16 @@
 # by-feel iteration, and the static server has no `/api` proxy, so the browser
 # would have no route to the backend.
 #
-# The `runtime` stage is NOT production-ready as it stands. It serves the built
+# The `runtime` stage is NOT deployable as it stands. It serves the built
 # bundle with `serve -s`, whose SPA fallback answers ANY unmatched path with
-# 200 + index.html — including /api/*. A frontend deployed that way would see
-# every API call "succeed" while receiving HTML instead of JSON, which is a
-# worse failure than a connection error because it does not look like a
-# networking problem. Before that image is deployed it needs either a reverse
-# proxy forwarding /api to the backend, or a configurable API base URL instead
-# of a same-origin /api path. Dormant today only because the frontend makes no
-# API calls yet.
+# 200 + index.html — including /api/*. The frontend calls /api/* for every
+# game action, so every one would fail. The guard in frontend/src/lib/api.ts
+# turns that into a named NON_JSON_RESPONSE error rather than a confusing
+# parse failure, but the container still reports healthy while nothing works.
+# The preferred fix is a reverse proxy forwarding /api to the backend: requests
+# stay same-origin and CORS is untouched. A configurable API base URL would
+# instead force CORS and expose the backend. Nothing here is dormant — it only
+# doesn't bite because compose runs the `builder` stage (see above).
 
 services:
   backend:
