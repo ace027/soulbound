@@ -1,0 +1,43 @@
+# 05-06 task 1 — compose.selfhost.yml on a NON-default port (3999)
+# date: 2026-09-23T04:59:50Z  commit: f8c0476  image: ghcr.io/deanitservices/soulbound:local sha256:276c200040b3
+# env file: .planning/phases/05-docker-image-publishing/evidence/sample.env.example (fake values only)
+
+$ docker compose -f compose.selfhost.yml --env-file .planning/phases/05-docker-image-publishing/evidence/sample.env.example config -q
+exit 0
+
+$ docker compose -f compose.selfhost.yml --env-file .planning/phases/05-docker-image-publishing/evidence/sample.env.example up -d
+ Container soulbound-soulbound-1 Created 
+ Container soulbound-soulbound-1 Starting 
+ Container soulbound-soulbound-1 Started 
+
+$ curl -s -o /dev/null -w 'health: %{http_code}\n' http://localhost:3999/api/health
+health: 200
+
+$ curl -s -o /dev/null -w 'root: %{http_code} %{content_type}\n' http://localhost:3999/
+root: 200 text/html; charset=utf-8
+
+$ curl -s -w '\naccess (no header): %{http_code}\n' http://localhost:3999/api/access
+{"error":{"message":"Passphrase required","code":"PASSPHRASE_REQUIRED"}}
+access (no header): 401
+
+$ curl -s -o /dev/null -w 'access (Bearer): %{http_code}\n' -H 'Authorization: Bearer sample-passphrase-0506' http://localhost:3999/api/access
+access (Bearer): 204
+
+$ curl -s -w '\napi/x: %{http_code} %{content_type}\n' -H 'Authorization: Bearer sample-passphrase-0506' http://localhost:3999/api/x
+{"error":{"message":"Not found","code":"NOT_FOUND"}}
+api/x: 404 application/json; charset=utf-8
+
+$ curl -s -o /dev/null -w 'Host localhost:3999 accepted: %{http_code}\n' -H 'Host: localhost:3999' http://127.0.0.1:3999/api/health
+Host localhost:3999 accepted: 200
+
+$ curl -s -o /dev/null -w 'Host evil.example rejected: %{http_code}\n' -H 'Host: evil.example' http://127.0.0.1:3999/api/health
+Host evil.example rejected: 403
+
+$ docker inspect -f 'ReadonlyRootfs={{.HostConfig.ReadonlyRootfs}} CapDrop={{.HostConfig.CapDrop}} SecurityOpt={{.HostConfig.SecurityOpt}} User={{.Config.User}}' <container>
+ReadonlyRootfs=true CapDrop=[ALL] SecurityOpt=[no-new-privileges:true] User=node
+
+$ docker logs <container> | grep -c <passphrase>   (must be 0)
+0
+
+$ docker compose ... down
+ Network soulbound_default Removed 
