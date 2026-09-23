@@ -53,7 +53,17 @@ export interface AppConfig {
   checkPassphrase: (candidate: string) => boolean;
   RATE_LIMIT_PER_MINUTE: number;
   TRUST_PROXY: false | 'loopback' | 'uniquelocal' | number;
-  /** Injectable clock for the rate limiter's tests; defaults to `Date.now`. */
+  /**
+   * Injectable clock for the rate limiter's tests; defaults to
+   * `performance.now()`, not `Date.now()`. The limiter only ever compares two
+   * readings of this clock to each other (`t - bucket.windowStart`) — it
+   * never needs a wall-clock/epoch value — so a monotonic clock is strictly
+   * better here: `Date.now()` can jump backward or forward if the system
+   * clock is stepped (NTP correction, a container host suspend/resume,
+   * a manual `date` change), which could silently reopen an already-spent
+   * window or freeze a fresh one open far longer than one minute.
+   * `performance.now()` cannot be adjusted this way.
+   */
   now?: () => number;
 }
 
@@ -144,16 +154,20 @@ function mapBodyParserError(err: ApiError): { statusCode: number; code: string }
 /**
  * Builds the real Express pipeline, in this order: Host allow-list, CORS,
  * `GET /api/health` (no credentials needed — the compose healthcheck calls
- * it), the `/api` rate limiter, the `/api` access gate, JSON body parsing,
- * `GET /api/access` (the frontend's pre-flight passphrase check), the three
- * World Voice routes, an `/api`-scoped JSON 404, a global JSON 404, and the
- * central sanitizing error handler.
+ * it), the `/api` rate limiter, the `/api` access gate, `/api`-scoped JSON
+ * body parsing, `GET /api/access` (the frontend's pre-flight passphrase
+ * check), the three World Voice routes, an `/api`-scoped JSON 404, a global
+ * JSON 404, and the central sanitizing error handler.
  *
  * The limiter runs BEFORE the gate so a passphrase-guessing burst is
  * throttled even though every guess also gets rejected. Both run BEFORE
  * `express.json` so an unauthenticated request's body is never parsed —
  * `routes.test.ts` proves this with an oversized, unauthenticated body that
- * gets 401, not 413. Every `/api` middleware is mounted with
+ * gets 401, not 413. `express.json` itself is scoped to `/api` (not a global
+ * `app.use`), same as the limiter and gate: every real route in this app
+ * lives under `/api`, and a global mount would parse a body for ANY path —
+ * including one with no passphrase required at all — before anything is
+ * known to even match a route. Every `/api` middleware is mounted with
  * `app.use('/api', …)`, never a hand-written `req.path.startsWith` check:
  * Express 5's router matches `/API/x`, `/api/x/` and `/api/../api/x` as
  * `/api`, and a string-prefix check would not (verified by probe).
@@ -166,7 +180,7 @@ export function buildApp(config: AppConfig): Express {
     checkPassphrase,
     RATE_LIMIT_PER_MINUTE,
     TRUST_PROXY,
-    now = Date.now,
+    now = () => performance.now(),
   } = config;
   const app = express();
   app.set('trust proxy', TRUST_PROXY);
@@ -210,7 +224,16 @@ export function buildApp(config: AppConfig): Express {
   app.use('/api', createRateLimiter({ perMinute: RATE_LIMIT_PER_MINUTE, now }));
   app.use('/api', createAccessGate(checkPassphrase));
 
-  app.use(express.json({ limit: JSON_BODY_LIMIT }));
+  // Scoped to /api, like the limiter and gate above — NOT a global
+  // app.use(express.json(...)). A non-/api path (e.g. an eventual static
+  // asset request, or simply a typo'd route) has no reason to have its body
+  // read and buffered up to JSON_BODY_LIMIT before it is even known whether
+  // anything matches; every real route in this app lives under /api. Fixed
+  // per the independent security review: the previous global mount parsed a
+  // request body for ANY path with no passphrase required, contradicting
+  // this function's own header comment that both middlewares above run
+  // before body parsing.
+  app.use('/api', express.json({ limit: JSON_BODY_LIMIT }));
 
   // The frontend's pre-flight check: reaching this handler at all means the
   // limiter and gate above already passed, so there is nothing left to

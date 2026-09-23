@@ -64,19 +64,30 @@ class Secret {
   }
 }
 
-function readApiKey(): Secret {
-  const raw = process.env.ANTHROPIC_API_KEY;
-  // Remove the plaintext copy from process.env immediately. Without this the
-  // key lives in two places: inside `Secret` (guarded) and in process.env
-  // (completely unguarded). That second copy is reachable by anything in the
-  // process — and Node's own diagnostic report writes the whole environment
-  // to disk in plaintext on a fatal error (`--report-on-fatalerror`,
-  // `--report-uncaught-exception`, `process.report.writeReport()`), which is
-  // exactly the "key must never appear in a stack trace" case R2 forbids.
-  // Verified by probe: process.report.getReport().environmentVariables leaked
-  // a canary key before this line existed. Nothing else reads this variable
-  // after config.ts's one-time read, so deleting it is safe.
-  delete process.env.ANTHROPIC_API_KEY;
+/**
+ * Reads and deletes an env var in one step, before anything validates it.
+ *
+ * `ANTHROPIC_API_KEY` and `SOULBOUND_PASSPHRASE` must BOTH be removed from
+ * `process.env` before EITHER is validated — not "read-and-validate the
+ * first, then read-and-validate the second". If the key is missing, the old
+ * shape (`readApiKey()` deleting-then-throwing before `readPassphrase()` ever
+ * ran) would leave the real passphrase sitting in `process.env` at the exact
+ * moment `readApiKey()` throws — and that throw is precisely when a crash
+ * (Node's diagnostic report, an uncaught exception) is most likely to dump
+ * the whole environment to disk. Taking both values out of `process.env`
+ * first, unconditionally, closes that window regardless of which one (if
+ * either) turns out to be invalid.
+ */
+function takeEnv(name: string): string | undefined {
+  const raw = process.env[name];
+  delete process.env[name];
+  return raw;
+}
+
+const rawApiKey = takeEnv('ANTHROPIC_API_KEY');
+const rawPassphrase = takeEnv('SOULBOUND_PASSPHRASE');
+
+function validateApiKey(raw: string | undefined): Secret {
   if (!raw || raw.trim().length === 0) {
     // Fail fast, at startup, before the app is built or the port is bound —
     // not three calls deep into gameplay.
@@ -90,7 +101,7 @@ function readApiKey(): Secret {
   return new Secret(raw.trim());
 }
 
-const anthropicApiKey = readApiKey();
+const anthropicApiKey = validateApiKey(rawApiKey);
 
 /**
  * The Anthropic API key, for the Anthropic client to consume (Phase 2).
@@ -137,13 +148,7 @@ never even reach this server with the header intact. Use only plain ASCII
 letters, digits, punctuation and spaces.
 `.trim();
 
-function readPassphrase(): Secret {
-  const raw = process.env.SOULBOUND_PASSPHRASE;
-  // Same reasoning as readApiKey(): a plaintext copy left in process.env is
-  // reachable by anything in the process, including Node's own diagnostic
-  // report on a fatal error. Nothing else reads this variable after this
-  // one-time read, so deleting it is safe.
-  delete process.env.SOULBOUND_PASSPHRASE;
+function validatePassphrase(raw: string | undefined): Secret {
   if (!raw || raw.trim().length === 0) {
     throw new Error(MISSING_PASSPHRASE_MESSAGE);
   }
@@ -157,7 +162,7 @@ function readPassphrase(): Secret {
   return new Secret(trimmed);
 }
 
-const soulboundPassphrase = readPassphrase();
+const soulboundPassphrase = validatePassphrase(rawPassphrase);
 
 /** SHA-256 digest of a string, as a Buffer, for constant-time comparison. */
 function sha256(value: string): Buffer {
@@ -188,10 +193,21 @@ export function checkPassphrase(candidate: string): boolean {
  */
 export function redact(input: string): string {
   if (!input) return input;
-  let result = input.split(anthropicApiKey.reveal()).join('[REDACTED]');
+  const key = anthropicApiKey.reveal();
   const passphrase = soulboundPassphrase.reveal();
-  if (passphrase.length > 0) {
-    result = result.split(passphrase).join('[REDACTED]');
+  // Replace the LONGER secret first. If one secret happened to be a
+  // substring of the other (never true today — the key is `sk-ant-...` and
+  // the passphrase is validated printable ASCII with no fixed prefix — but
+  // this function must not depend on that staying true), redacting the
+  // shorter one first would consume only part of an occurrence of the longer
+  // one, leaving a fragment of it in the output instead of a clean
+  // `[REDACTED]`. Doing the longer one first can never have that problem:
+  // once every occurrence of the longer string is gone, nothing the shorter
+  // pass finds can be a leftover piece of it.
+  const [first, second] = key.length >= passphrase.length ? [key, passphrase] : [passphrase, key];
+  let result = first.length > 0 ? input.split(first).join('[REDACTED]') : input;
+  if (second.length > 0) {
+    result = result.split(second).join('[REDACTED]');
   }
   return result;
 }
@@ -374,6 +390,31 @@ export const RATE_LIMIT_PER_MINUTE: number = readRateLimitPerMinute();
  * "trust only private/loopback hops"; a small integer is "trust exactly this
  * many hops", both of which name a specific, bounded amount of trust rather
  * than an unbounded one.
+ *
+ * **`'uniquelocal'` and a hop count are not automatically safe just because
+ * they are bounded — they are only safe when something in front of this
+ * server actually OVERWRITES `X-Forwarded-For` on every request**, rather
+ * than merely appending to whatever the client sent. Docker's published-port
+ * networking is the case that bites here: a container reached via
+ * `-p 3001:3001` sees the connection arrive from the Docker bridge gateway
+ * (a private `172.x` address), which `'uniquelocal'` (and hop-count 1) both
+ * classify as "trusted". But nothing in that path strips or overwrites a
+ * `X-Forwarded-For` header the ORIGINAL CLIENT sent — Docker's userland/NAT
+ * port publishing is not a reverse proxy and does not touch application-layer
+ * headers at all. A caller can set `X-Forwarded-For: <anything>` directly and
+ * Express will trust it, treating every request as a fresh IP and therefore
+ * a fresh rate-limit bucket — silently defeating the limiter while `req.ip`
+ * still looks plausible in a log line. `TRUST_PROXY` is safe to set ONLY
+ * when a real reverse proxy (nginx, Caddy, a cloud load balancer, ...) sits
+ * in front of this backend and is KNOWN to overwrite (not append to)
+ * `X-Forwarded-For` with the real client address on every request — and even
+ * then, prefer the smallest hop count that matches the actual proxy chain
+ * over `'uniquelocal'`, which trusts any number of private-range hops. Plain
+ * Docker port publishing, with no such proxy, should leave `TRUST_PROXY`
+ * unset (`false`): every request behind the bridge shares one rate-limit
+ * bucket, which is a documented, accepted degradation (see
+ * `.env.example` and the README's self-hosting section) — not a security
+ * hole, unlike a `TRUST_PROXY` value that turns out to be spoofable.
  */
 function readTrustProxy(): false | 'loopback' | 'uniquelocal' | number {
   const raw = process.env.TRUST_PROXY;

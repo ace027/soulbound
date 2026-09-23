@@ -38,6 +38,26 @@ interface Bucket {
 const WINDOW_MS = 60_000;
 
 /**
+ * The most distinct rate-limit keys (`req.ip` values, or the shared
+ * `'unknown'` key) this limiter will track at once, before new, never-seen
+ * keys start sharing one overflow bucket instead of each getting their own.
+ *
+ * 10,000 is chosen, not left unbounded, because a self-hosted, single-tenant
+ * deployment behind a passphrase and a Host allow-list has no legitimate
+ * reason to see anywhere close to that many distinct real client addresses —
+ * a household or small group sharing one passphrase is the whole audience.
+ * At roughly 100 bytes per `Bucket` entry plus its `Map` overhead, 10,000
+ * entries caps this limiter's own memory at a low, fixed number of megabytes
+ * regardless of how many distinct keys an attacker manages to present (see
+ * the module doc comment for how this fails — toward throttling, never
+ * bypass — once the cap is reached).
+ */
+const MAX_TRACKED_KEYS = 10_000;
+
+/** The shared bucket every key past `MAX_TRACKED_KEYS` folds into. */
+const OVERFLOW_KEY = '\u0000overflow';
+
+/**
  * A fixed-window, per-client rate limiter for gated `/api/*` requests.
  *
  * `now` is injectable so tests can control the window boundary precisely,
@@ -45,24 +65,79 @@ const WINDOW_MS = 60_000;
  * exact `Retry-After`). Buckets live in an in-process `Map` — this backend is
  * single-tenant, single-process (see the spec's Rate-limit store decision),
  * so there is no cross-instance state to share.
+ *
+ * Two things keep that `Map` from growing without bound (independent
+ * review, task 3 follow-up):
+ *
+ *   1. **A sweep, at most once per window.** Every call checks whether a
+ *      full window has passed since the last sweep; if so, it walks the map
+ *      once and deletes every entry whose window has already expired. This
+ *      is O(1) amortized per request (one full-map walk per 60s, not per
+ *      request) and needs no background timer — nothing runs when the
+ *      server is idle.
+ *   2. **A hard cap** (`MAX_TRACKED_KEYS`). If the map is already at the cap
+ *      after a sweep and a request arrives from a key that isn't already
+ *      tracked, that request is folded into a single shared `OVERFLOW_KEY`
+ *      bucket instead of getting a fresh entry. This is what actually bounds
+ *      memory under sustained pressure from many distinct (forged or real)
+ *      keys arriving faster than one sweep interval can clear them — sweeping
+ *      alone only reclaims SPACE that a stopped attacker leaves behind; it
+ *      does not stop an attacker who keeps presenting new keys continuously.
+ *      Folding into a shared bucket means the limiter fails TOWARD
+ *      throttling once the cap is hit (an overflowing caller now shares a
+ *      budget with everyone else past the cap, so 429s arrive sooner), never
+ *      toward bypass (nobody past the cap gets an unlimited, untracked ride).
  */
-export function createRateLimiter(opts: { perMinute: number; now: () => number }): RequestHandler {
-  const { perMinute, now } = opts;
-  const buckets = new Map<string, Bucket>();
+/** A rate-limiter middleware with a test-only hook for inspecting its internal state. */
+export interface RateLimiterHandler extends RequestHandler {
+  /**
+   * Test-only: the current number of distinct tracked keys. Lets a test
+   * prove the sweep actually shrinks the map, without either reaching into
+   * module-private state or waiting on 1,000 real HTTP round trips just to
+   * observe it — the test still drives 1,000 real requests through the
+   * middleware to populate it, this just reads the result cheaply.
+   */
+  __trackedKeyCount(): number;
+}
 
-  return (req: Request, res: Response, next: NextFunction): void => {
+export function createRateLimiter(opts: {
+  perMinute: number;
+  now: () => number;
+  /** Override for tests; defaults to `MAX_TRACKED_KEYS`. */
+  maxTrackedKeys?: number;
+}): RateLimiterHandler {
+  const { perMinute, now, maxTrackedKeys = MAX_TRACKED_KEYS } = opts;
+  const buckets = new Map<string, Bucket>();
+  let lastSweep = now();
+
+  function sweepExpired(t: number): void {
+    if (t - lastSweep < WINDOW_MS) return;
+    lastSweep = t;
+    for (const [key, bucket] of buckets) {
+      if (t - bucket.windowStart >= WINDOW_MS) {
+        buckets.delete(key);
+      }
+    }
+  }
+
+  const handler = ((req: Request, res: Response, next: NextFunction): void => {
+    const t = now();
+    sweepExpired(t);
+
     // A request with no resolvable IP shares one fixed bucket, so an absent
     // `req.ip` fails TOWARD throttling (everyone with no IP shares a budget),
     // never toward bypass (spec's Rate-limit key decision).
-    const key = req.ip ?? 'unknown';
-    const t = now();
+    let key = req.ip ?? 'unknown';
+    if (!buckets.has(key) && buckets.size >= maxTrackedKeys) {
+      // The cap is full and this key has never been seen: give it the
+      // shared overflow bucket rather than growing the map further. See the
+      // function doc comment above.
+      key = OVERFLOW_KEY;
+    }
 
     let bucket = buckets.get(key);
     if (bucket === undefined || t - bucket.windowStart >= WINDOW_MS) {
-      // A new window: prune the stale entry (if any) and start fresh. Pruning
-      // here, on access, is enough for a single-tenant deployment — there is
-      // no background sweep, and the number of distinct keys is bounded by
-      // the number of distinct clients that have ever called this server.
+      // A new window: replace the stale entry (if any) and start fresh.
       bucket = { count: 0, windowStart: t };
       buckets.set(key, bucket);
     }
@@ -80,7 +155,11 @@ export function createRateLimiter(opts: { perMinute: number; now: () => number }
     }
 
     next();
-  };
+  }) as RateLimiterHandler;
+
+  handler.__trackedKeyCount = () => buckets.size;
+
+  return handler;
 }
 
 /**

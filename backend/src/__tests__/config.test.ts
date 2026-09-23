@@ -64,6 +64,21 @@ describe('ANTHROPIC_API_KEY', () => {
     await import('../config.js');
     expect(process.env.ANTHROPIC_API_KEY).toBeUndefined();
   });
+
+  it('is removed from process.env even when SOULBOUND_PASSPHRASE is the one that is invalid', async () => {
+    // Both secrets must come OUT of process.env before EITHER is validated —
+    // not "read-and-validate the key, then read-and-validate the
+    // passphrase". Otherwise a passphrase-validation failure here would never
+    // even reach the point of deleting ANTHROPIC_API_KEY (this case), and
+    // conversely a key-validation failure must not leave the passphrase
+    // sitting in process.env either (the next case). Both directions matter:
+    // whichever one is invalid, NEITHER raw value should survive in the
+    // environment by the time the throw happens.
+    process.env.SOULBOUND_PASSPHRASE = 'short';
+    await expect(import('../config.js')).rejects.toThrow(/SOULBOUND_PASSPHRASE/);
+    expect(process.env.ANTHROPIC_API_KEY).toBeUndefined();
+    expect(process.env.SOULBOUND_PASSPHRASE).toBeUndefined();
+  });
 });
 
 describe('SOULBOUND_PASSPHRASE', () => {
@@ -102,6 +117,16 @@ describe('SOULBOUND_PASSPHRASE', () => {
     expect(process.env.SOULBOUND_PASSPHRASE).toBeUndefined();
   });
 
+  it('is removed from process.env even when ANTHROPIC_API_KEY is the one that is invalid', async () => {
+    // The reverse direction of the case in the ANTHROPIC_API_KEY describe
+    // block above: a missing/invalid key must not leave the real passphrase
+    // sitting unguarded in process.env at the moment config.ts throws.
+    process.env.ANTHROPIC_API_KEY = '   ';
+    await expect(import('../config.js')).rejects.toThrow(/ANTHROPIC_API_KEY/);
+    expect(process.env.ANTHROPIC_API_KEY).toBeUndefined();
+    expect(process.env.SOULBOUND_PASSPHRASE).toBeUndefined();
+  });
+
   it('is trimmed before validation and comparison', async () => {
     process.env.SOULBOUND_PASSPHRASE = `  ${FAKE_PASSPHRASE}  `;
     const { checkPassphrase } = await import('../config.js');
@@ -137,6 +162,25 @@ describe('redact()', () => {
     const { redact } = await import('../config.js');
     const input = `key=${FAKE_KEY} pass=${FAKE_PASSPHRASE}`;
     expect(redact(input)).toBe('key=[REDACTED] pass=[REDACTED]');
+  });
+
+  it('redacts the longer secret first, so a shorter secret that is a substring of it cannot leave a fragment behind', async () => {
+    vi.resetModules();
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-shared-substring-suffix';
+    // The passphrase (>=12 chars) is a substring of the key above. If the
+    // shorter one were redacted first, only the passphrase-length slice
+    // inside each key occurrence would be replaced, leaving key fragments
+    // ("sk-ant-" plus leftover characters) in the output instead of one
+    // clean [REDACTED] per occurrence.
+    process.env.SOULBOUND_PASSPHRASE = 'shared-substring-suffix';
+    const { redact } = await import('../config.js');
+
+    const input = 'leaked key: sk-ant-shared-substring-suffix';
+    const result = redact(input);
+    expect(result).toBe('leaked key: [REDACTED]');
+    // Specifically: no fragment of either secret survives.
+    expect(result).not.toContain('shared-substring-suffix');
+    expect(result).not.toContain('sk-ant-');
   });
 });
 
