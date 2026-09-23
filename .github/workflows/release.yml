@@ -40,7 +40,9 @@ jobs:
       # full, so a branch dispatch is a real dry run of build+test.
       - name: Warn if dispatched off main
         if: github.ref != 'refs/heads/main'
-        run: echo "::notice::Dispatched from ${{ github.ref }}, not main — test will run, but the publish job (build, smoke, push) will be skipped."
+        env:
+          REF: ${{ github.ref }}
+        run: echo "::notice::Dispatched from $REF, not main — test will run, but the publish job (build, smoke, push) will be skipped."
 
       - uses: actions/checkout@v4
         with:
@@ -161,7 +163,11 @@ jobs:
 
       # The pushed image must be the smoke-tested one (review finding: it
       # wasn't). Build linux/amd64 only, load it into the local Docker
-      # daemon, and smoke it BEFORE anything is pushed. This replaces the
+      # daemon, and smoke it BEFORE anything is pushed, using the exact same
+      # `labels:` as the push step below — labels live in the image config,
+      # so if this build's labels ever drifted from the push's, the pushed
+      # amd64 config (and its digest) could never match this one even if
+      # every layer's contents were exactly the same. This replaces the
       # separate top-level `smoke` job this workflow used to have: that job
       # built its own image with a plain `docker build` sharing no cache
       # with this one, so it proved a *different* set of bytes than the ones
@@ -177,14 +183,24 @@ jobs:
           push: false
           tags: soulbound:release-smoke
           cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ env.VERSION }}
 
       - name: Smoke test the amd64 image
         run: scripts/smoke-image.sh soulbound:release-smoke
 
-      # Multi-platform push. The amd64 layers are pulled from the gha cache
-      # written above, so the amd64 bytes pushed here are byte-identical to
-      # the ones just smoke-tested — not merely "built the same way" but the
-      # same cache hit. arm64 is built fresh under QEMU in this step and is
+      # Multi-platform push. The amd64 layers are meant to come from the gha
+      # cache written above, so in the normal case this is the same build,
+      # with the same cached layers, as the one just smoke-tested — not
+      # merely "built the same way" but the same cache hit. That is CHECKED
+      # below, not just assumed: a `type=gha` cache-import failure is only a
+      # warning in BuildKit, so amd64 could otherwise be silently rebuilt
+      # with different layers and pushed untested. The "Verify pushed amd64
+      # layers match the smoke-tested image" step compares this image's
+      # actual layer diff IDs against the smoke image's and fails the run on
+      # any mismatch. arm64 is built fresh under QEMU in this step and is
       # NEVER executed or smoke-tested, only built; that gap is accepted
       # (spec: Open Question 1) until a real workflow_dispatch on an
       # arm64 runner exists. `provenance: false`: the default build
@@ -201,6 +217,7 @@ jobs:
           push: true
           provenance: false
           cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: |
             ${{ env.IMAGE }}:${{ env.VERSION }}
             ${{ env.IMAGE }}:latest
@@ -208,3 +225,106 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ env.VERSION }}
+
+      # Post-push check for the gap named above: compare the smoke-tested
+      # image's layer diff IDs against the pushed linux/amd64 image's
+      # config diff IDs, and fail the run if they don't match. At that
+      # point the tag is already on GHCR — this can only catch the problem
+      # and say so loudly, not prevent the push (the manifest can't be
+      # verified before it exists).
+      #
+      # `docker buildx imagetools inspect --format '{{json .Image}}'`'s
+      # exact shape for a multi-platform ref isn't something this workflow
+      # can pin down offline (no registry to push a real multi-platform
+      # image to from the dev sandbox — see 05-CONTEXT.md's environment
+      # facts), so the parser below does not assume one fixed shape. It
+      # searches the returned JSON for image-config-shaped objects
+      # (anything with an "architecture" or "rootfs" key), keeps the ones
+      # tagged linux/amd64, and requires exactly one such match with a
+      # non-empty rootfs.diff_ids list. Anything else — zero matches, more
+      # than one, or a missing/empty diff_ids — fails closed rather than
+      # risking a false "match".
+      - name: Verify pushed amd64 layers match the smoke-tested image
+        run: |
+          smoke_diffs=$(docker image inspect soulbound:release-smoke --format '{{json .RootFS.Layers}}')
+          pushed_image=$(docker buildx imagetools inspect "$IMAGE:$VERSION" --format '{{json .Image}}')
+          SMOKE_DIFFS="$smoke_diffs" PUSHED_IMAGE="$pushed_image" python3 - <<'PY'
+          import json
+          import os
+          import sys
+
+          def fail(msg):
+              print(f"::error::{msg}")
+              sys.exit(1)
+
+          try:
+              smoke_diffs = json.loads(os.environ["SMOKE_DIFFS"])
+          except Exception as e:
+              fail(f"Could not parse smoke image diff IDs: {e}")
+
+          if not isinstance(smoke_diffs, list) or not smoke_diffs:
+              fail(f"Smoke image diff IDs missing or not a non-empty list: {smoke_diffs!r}")
+
+          raw = os.environ["PUSHED_IMAGE"]
+          try:
+              pushed = json.loads(raw)
+          except Exception as e:
+              fail(f"Could not parse pushed image config JSON: {e}\nRaw: {raw}")
+
+          def image_config_candidates(node):
+              # Depth-first search for any dict that looks like an OCI image
+              # config (has an "architecture" or "rootfs" key). Deliberately
+              # shape-agnostic: see the step comment above for why.
+              if isinstance(node, dict):
+                  if "architecture" in node or "rootfs" in node:
+                      yield node
+                  for value in node.values():
+                      yield from image_config_candidates(value)
+              elif isinstance(node, list):
+                  for item in node:
+                      yield from image_config_candidates(item)
+
+          amd64_configs = [
+              c for c in image_config_candidates(pushed)
+              if c.get("architecture") == "amd64" and c.get("os", "linux") == "linux"
+          ]
+
+          if len(amd64_configs) != 1:
+              fail(
+                  "Expected exactly one linux/amd64 image config in the pushed "
+                  f"manifest, found {len(amd64_configs)}. The tag is ALREADY "
+                  "PUSHED to GHCR but could not be verified against the "
+                  "smoke-tested image. Remedy: re-dispatch this workflow after "
+                  "fixing the cause, or retag ':latest' back to the previous "
+                  f"known-good version.\nRaw imagetools output: {raw}"
+              )
+
+          rootfs = amd64_configs[0].get("rootfs") or {}
+          pushed_diffs = rootfs.get("diff_ids")
+
+          if not isinstance(pushed_diffs, list) or not pushed_diffs:
+              fail(
+                  "Pushed amd64 image config has no non-empty rootfs.diff_ids. "
+                  "The tag is ALREADY PUSHED to GHCR but could not be verified "
+                  "against the smoke-tested image. Remedy: re-dispatch this "
+                  "workflow after fixing the cause, or retag ':latest' back to "
+                  f"the previous known-good version.\nConfig: {amd64_configs[0]!r}"
+              )
+
+          if smoke_diffs != pushed_diffs:
+              fail(
+                  "Pushed linux/amd64 layers do NOT match the smoke-tested "
+                  "image. The tag is ALREADY PUSHED to GHCR but is NOT the "
+                  "image that passed the smoke test. Remedy: re-dispatch this "
+                  "workflow after fixing the cause (for example, a stale or "
+                  "failed `type=gha` cache import), or retag ':latest' back to "
+                  "the previous known-good version.\n"
+                  f"smoke diff_ids:  {smoke_diffs}\n"
+                  f"pushed diff_ids: {pushed_diffs}"
+              )
+
+          print(
+              "Verified: pushed linux/amd64 layers match the smoke-tested "
+              f"image ({len(pushed_diffs)} layers)."
+          )
+          PY
