@@ -22,7 +22,10 @@ function makeGameState(): GameState {
         id: 'mycelium',
         name: 'Mycelium',
         desc: 'A colony that learned to want.',
-        intrinsic: [{ name: 'Spore Sense', description: 'Reads the air for kin.' }],
+        intrinsic: [
+          { name: 'Spore Sense', description: 'Reads the air for kin.' },
+          { name: 'Rootbound', description: 'Draws on what it stands in.' },
+        ],
       },
       uniqueSkill: {
         skill_name: 'The Patient Ledger',

@@ -32,6 +32,10 @@
  */
 
 import {
+  ACCESS_CHECK_PATH,
+  ACCESS_HEADER,
+  ACCESS_SCHEME,
+  PASSPHRASE_REQUIRED,
   UniqueSkillDeterminationSchema,
   WorldVoiceResponseSchema,
   type Character,
@@ -42,6 +46,8 @@ import {
   type WorldVoiceResponse,
 } from '@soulbound/shared';
 
+import { clearPassphrase, emitPassphraseRequired, getPassphrase } from './passphrase.js';
+
 // ─── Error type ─────────────────────────────────────────────────────────────
 
 /**
@@ -51,8 +57,9 @@ import {
  *
  * `code` is the backend's `error.code` when the backend answered
  * (INVALID_REQUEST, AUTHENTICATION_FAILED, RATE_LIMITED, UPSTREAM_UNAVAILABLE,
- * UPSTREAM_ERROR, INVALID_RESPONSE_SHAPE, PAYLOAD_TOO_LARGE, NOT_FOUND, ...),
- * or one of the client-side codes below when it did not.
+ * UPSTREAM_ERROR, INVALID_RESPONSE_SHAPE, PAYLOAD_TOO_LARGE, NOT_FOUND,
+ * PASSPHRASE_REQUIRED, TOO_MANY_REQUESTS, ...), or one of the client-side codes
+ * below when it did not.
  */
 export type ApiClientErrorCode =
   /** A 200 (or any status) whose content-type was not JSON — the SPA-fallback trap. */
@@ -142,11 +149,29 @@ async function readErrorEnvelope(
 }
 
 /**
+ * Every request the auth headers this module adds. When a passphrase is
+ * stored, it goes in as `Authorization: Bearer <passphrase>` (Phase 5, R19) —
+ * the same header name and scheme the backend gate checks
+ * (`shared/src/accessGate.ts`), so no CORS change was needed. When none is
+ * stored, the header is simply absent and the backend answers 401
+ * `PASSPHRASE_REQUIRED` (unless the gate is unset, e.g. in tests).
+ */
+function authHeaders(): Record<string, string> {
+  const p = getPassphrase();
+  return p === null ? {} : { [ACCESS_HEADER]: `${ACCESS_SCHEME} ${p}` };
+}
+
+/**
  * POST JSON to a backend route and return the schema-validated response.
  *
  * Order of gates matters and each one is load-bearing:
  *   1. fetch rejection          → NETWORK_ERROR
  *   2. `response.ok`            → R12. Non-2xx never reaches a parse.
+ *      A 401 `PASSPHRASE_REQUIRED` here also clears the stored passphrase and
+ *      notifies `AccessGate` — but a 401 `AUTHENTICATION_FAILED` (the
+ *      deployer's own Anthropic key is bad) must NOT: that would wipe a
+ *      correct passphrase over an unrelated upstream problem. Keyed on `code`,
+ *      never on status alone (05-CONTEXT.md derived fact 1).
  *   3. content-type is JSON     → the SPA-fallback trap, which (2) cannot see.
  *   4. body parses as JSON      → MALFORMED_JSON
  *   5. body matches the schema  → INVALID_RESPONSE_SHAPE
@@ -163,6 +188,7 @@ async function postJson<T>(
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
+        ...authHeaders(),
       },
       body: JSON.stringify(body),
     });
@@ -187,6 +213,12 @@ async function postJson<T>(
       : { message: null, code: null };
 
     const code = envelope.code ?? 'HTTP_ERROR';
+
+    if (response.status === 401 && code === PASSPHRASE_REQUIRED) {
+      clearPassphrase();
+      emitPassphraseRequired();
+    }
+
     const detail =
       envelope.message ??
       `The server returned ${response.status} ${response.statusText || 'error'} ` +
@@ -338,4 +370,42 @@ export async function generateIntroScene(
     },
   };
   return postJson('/api/intro-scene', body, WorldVoiceResponseSchema);
+}
+
+// ─── Access check ───────────────────────────────────────────────────────────
+
+/**
+ * Probes `GET /api/access` so `AccessGate` can ask before the title screen,
+ * never after a paid call has already started (05-CONTEXT.md derived fact 2:
+ * a failed creation strands the player mid-flow with no retry).
+ *
+ * Never throws. Every outcome that is not a clean 204 or a clean 401
+ * `PASSPHRASE_REQUIRED` — a network error, a 502 from Vite's dev proxy with no
+ * backend running, a 200 with an HTML body, a 401 with no recognisable
+ * envelope — reads as `'unknown'`, and `AccessGate` fails OPEN on `'unknown'`.
+ * The backend enforces regardless; failing closed here would lock out every
+ * dev run started before the backend is up.
+ */
+export async function checkAccess(): Promise<'ok' | 'required' | 'unknown'> {
+  let response: Response;
+  try {
+    response = await fetch(ACCESS_CHECK_PATH, {
+      method: 'GET',
+      headers: { Accept: 'application/json', ...authHeaders() },
+    });
+  } catch {
+    return 'unknown';
+  }
+
+  if (response.status === 204) return 'ok';
+
+  if (response.status === 401) {
+    const contentType = response.headers.get('content-type');
+    const envelope = isJsonContentType(contentType)
+      ? await readErrorEnvelope(response)
+      : { message: null, code: null };
+    return envelope.code === PASSPHRASE_REQUIRED ? 'required' : 'unknown';
+  }
+
+  return 'unknown';
 }
