@@ -201,6 +201,103 @@ describe('AccessGate', () => {
     expect(await screen.findByText('The Soulbound Chronicles')).toBeInTheDocument();
   });
 
+  it('rejects a non-ASCII passphrase (accented letter) in the form and stores nothing', async () => {
+    stubFetchOnce(
+      jsonResponse(401, { error: { message: 'Passphrase required', code: 'PASSPHRASE_REQUIRED' } }),
+    );
+    render(
+      <AccessGate>
+        <div>secret game</div>
+      </AccessGate>,
+    );
+
+    const input = await screen.findByLabelText('Passphrase');
+    fireEvent.change(input, { target: { value: 'café123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+
+    expect(
+      await screen.findByText(/Use only standard keyboard characters/),
+    ).toBeInTheDocument();
+    // No second fetch — the value never reached checkAccess().
+    expect(screen.getByLabelText('Passphrase')).toBeInTheDocument();
+    const { getPassphrase } = await import('../../lib/passphrase');
+    expect(getPassphrase()).toBeNull();
+  });
+
+  it('rejects a non-ASCII passphrase (emoji) in the form and stores nothing', async () => {
+    stubFetchOnce(
+      jsonResponse(401, { error: { message: 'Passphrase required', code: 'PASSPHRASE_REQUIRED' } }),
+    );
+    render(
+      <AccessGate>
+        <div>secret game</div>
+      </AccessGate>,
+    );
+
+    const input = await screen.findByLabelText('Passphrase');
+    fireEvent.change(input, { target: { value: 'hunter2🔒' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+
+    expect(
+      await screen.findByText(/Use only standard keyboard characters/),
+    ).toBeInTheDocument();
+    const { getPassphrase } = await import('../../lib/passphrase');
+    expect(getPassphrase()).toBeNull();
+  });
+
+  it("clears the stored value and shows a recoverable message when the re-check comes back 'unknown'", async () => {
+    const fetchMock = vi.fn();
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(401, { error: { message: 'Passphrase required', code: 'PASSPHRASE_REQUIRED' } }),
+    );
+    // The re-check after submit fails to reach the server.
+    fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <AccessGate>
+        <div>secret game</div>
+      </AccessGate>,
+    );
+
+    const input = await screen.findByLabelText('Passphrase');
+    fireEvent.change(input, { target: { value: 'correct-horse-battery' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+
+    expect(
+      await screen.findByText(/Couldn't reach the server/),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Passphrase')).toBeInTheDocument();
+    expect(screen.queryByText('secret game')).not.toBeInTheDocument();
+    const { getPassphrase } = await import('../../lib/passphrase');
+    expect(getPassphrase()).toBeNull();
+  });
+
+  it('shows the "didn\'t work" message when a resubmitted passphrase re-checks as 401 PASSPHRASE_REQUIRED', async () => {
+    const fetchMock = vi.fn();
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(401, { error: { message: 'Passphrase required', code: 'PASSPHRASE_REQUIRED' } }),
+    );
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(401, { error: { message: 'Passphrase required', code: 'PASSPHRASE_REQUIRED' } }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <AccessGate>
+        <div>secret game</div>
+      </AccessGate>,
+    );
+
+    const input = await screen.findByLabelText('Passphrase');
+    fireEvent.change(input, { target: { value: 'wrong-passphrase' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+
+    expect(await screen.findByText("That passphrase didn't work.")).toBeInTheDocument();
+    expect(screen.getByLabelText('Passphrase')).toBeInTheDocument();
+    expect(screen.queryByText('secret game')).not.toBeInTheDocument();
+  });
+
   it('never touches localStorage or fetch directly — only through lib/', async () => {
     // Static guard, mirrored from constraints.test.ts's approach: read the
     // source and assert absence, rather than trying to prove a negative

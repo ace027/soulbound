@@ -40,10 +40,20 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { checkAccess } from '../lib/api';
-import { onPassphraseRequired, setPassphrase } from '../lib/passphrase';
+import { clearPassphrase, onPassphraseRequired, setPassphrase } from '../lib/passphrase';
 import { sharedBg } from '../screens/sharedBg';
 
 type AccessState = 'pending' | 'ok' | 'required' | 'unknown';
+
+/**
+ * Mirrors the backend's own check (`backend/src/config.ts`,
+ * `/^[\x20-\x7E]+$/`) so a non-ASCII value is rejected in the form, before
+ * `setPassphrase` ever stores it. `fetch` throws a `TypeError` on a non-Latin-1
+ * header value, which `checkAccess` has no way to distinguish from a network
+ * failure — it comes back `'unknown'`, and without this guard the form would
+ * dismiss itself into a state that can never recover (finding A).
+ */
+const PRINTABLE_ASCII = /^[\x20-\x7E]+$/;
 
 export interface AccessGateProps {
   children: React.ReactNode;
@@ -56,6 +66,8 @@ export default function AccessGate({ children }: AccessGateProps) {
   const [showValue, setShowValue] = useState(false);
   const [wrong, setWrong] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [invalid, setInvalid] = useState(false);
+  const [unreachable, setUnreachable] = useState(false);
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -67,6 +79,8 @@ export default function AccessGate({ children }: AccessGateProps) {
       if (mounted.current) {
         setOverlay(true);
         setWrong(false);
+        setInvalid(false);
+        setUnreachable(false);
       }
     });
     return () => {
@@ -78,13 +92,26 @@ export default function AccessGate({ children }: AccessGateProps) {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (checking) return;
+    const trimmed = value.trim();
+    setWrong(false);
+    setUnreachable(false);
+    if (!PRINTABLE_ASCII.test(trimmed)) {
+      setInvalid(true);
+      return;
+    }
+    setInvalid(false);
     setChecking(true);
-    setPassphrase(value.trim());
+    setPassphrase(trimmed);
     const result = await checkAccess();
     if (!mounted.current) return;
     setChecking(false);
     if (result === 'required') {
       setWrong(true);
+      return;
+    }
+    if (result === 'unknown') {
+      clearPassphrase();
+      setUnreachable(true);
       return;
     }
     setState(result);
@@ -167,11 +194,17 @@ export default function AccessGate({ children }: AccessGateProps) {
               tabIndex={-1}
             />
 
-            <div style={{ display: 'flex', gap: 8, marginBottom: wrong ? 8 : 20 }}>
+            <div
+              style={{ display: 'flex', gap: 8, marginBottom: wrong || invalid || unreachable ? 8 : 20 }}
+            >
               <input
                 type={showValue ? 'text' : 'password'}
                 value={value}
-                onChange={(e) => setValue(e.target.value)}
+                onChange={(e) => {
+                  setValue(e.target.value);
+                  setInvalid(false);
+                  setUnreachable(false);
+                }}
                 autoComplete="current-password"
                 autoCapitalize="off"
                 autoCorrect="off"
@@ -207,6 +240,18 @@ export default function AccessGate({ children }: AccessGateProps) {
                 {showValue ? 'Hide' : 'Show'}
               </button>
             </div>
+
+            {invalid && (
+              <p style={{ fontSize: 12, color: '#c0392b', margin: '0 0 20px' }}>
+                Use only standard keyboard characters (A&ndash;Z, 0&ndash;9, punctuation).
+              </p>
+            )}
+
+            {unreachable && (
+              <p style={{ fontSize: 12, color: '#c0392b', margin: '0 0 20px' }}>
+                Couldn&apos;t reach the server &mdash; try again.
+              </p>
+            )}
 
             {wrong && (
               <p style={{ fontSize: 12, color: '#c0392b', margin: '0 0 20px' }}>
