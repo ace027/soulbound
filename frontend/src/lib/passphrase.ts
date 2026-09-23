@@ -18,10 +18,30 @@
 
 import { ACCESS_STORAGE_KEY } from '@soulbound/shared';
 
-/** Read the stored passphrase, or `null` if unset or storage is unavailable. */
+/**
+ * The only characters a passphrase may contain. Mirrors the backend's boot
+ * check (`backend/src/config.ts`, `/^[\x20-\x7E]+$/`): `fetch` throws a
+ * `TypeError` on a non-Latin-1 header value, which the client cannot tell
+ * apart from a network failure, so a value outside this set could never be
+ * sent. One definition, used by the form (before storing) and by
+ * `getPassphrase` (before sending).
+ */
+export const PRINTABLE_ASCII = /^[\x20-\x7E]+$/;
+
+/**
+ * Read the stored passphrase, or `null` if unset, storage is unavailable, or
+ * the stored value could never be sent. A value outside `PRINTABLE_ASCII`
+ * (e.g. one stored before the form validated input) is cleared rather than
+ * returned, so the next check asks again instead of failing every call.
+ */
 export function getPassphrase(): string | null {
   try {
-    return localStorage.getItem(ACCESS_STORAGE_KEY);
+    const stored = localStorage.getItem(ACCESS_STORAGE_KEY);
+    if (stored !== null && !PRINTABLE_ASCII.test(stored)) {
+      localStorage.removeItem(ACCESS_STORAGE_KEY);
+      return null;
+    }
+    return stored;
   } catch {
     return null;
   }

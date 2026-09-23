@@ -60,6 +60,12 @@ describe('getPassphrase / setPassphrase / clearPassphrase', () => {
     expect(getPassphrase()).toBe('correct-horse-battery');
   });
 
+  it('clears and ignores a stored value that could never be sent (non-ASCII)', () => {
+    localStorage.setItem(ACCESS_STORAGE_KEY, 'caf\u00e9-passphrase-1234');
+    expect(getPassphrase()).toBeNull();
+    expect(localStorage.getItem(ACCESS_STORAGE_KEY)).toBeNull();
+  });
+
   it('clears a stored value', () => {
     setPassphrase('correct-horse-battery');
     clearPassphrase();

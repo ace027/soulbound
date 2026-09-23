@@ -40,20 +40,15 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { checkAccess } from '../lib/api';
-import { clearPassphrase, onPassphraseRequired, setPassphrase } from '../lib/passphrase';
+import {
+  PRINTABLE_ASCII,
+  clearPassphrase,
+  onPassphraseRequired,
+  setPassphrase,
+} from '../lib/passphrase';
 import { sharedBg } from '../screens/sharedBg';
 
 type AccessState = 'pending' | 'ok' | 'required' | 'unknown';
-
-/**
- * Mirrors the backend's own check (`backend/src/config.ts`,
- * `/^[\x20-\x7E]+$/`) so a non-ASCII value is rejected in the form, before
- * `setPassphrase` ever stores it. `fetch` throws a `TypeError` on a non-Latin-1
- * header value, which `checkAccess` has no way to distinguish from a network
- * failure — it comes back `'unknown'`, and without this guard the form would
- * dismiss itself into a state that can never recover (finding A).
- */
-const PRINTABLE_ASCII = /^[\x20-\x7E]+$/;
 
 export interface AccessGateProps {
   children: React.ReactNode;
@@ -106,6 +101,10 @@ export default function AccessGate({ children }: AccessGateProps) {
     if (!mounted.current) return;
     setChecking(false);
     if (result === 'required') {
+      // A rejected value must not linger in storage: it would be re-sent on
+      // every reload, and a mistaken autofill (another site's password) would
+      // stay stored in plaintext.
+      clearPassphrase();
       setWrong(true);
       return;
     }

@@ -296,6 +296,8 @@ describe('AccessGate', () => {
     expect(await screen.findByText("That passphrase didn't work.")).toBeInTheDocument();
     expect(screen.getByLabelText('Passphrase')).toBeInTheDocument();
     expect(screen.queryByText('secret game')).not.toBeInTheDocument();
+    // The rejected value is not left behind in storage.
+    expect(localStorage.getItem(ACCESS_STORAGE_KEY)).toBeNull();
   });
 
   it('never touches localStorage or fetch directly — only through lib/', async () => {
