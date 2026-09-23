@@ -115,8 +115,9 @@ docker run -d --name soulbound -p 127.0.0.1:8080:3001 \
   ghcr.io/deanitservices/soulbound:latest
 ```
 
-Set `ALLOWED_HOSTS` to match the host port you publish — leave out `localhost:8080` here and every
-request that arrives on port 8080 gets 403. `localhost:3001` is included too, harmlessly and for
+Set `ALLOWED_HOSTS` to match the host names and port browsers use — leave out `localhost:8080`
+here and a browser at `http://localhost:8080` gets 403 (the check is on the request's `Host`
+header, so each name you reach the server by needs its own entry). `localhost:3001` is included too, harmlessly and for
 future-proofing: the image has no built-in `HEALTHCHECK` (a plain `docker run` gets none unless you
 add `--health-cmd` yourself), but if you do add one, or front this with an orchestrator that
 health-checks it from inside the container, it will always call `localhost:3001` regardless of the

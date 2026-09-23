@@ -271,12 +271,24 @@ jobs:
           except Exception as e:
               fail(f"Could not parse pushed image config JSON: {e}\nRaw: {raw}")
 
+          # A plain re-dispatch cannot fix a failed verification: this version
+          # is already on GHCR, so "Refuse to overwrite an existing version"
+          # stops it by design. The way out is a new version number.
+          REMEDY = (
+              "Remedy: retag ':latest' back to the previous known-good version "
+              "now, then fix the cause, bump the version in all four "
+              "package.json files, and dispatch again."
+          )
+
           def image_config_candidates(node):
               # Depth-first search for any dict that looks like an OCI image
-              # config (has an "architecture" or "rootfs" key). Deliberately
-              # shape-agnostic: see the step comment above for why.
+              # config. It must carry "rootfs" (the layer list this step
+              # compares); "architecture" alone is not enough, because an
+              # image label literally named "architecture" would otherwise
+              # count as a second amd64 config and fail a good push.
+              # Deliberately shape-agnostic: see the step comment above.
               if isinstance(node, dict):
-                  if "architecture" in node or "rootfs" in node:
+                  if "rootfs" in node:
                       yield node
                   for value in node.values():
                       yield from image_config_candidates(value)
@@ -294,9 +306,7 @@ jobs:
                   "Expected exactly one linux/amd64 image config in the pushed "
                   f"manifest, found {len(amd64_configs)}. The tag is ALREADY "
                   "PUSHED to GHCR but could not be verified against the "
-                  "smoke-tested image. Remedy: re-dispatch this workflow after "
-                  "fixing the cause, or retag ':latest' back to the previous "
-                  f"known-good version.\nRaw imagetools output: {raw}"
+                  f"smoke-tested image. {REMEDY}\nRaw imagetools output: {raw}"
               )
 
           rootfs = amd64_configs[0].get("rootfs") or {}
@@ -306,19 +316,15 @@ jobs:
               fail(
                   "Pushed amd64 image config has no non-empty rootfs.diff_ids. "
                   "The tag is ALREADY PUSHED to GHCR but could not be verified "
-                  "against the smoke-tested image. Remedy: re-dispatch this "
-                  "workflow after fixing the cause, or retag ':latest' back to "
-                  f"the previous known-good version.\nConfig: {amd64_configs[0]!r}"
+                  f"against the smoke-tested image. {REMEDY}\nConfig: {amd64_configs[0]!r}"
               )
 
           if smoke_diffs != pushed_diffs:
               fail(
                   "Pushed linux/amd64 layers do NOT match the smoke-tested "
                   "image. The tag is ALREADY PUSHED to GHCR but is NOT the "
-                  "image that passed the smoke test. Remedy: re-dispatch this "
-                  "workflow after fixing the cause (for example, a stale or "
-                  "failed `type=gha` cache import), or retag ':latest' back to "
-                  "the previous known-good version.\n"
+                  "image that passed the smoke test (a stale or failed `type=gha` "
+                  f"cache import is the likely cause). {REMEDY}\n"
                   f"smoke diff_ids:  {smoke_diffs}\n"
                   f"pushed diff_ids: {pushed_diffs}"
               )

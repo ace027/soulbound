@@ -66,6 +66,18 @@ describe('getPassphrase / setPassphrase / clearPassphrase', () => {
     expect(localStorage.getItem(ACCESS_STORAGE_KEY)).toBeNull();
   });
 
+  it('returns null for an unsendable stored value even when removing it throws', () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('caf\u00e9-passphrase-1234');
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new Error('storage blocked');
+    });
+    try {
+      expect(getPassphrase()).toBeNull();
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+
   it('clears a stored value', () => {
     setPassphrase('correct-horse-battery');
     clearPassphrase();
