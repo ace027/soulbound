@@ -122,6 +122,25 @@ describe('server.ts startup (main)', () => {
     expect(logged).toContain('ANTHROPIC_API_KEY');
     expect(logged).not.toMatch(/\n\s+at /); // one clean message, not a stack dump
   });
+
+  it('exits 1 naming SOULBOUND_PASSPHRASE when it is unset, and never echoes the fake key', async () => {
+    delete process.env.SOULBOUND_PASSPHRASE;
+    const { main } = await import('../server.js');
+
+    let thrown: unknown;
+    try {
+      await main();
+    } catch (err) {
+      thrown = err;
+    }
+
+    expect((thrown as Error).message).toBe('process.exit(1)');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const logged = errorSpy.mock.calls.map((call) => call.join(' ')).join('\n');
+    expect(logged).toContain('SOULBOUND_PASSPHRASE');
+    expect(logged).not.toContain(FAKE_KEY);
+    expect(logged).not.toMatch(/\n\s+at /);
+  });
 });
 
 describe('isHostAllowed', () => {

@@ -705,6 +705,26 @@ describe('World Voice routes (mocked SDK boundary)', () => {
         consoleErrorSpy.mockRestore();
       }
     });
+
+    it('a thrown error echoing the passphrase is redacted from both the log and the response body', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      try {
+        createSpy.mockRejectedValueOnce(
+          new Error(`upstream echoed something: ${FAKE_PASSPHRASE}`),
+        );
+        const res = await httpRequest(port, {
+          method: 'POST',
+          path: '/api/unique-skill',
+          body: JSON.stringify(uniqueSkillRequestBody),
+        });
+
+        const logged = consoleErrorSpy.mock.calls.map((call) => call.join(' ')).join('\n');
+        expect(logged).not.toContain(FAKE_PASSPHRASE);
+        expect(res.bodyText).not.toContain(FAKE_PASSPHRASE);
+      } finally {
+        consoleErrorSpy.mockRestore();
+      }
+    });
   });
 
   it('a mocked SDK error returns the mapped structured code, not a 500 dump', async () => {
