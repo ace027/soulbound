@@ -411,12 +411,11 @@ Two corrections from the phase review's QA reviewer, both re-derived before reco
 - "spec-anticipated" → **"plan-anticipated"** (2 occurrences). The allowance for a behaviourally
   equivalent survivor lives in `05-02-PLAN.md`, not in the spec. The spec's Acceptance Checks row is
   `Required: true` and names the variant "swap `timingSafeEqual` for `===` **on a length mismatch**".
-- **That spec variant is caught.** Replacing the SHA-256-then-`timingSafeEqual` compare with
+- **The closest mutation-testable reading of that spec row is caught** (review cycle 2 wording correction: the spec row names a `===` swap on a length mismatch; read literally that is also a behavioural equivalent, so this raw-buffer mutation is our testable interpretation, not the spec's literal text). Replacing the SHA-256-then-`timingSafeEqual` compare with
   `timingSafeEqual(Buffer.from(candidate), Buffer.from(real))` (no hashing, so buffers differ in length)
   turns **4** backend tests red (orchestrator re-run, restored clean):
   `rejects a candidate of a different length without throwing`, `rejects an empty candidate`,
   `the wrong passphrase returns 401 and never reaches the SDK`,
   `a burst past the limit gets 429 before the gate, and wrong-passphrase attempts count too`.
   The raw-string `===` swap still survives as a documented behavioural equivalent: its timing
-  property is checked by code review only. The spec's required row is met by the length-mismatch
-  variant.
+  property is checked by code review only. The spec's required row is met by that interpretation.

@@ -275,3 +275,16 @@ appended `test(...)` block at the end of the file. No existing `test(...)` body'
   above — the first draft's two parametrized e2e tests were replaced with one test before this
   summary was written, once `npm run test:e2e` reported 7 passed against a plan and spec that both
   say 6.
+
+
+## Post-review changes to AccessGate (review cycles 1-2)
+The submit path described above changed after the phase review:
+- **Cycle 1 (`96fa1d1`):** the form rejects a value outside printable ASCII before storing it ("Use only
+  standard keyboard characters…"), and a post-submit `'unknown'` now clears the stored value and keeps
+  the form open with "Couldn't reach the server — try again". The initial-mount fail-open on
+  `'unknown'` is unchanged.
+- **Cycle 2 (`efb4829`):** a post-submit `'required'` also clears the stored value, and
+  `getPassphrase()` drops any stored value outside printable ASCII. `PRINTABLE_ASCII` now lives once in
+  `lib/passphrase.ts`.
+Frontend tests: 184 at this plan's close → 189 after both cycles. Each change was checked with a
+mutation that turns a test red.
