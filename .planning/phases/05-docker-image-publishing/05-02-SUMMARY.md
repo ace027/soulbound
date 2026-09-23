@@ -176,7 +176,7 @@ the sweep.
 | 3 | Replace `timingSafeEqual(candidateDigest, realDigest)` with `candidate === soulboundPassphrase.reveal()` (raw-string `===`, no hashing) | `config.ts` | **SURVIVED** — all 167 tests stayed green. Recorded honestly per the plan's own instruction: `===` returns the same boolean as the hash-then-`timingSafeEqual` path for every functional test case, so no test built for this plan can distinguish them by outcome. The timing property `timingSafeEqual` protects against is not observable from a `vitest` assertion on response status/body — it is a code-review-only property, not a mutation-testable one. Verified by re-reading `checkPassphrase`'s implementation directly: it is unchanged from 05-01 and remains hash-then-`timingSafeEqual`. |
 | 4 | Drop the passphrase branch from `redact()` (key redaction only) | `config.ts` | **RED** — 2 tests failed: `error handler > a thrown error echoing the passphrase is redacted from both the log and the response body` (this plan, `routes.test.ts`) and one config-level `redact()` test from 05-01 (`redact() > strips both the API key and the passphrase from one string`) |
 
-3 of 4 mutations caught by a test on the first pass; #3 is the spec-anticipated "behaviourally
+3 of 4 mutations caught by a test on the first pass; #3 is the plan-anticipated "behaviourally
 equivalent" case and was recorded as such rather than papered over with an invented timing test.
 
 ## Security review findings
@@ -382,7 +382,7 @@ the sweep.
 | 5 (new) | Disable the sweep (`sweepExpired` becomes a no-op) | `accessGate.ts` | **RED** — 1 test failed (`rate-limiter map growth… > sweeps expired entries…`: tracked-key count stayed at 1000 instead of dropping to 1 after the window advanced) |
 | 6 (new) | Mount `express.json` globally again (drop the `/api` scope) | `server.ts` | **RED** — 1 test failed (`a 1 MB body to a non-/api path…` got 413 instead of 404) |
 
-5 of 6 mutations caught by a test; #3 is the same spec-anticipated "behaviourally equivalent" case
+5 of 6 mutations caught by a test; #3 is the same plan-anticipated "behaviourally equivalent" case
 recorded in the original task-3 sweep, unchanged by this follow-up since `checkPassphrase` itself
 was not touched.
 
@@ -404,3 +404,19 @@ was not touched.
 ### Commits
 - `9dd995c` — `fix(backend): apply independent security review fixes to the access gate` (committed
   before the mutation re-run, per protocol).
+
+
+## Review cycle 1 correction (orchestrator)
+Two corrections from the phase review's QA reviewer, both re-derived before recording:
+- "spec-anticipated" → **"plan-anticipated"** (2 occurrences). The allowance for a behaviourally
+  equivalent survivor lives in `05-02-PLAN.md`, not in the spec. The spec's Acceptance Checks row is
+  `Required: true` and names the variant "swap `timingSafeEqual` for `===` **on a length mismatch**".
+- **That spec variant is caught.** Replacing the SHA-256-then-`timingSafeEqual` compare with
+  `timingSafeEqual(Buffer.from(candidate), Buffer.from(real))` (no hashing, so buffers differ in length)
+  turns **4** backend tests red (orchestrator re-run, restored clean):
+  `rejects a candidate of a different length without throwing`, `rejects an empty candidate`,
+  `the wrong passphrase returns 401 and never reaches the SDK`,
+  `a burst past the limit gets 429 before the gate, and wrong-passphrase attempts count too`.
+  The raw-string `===` swap still survives as a documented behavioural equivalent: its timing
+  property is checked by code review only. The spec's required row is met by the length-mismatch
+  variant.

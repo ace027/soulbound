@@ -76,6 +76,7 @@ Each mutation ran on a committed tree, was restored with `git checkout -- <file>
 | 4 | 05-02 | delete the gate mount | CAUGHT (11) | "no header returns 401 PASSPHRASE_REQUIRED and never reaches the SDK" |
 | 5 | 05-02 | `express.json` above the limiter/gate | CAUGHT (1) | "a 1 MB unauthenticated body gets 401, not 413…" |
 | 6 | 05-02 | `timingSafeEqual` → raw `===` | **SURVIVED**, as 05-02 recorded: behaviourally equivalent, so the timing property is checked by code review only | — |
+| 6b | spec | drop hashing: `timingSafeEqual` on raw buffers (the spec's "on a length mismatch" variant; added in review cycle 1) | CAUGHT (4) | "rejects a candidate of a different length without throwing" |
 | 8 | 05-03 | `checkAccess` falls back to `'required'` | CAUGHT (3) | "maps a 502 text/plain (Vite proxy, no backend) to unknown" |
 | 9 | 05-03 | any 401 clears storage | CAUGHT (1) | "401 AUTHENTICATION_FAILED does NOT clear the stored passphrase" |
 | 10 | 05-04 | static block before the `/api` 404 | CAUGHT (2) | "returns a JSON 404 for an unmatched /api path, both GET and POST" |
