@@ -4,8 +4,12 @@
 - **Phase**: 4 of 4 (complete)
 - **Status**: **All four phases complete and shipped.** Phase 4 review PASSED after 3 cycles (3-reviewer panel, 29 findings, 0 blockers); shipped as [PR #3](https://github.com/DeanItServices/soulbound/pull/3), 15 commits / 48 files / +4,757−1,474. R13, R14, R15, R16 close. The legacy artifact is deleted — recover it with `git show 3d01fa5:legacy/souldbound-world.jsx` (the `parity-oracle` tag is local-only and cannot be pushed from this environment; the SHA is on the branch and works everywhere).
   ⚠️ **Correction**: this file previously said PR #2 was "open against `main`". It was **merged** 2026-09-18T01:49Z (head `5147bd8`). That is why Phase 4 needed a new PR rather than additions to #2.
-- **Last Activity**: Phase 4 shipped as PR #3 (2026-09-18)
-- **Next Action**: `/legion:retro` to capture the review's process findings, and `/legion:map --refresh` — deleting `legacy/` changed the codebase fingerprint.
+- **Last Activity**: post-phase maintenance shipped as PR #4 and PR #5 (2026-09-19). Both merged.
+- **Next Action**: nothing is in flight. See **Next Action** below for the open items, none of which
+  are started. `/legion:retro` and `/legion:map --refresh` are DONE (`0ee0e91`, `46b33a5`) — this line
+  previously still listed them as pending.
+- **Branch**: `claude/admiring-wright-hfmugk` is reset to `origin/main` (`f70aa31`) — 0 ahead, 0 behind,
+  clean tree. Next work starts here and needs a NEW pull request; #5 is merged and cannot track it.
 
 ### Two things to carry into any next phase
 1. **A fix is a claim, and carries the same derivation burden as a finding.** All three review cycles
@@ -14,9 +18,27 @@
 2. **Retaining raw evidence pays immediately.** The screenshots committed to close one finding caught
    a wrong number in the very summary they were filed under, on their first use.
 
-### Known environment limit
+### Known environment limits
 `git push origin <tag>` fails here (`remote end hung up`) while branch pushes succeed — a tag-ref
-permission. Any durability scheme must survive without tags.
+permission. Any durability scheme must survive without tags. This matters for the Docker publish work
+below: a tag-triggered release workflow cannot be tagged from this environment.
+
+**Docker works, but the daemon is not started.** `docker` and `dockerd` are both installed
+(`/usr/bin/`, Engine 29.3.1) and `/var/run/docker.sock` exists — with nothing listening on it, which
+makes every command fail as if Docker were unavailable. It is not. Start it and it works:
+
+```bash
+nohup dockerd > /tmp/dockerd.log 2>&1 &   # run as root, detached
+sleep 8                                    # not listening instantly
+docker version --format 'Server {{.Server.Version}}'
+```
+
+Verified 2026-09-22 end to end: `docker run --rm hello-world` pulled from Docker Hub through the agent
+proxy and ran. overlayfs storage driver, cgroups v1, ~30 GB free. Per-session — a fresh container
+starts with no daemon. The daemon was stopped again afterwards, so this session left it as found.
+
+**The app was never run under Docker here.** Every live test ran natively: `node backend/dist/server.js`
+on :3001 and `vite` on :5173, with Playwright driving the pre-installed Chromium at `/opt/pw-browsers/`.
 
 ## Progress
 ```
@@ -74,7 +96,44 @@ permission. Any durability scheme must survive without tags.
 
 ## Next Action
 
-**Phase 4 is planned** — 6 plans across 4 waves. Run `/legion:build` to execute it.
+**Nothing is in flight.** All 4 phases are shipped and merged; the roadmap is exhausted. Four open
+items, newest first, none started:
+
+1. **Stale comment in `docker-compose.yml`** (lines 14-22). It says the broken `runtime` stage is
+   "Dormant today only because the frontend makes no API calls yet." That stopped being true when
+   Phase 3 shipped the game — `frontend/src/lib/api.ts` calls `/api/*`. `/legion:quick` territory.
+
+2. **Publishing Docker images is a real Phase 5**, not a quick task. The blocker is documented above:
+   `frontend/Dockerfile`'s `runtime` stage serves the bundle with `serve -s dist`, whose SPA fallback
+   answers ANY unmatched path with 200 + index.html — including `/api/*`, which the frontend calls as
+   relative same-origin paths. It would return HTML to a JSON parser on every call. Fix by serving
+   behind a proxy that forwards `/api` (keeps same-origin, keeps CORS out of it) rather than by adding
+   a configurable API base (which forces CORS and exposing the backend). Then: versioning (everything
+   is `0.0.1`), a publish workflow (`ci.yml` only runs build-and-test), multi-arch, a consumer compose
+   file using `image:` instead of `build:`, and env that is not hardcoded to one machine.
+   ⚠️ Decide the auth question FIRST: `MIGRATION-PLAN.md` settled on single-tenant self-hosting, and a
+   public image means strangers running an unauthenticated backend that spends a configured key.
+
+3. **LAN exposure is documented, not applied.** README's "Expose the frontend on your LAN" describes
+   the one-line compose change; `docker-compose.yml` is deliberately unchanged, so the default stays
+   loopback-only. Applying it is the deployer's affirmative choice.
+
+4. **The intro-scene prompt was left untouched** when the entity-ledger bug was fixed. A live probe
+   showed the model already populates `new_entities` unprompted, so no change was needed. Making it
+   explicit would be a third sanctioned deviation from that verbatim port — flagged, not taken.
+
+### Shipped after Phase 4 (both merged)
+- **PR #5** — https://github.com/DeanItServices/soulbound/pull/5 — merged `f70aa31`. README only:
+  the LAN section, and Setup moved to `SOULBOUND_ANTHROPIC_KEY` (it had been telling readers to use
+  the one name `.env.example` warns against).
+- **PR #4** — https://github.com/DeanItServices/soulbound/pull/4 — merged `c994f53`. The model split
+  swapped to Sonnet 5 on world-engine + intro-scene / Opus 5 on unique-skill, narration cut to 2-3
+  paragraphs, prompt cache moved to a 1-hour TTL, and **the entity-ledger drift fixed** — creation
+  discarded the intro scene's `narrative_memory_updates`, so turn 1 was told "KNOWN ENTITIES: (none
+  yet)" about a cast the intro had just introduced, and denied its own NPC. Evidence for both live
+  runs is under `.planning/experiments/`.
+  **Cached prefix is now 15,523, confirmed live twice.** Re-derive with `count_tokens` (free) rather
+  than re-measuring; `CLAUDE.md` carries the number.
 
 ### Phase 4 Plans
 | Plan | Wave | Deliverable | Agent | Cost |
