@@ -1,8 +1,9 @@
 # Project State
 
 ## Current Position
-- **Phase**: 5 of 5 (executing — wave 1/6 done)
+- **Phase**: 5 of 5 (executing — wave 2/6 done)
 - **Phase 5 results**: 05-01 ✅ `5c45340`, `421d896` — passphrase required at boot, config readers, shared contract; backend tests 117 → 146, 3/3 mutations caught
+  05-02 ✅ `846d7e8`..`95609ae` — rate limiter + gate before body parsing, `/api/access`; independent Security Engineer review (orchestrator-run) PASS WITH FIXES → all fixed (map sweep + 10k cap, `/api`-scoped JSON parsing, TRUST_PROXY Docker warning, test gaps); backend tests 146 → 180; mutations 5/6 caught, 1 behaviourally-equivalent (`===` vs timingSafeEqual) recorded
 - **Status**: **Phase 5 planned — 6 plans across 6 serial waves** (`.planning/phases/05-docker-image-publishing/`).
   Spec critiqued once (REWORK → 12 findings applied), plans critiqued once (CAUTION → 29 findings
   applied; see `05-CONTEXT.md` → Execution protocol). Zero Anthropic spend planned.
