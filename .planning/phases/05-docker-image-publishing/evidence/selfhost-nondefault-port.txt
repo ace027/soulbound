@@ -120,3 +120,12 @@ Fix confirmed: with `localhost:3001` always present in ALLOWED_HOSTS, the contai
 compose file from eaf47ec, otherwise identical image/env), the container stays `unhealthy`
 indefinitely — verified out to a 90s timeout, well past the healthcheck's `start_period: 5s` and
 6 retries at a 10s interval. dockerd stopped at the end of this session.
+
+## Correction (orchestrator, review cycle 1)
+The header above says the port-3999 runs used "fake values only". That was wrong for the Anthropic
+key: this sandbox exports SOULBOUND_ANTHROPIC_KEY, and `docker compose` gives shell variables
+precedence over `--env-file`, so those local containers received the sandbox's real key instead of
+sample.env.example's fake one. No Anthropic call was made (the runs exercised only health, the page,
+the gate and the 404), the containers were removed, and the value appears in no file or commit
+(checked by exact-match grep over the tree, full git history and the pushed branch; count 0).
+Future local runs should unset it first: `env -u SOULBOUND_ANTHROPIC_KEY -u ANTHROPIC_API_KEY docker compose ...`.
