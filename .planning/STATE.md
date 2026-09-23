@@ -4,12 +4,14 @@
 - **Phase**: 4 of 4 (complete)
 - **Status**: **All four phases complete and shipped.** Phase 4 review PASSED after 3 cycles (3-reviewer panel, 29 findings, 0 blockers); shipped as [PR #3](https://github.com/DeanItServices/soulbound/pull/3), 15 commits / 48 files / +4,757−1,474. R13, R14, R15, R16 close. The legacy artifact is deleted — recover it with `git show 3d01fa5:legacy/souldbound-world.jsx` (the `parity-oracle` tag is local-only and cannot be pushed from this environment; the SHA is on the branch and works everywhere).
   ⚠️ **Correction**: this file previously said PR #2 was "open against `main`". It was **merged** 2026-09-18T01:49Z (head `5147bd8`). That is why Phase 4 needed a new PR rather than additions to #2.
-- **Last Activity**: post-phase maintenance shipped as PR #4 and PR #5 (2026-09-19). Both merged.
-- **Next Action**: nothing is in flight. See **Next Action** below for the open items, none of which
-  are started. `/legion:retro` and `/legion:map --refresh` are DONE (`0ee0e91`, `46b33a5`) — this line
-  previously still listed them as pending.
-- **Branch**: `claude/admiring-wright-hfmugk` is reset to `origin/main` (`f70aa31`) — 0 ahead, 0 behind,
-  clean tree. Next work starts here and needs a NEW pull request; #5 is merged and cannot track it.
+- **Last Activity**: 2026-09-23 on `claude/legion-status-uxlaqo` (pushed, no PR yet): stale
+  `docker-compose.yml` comment fixed (`1506c3a`), codebase map refreshed (`7856b7d`), and the Phase 5
+  public-image auth question **decided — option 2, a deployer-set access gate** (see Next Action 2).
+- **Next Action**: `/legion:plan 5` — Docker image publishing, now unblocked by the auth decision.
+  See **Next Action** below.
+- **Branch**: work continues on `claude/legion-status-uxlaqo`, which descends from `origin/main`
+  (`f70aa31`) and carries this session's commits. It needs a NEW pull request; #5 is merged and
+  cannot track it.
 
 ### Two things to carry into any next phase
 1. **A fix is a claim, and carries the same derivation burden as a finding.** All three review cycles
@@ -81,11 +83,11 @@ on :3001 and `vite` on :5173, with Playwright driving the pre-installed Chromium
 
 ## Recent Decisions
 - **Design source**: `.planning/explorations/2026-09-17-soulbound-artifact-to-app-design.md` (committed `e56f400`)
-- **Codebase map**: ✅ refreshed 2026-09-18 at commit `3288223` — `.planning/CODEBASE.md` plus the
-  `.planning/codebase/` dataset (**54 chunks, 125 symbols, fingerprint `29353e65f863b7d1`**).
-  The Phase 4 invalidation is resolved: `legacy/souldbound-world.jsx` is deleted and no longer
-  indexed, and the map now covers the Playwright e2e domain and the three new constraint guards.
-  Previous dataset was `8a9f165` / `55cdb963eeca5ba7`.
+- **Codebase map**: ✅ refreshed 2026-09-23 at commit `1506c3a` — `.planning/CODEBASE.md` plus the
+  `.planning/codebase/` dataset (**56 chunks, 127 symbols, fingerprint `9ff2babb3c9f807f`**).
+  Picks up PR #4 (`game/narrativeMemory.ts`, swapped model split, 1h TTL). Previous dataset was
+  `3288223` / `29353e65f863b7d1`. The fingerprint command sorts blob hashes by hash — see
+  `.planning/codebase/search.md`.
 - **Scope**: full migration to playable, not a scaffold or vertical slice
 - **Language**: TypeScript both sides; the World Voice contract lives in `shared/` so prompt/parser drift becomes a compile error
 - **JSON contract**: structured outputs (`output_config.format`), field names unchanged
@@ -96,12 +98,12 @@ on :3001 and `vite` on :5173, with Playwright driving the pre-installed Chromium
 
 ## Next Action
 
-**Nothing is in flight.** All 4 phases are shipped and merged; the roadmap is exhausted. Four open
-items, newest first, none started:
+**Nothing is in flight.** All 4 phases are shipped and merged; the roadmap is exhausted. Open
+items, newest first:
 
-1. **Stale comment in `docker-compose.yml`** (lines 14-22). It says the broken `runtime` stage is
-   "Dormant today only because the frontend makes no API calls yet." That stopped being true when
-   Phase 3 shipped the game — `frontend/src/lib/api.ts` calls `/api/*`. `/legion:quick` territory.
+1. ~~**Stale comment in `docker-compose.yml`**~~ — **DONE** 2026-09-23 (`1506c3a`). It now says the
+   `runtime` stage fails every game call, that `lib/api.ts` surfaces it as `NON_JSON_RESPONSE` while
+   the container reports healthy, and names the same-origin reverse proxy as the preferred fix.
 
 2. **Publishing Docker images is a real Phase 5**, not a quick task. The blocker is documented above:
    `frontend/Dockerfile`'s `runtime` stage serves the bundle with `serve -s dist`, whose SPA fallback
@@ -111,8 +113,32 @@ items, newest first, none started:
    a configurable API base (which forces CORS and exposing the backend). Then: versioning (everything
    is `0.0.1`), a publish workflow (`ci.yml` only runs build-and-test), multi-arch, a consumer compose
    file using `image:` instead of `build:`, and env that is not hardcoded to one machine.
-   ⚠️ Decide the auth question FIRST: `MIGRATION-PLAN.md` settled on single-tenant self-hosting, and a
-   public image means strangers running an unauthenticated backend that spends a configured key.
+   ✅ **Auth question DECIDED 2026-09-23 (developer): option 2 — a deployer-set access gate.**
+   The problem: the backend has no application-level auth or rate limiting; loopback port binding
+   is its only protection. A public image makes it easy for strangers to expose one (VPS,
+   port-forward, the README's LAN section taken further), and an exposed instance is an open proxy
+   billing the deployer's Anthropic key at ~$0.06-0.08 per turn.
+   Options weighed:
+   1. Stay single-tenant, docs-only warnings — rejected: safety depends on every deployer reading them.
+   2. **Access gate — CHOSEN.** The deployer sets a shared passphrase/token in `.env`; the backend
+      rejects `/api/*` without it (plus a basic rate limit). Still one deployer, one key.
+   3. Real user accounts — rejected: out of scope per PROJECT.md (belongs with multiplayer).
+   What this does NOT change: the settled key architecture (backend proxy holding the deployer's
+   own key from `.env`, never in the browser). This is access control on that proxy, not a
+   re-opening of it — CLAUDE.md's "do not re-litigate" still holds.
+   Carry into Phase 5 planning:
+   - The gate belongs in `server.ts`, which carries a standing rule: no new middleware without a
+     test asserting what it emits. Test the 401/429 bodies and that the token never appears in logs
+     or error responses (same bar as `ANTHROPIC_API_KEY`, R2).
+   - `/api/health` stays open — the compose healthcheck calls it from inside the container.
+   - Decide how the browser holds the token (e.g. entered once, kept in `localStorage` alongside
+     saves). It is a deployer-issued passphrase, not the Anthropic key, so this is NOT the rejected
+     paste-per-session BYOK — say so in the design log to head off that misreading.
+   - Out of scope stays out: PROJECT.md lists rate limiting as out of scope for the migration;
+     Phase 5 deliberately brings a basic limit in as part of this decision — record that in
+     PROJECT.md when the phase is planned.
+   - Log the decision and its rationale in `docs/design-decisions-log.md` in the same change that
+     implements it.
 
 3. **LAN exposure is documented, not applied.** README's "Expose the frontend on your LAN" describes
    the one-line compose change; `docker-compose.yml` is deliberately unchanged, so the default stays
