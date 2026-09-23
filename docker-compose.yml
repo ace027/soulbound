@@ -6,27 +6,31 @@
 #
 # Frontend: http://localhost:5173    Backend: http://localhost:3001
 #
-# The frontend runs Vite's dev server (the Dockerfile's `builder` stage) rather
-# than the static `runtime` stage, for two reasons: it keeps HMR working for
-# by-feel iteration, and the static server has no `/api` proxy, so the browser
-# would have no route to the backend.
-#
-# The `runtime` stage is NOT deployable as it stands. It serves the built
-# bundle with `serve -s`, whose SPA fallback answers ANY unmatched path with
-# 200 + index.html — including /api/*. The frontend calls /api/* for every
-# game action, so every one would fail. The guard in frontend/src/lib/api.ts
-# turns that into a named NON_JSON_RESPONSE error rather than a confusing
-# parse failure, but the container still reports healthy while nothing works.
-# The preferred fix is a reverse proxy forwarding /api to the backend: requests
-# stay same-origin and CORS is untouched. A configurable API base URL would
-# instead force CORS and expose the backend. Nothing here is dormant — it only
-# doesn't bite because compose runs the `builder` stage (see above).
+# This file is for DEVELOPMENT only. The published app (Phase 5, R20) is one
+# image, built untargeted from `backend/Dockerfile`: the backend serves the
+# built frontend bundle itself, same-origin, on one port — see the self-host
+# compose file for that shape. Here, the two halves still run as separate
+# containers on purpose: the frontend runs Vite's dev server (the frontend
+# Dockerfile's `builder` stage, its only remaining stage) for HMR, proxying
+# `/api/*` to the backend container, and the backend builds `target: api` —
+# `backend/Dockerfile`'s stage with no frontend bundle at all, so a dev
+# rebuild neither builds a frontend it will never serve nor risks serving a
+# stale one from a previous build's cache on :3001 (BuildKit skips any stage
+# nothing asks for, so this costs nothing extra). A healthy container is not
+# proof the app is reachable: this compose's own backend healthcheck curls
+# localhost from *inside* the container, so it never exercises the
+# frontend-to-backend path the browser actually uses — see the
+# `ALLOWED_HOSTS` comment below for the failure mode that gap once caused.
 
 services:
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
+      # The stage with no frontend bundle — see the header comment above.
+      # Dev serves the frontend from the `frontend` service's Vite dev
+      # server instead, over the proxy below.
+      target: api
       secrets:
         - npm_ca
     environment:
