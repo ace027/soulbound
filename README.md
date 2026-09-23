@@ -115,12 +115,13 @@ docker run -d --name soulbound -p 127.0.0.1:8080:3001 \
   ghcr.io/deanitservices/soulbound:latest
 ```
 
-Set `ALLOWED_HOSTS` to match the host port, and always keep `localhost:3001` in it too — the
-image has no built-in `HEALTHCHECK` (a plain `docker run` gets none unless you add `--health-cmd`
-yourself), but if you do add one, or front this with an orchestrator that health-checks it from
-inside the container, it will call `localhost:3001` regardless of the published port. Without
-`localhost:3001` in the allow-list, every request on any other host port gets 403. The compose
-file does this for you.
+Set `ALLOWED_HOSTS` to match the host port you publish — leave out `localhost:8080` here and every
+request that arrives on port 8080 gets 403. `localhost:3001` is included too, harmlessly and for
+future-proofing: the image has no built-in `HEALTHCHECK` (a plain `docker run` gets none unless you
+add `--health-cmd` yourself), but if you do add one, or front this with an orchestrator that
+health-checks it from inside the container, it will always call `localhost:3001` regardless of the
+published port — and without that entry, only the health check would fail, not the app. The
+compose file sets both entries for you.
 
 **If the pull is denied.** GHCR packages can be private on first push. The repository owner makes
 the package public in its package settings on GitHub.
