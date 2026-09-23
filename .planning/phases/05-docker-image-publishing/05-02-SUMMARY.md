@@ -1,17 +1,28 @@
 The rate limiter and access gate are now real and wired into `buildApp` in the exact order the
 spec fixes. `/api/access` exists for the frontend's pre-flight check.
 
-## Status: Complete with Warnings
+## Status: Complete
 
-The one warning: task 3 calls for spawning a read-only `engineering-security-engineer` review via
-an "Agent tool". No such tool (a `Task`/`Agent` call accepting `subagent_type`) was available in
-this session's toolset — only `SendMessage` to already-running peer agents, and the heavier-weight
-`create_session` (Claude Code Remote), neither of which is "spawn a read-only review agent, give it
-these files, it makes no edits" as the plan describes. I performed the review myself, read-only,
-against `backend/src/accessGate.ts`, the `server.ts` diff, and the spec's Failure Modes table,
-rather than silently skipping the second-agent-review requirement. See "Security review findings"
-below. Flagging this honestly rather than reporting a review that didn't happen the way the plan
-specified.
+**Correction to the original deviation note below:** task 3 originally called for spawning a
+read-only `engineering-security-engineer` review via an "Agent tool" that was not available in this
+session's toolset, so I performed that review myself (see "Security review findings" below) and
+flagged it as a warning rather than a genuinely independent review. **That has since been
+superseded**: the orchestrator ran a real, independent Security Engineer agent (read-only) against
+this plan's diff and reported its verdict as **PASS WITH FIXES**, with five findings. See
+"Independent security review (orchestrator-run) and fixes" at the end of this document for those
+findings, what was fixed, and the re-run mutation table. With that review now actually performed,
+the status is Complete rather than Complete with Warnings — the original self-review below is kept
+for its own record, not as a substitute.
+
+The original warning (superseded, kept for the record): task 3 calls for spawning a read-only
+`engineering-security-engineer` review via an "Agent tool". No such tool (a `Task`/`Agent` call
+accepting `subagent_type`) was available in this session's toolset — only `SendMessage` to
+already-running peer agents, and the heavier-weight `create_session` (Claude Code Remote), neither
+of which is "spawn a read-only review agent, give it these files, it makes no edits" as the plan
+describes. I performed the review myself, read-only, against `backend/src/accessGate.ts`, the
+`server.ts` diff, and the spec's Failure Modes table, rather than silently skipping the
+second-agent-review requirement. See "Security review findings" below. Flagging this honestly
+rather than reporting a review that didn't happen the way the plan specified.
 
 ## Tasks
 
@@ -237,11 +248,10 @@ recorded as an accepted, spec-endorsed tradeoff rather than fixed.
   except "never returns HTML for `/api/*`", which isn't yet meaningfully testable until 05-04 adds a
   non-`/api` static/SPA path to contrast against; today every unmatched route (both `/api` and not)
   returns the same JSON 404, so there is no HTML path to fail into yet.
-- **Escalate to the developer (not a code change here):** task 3 named a specific tool
-  (`engineering-security-engineer` via the "Agent tool") that was not present in this session. If
-  future phases in this environment need a genuinely separate reviewing agent (not the same
-  session re-reading its own work), that needs either a different execution environment or an
-  explicit fallback instruction in the plan/context docs.
+- ~~Escalate to the developer: task 3 named a specific tool (`engineering-security-engineer` via
+  the "Agent tool") that was not present in this session.~~ **Resolved**: the orchestrator ran that
+  review independently and reported it back (see the final section of this document). No further
+  action needed from a future session on this point.
 
 ## Auto-remediated
 - **Fixed my own test regression during task 2**: after making `httpRequest` send the Bearer header
@@ -250,3 +260,147 @@ recorded as an accepted, spec-endorsed tradeoff rather than fixed.
   404, because it never carried a header. Added the header to that one `fetch` call. Re-ran
   `npm test -w @soulbound/backend -- routes.test.ts` and confirmed all 23 tests in that file passed
   before moving on (AI-1: a fix is a claim).
+- **Fixed my own editing slip while adding the follow-up tests**: an `Edit` call meant to insert new
+  tests before the `OPTIONS /api/world-engine…` test accidentally wrapped that test (and the
+  pre-existing "rate limiter (own app…)" describe below it) inside a new, bogus `describe(...)`
+  block, and dropped the `async` keyword from the `OPTIONS` test's callback while its body still
+  awaited a promise. Caught immediately by re-reading the diff (AI-2) rather than by a test failure
+  (this was a syntax-level problem, so `tsc` would have caught it on the very next build regardless).
+  Fixed by restoring the original flat structure — a plain top-level `it(...)` for the OPTIONS test,
+  followed by the untouched `describe('rate limiter (own app, own clock…)')` as a sibling, not a
+  child. Re-ran `npm run build -w @soulbound/backend` (clean) and the full suite (180/180) before
+  moving on.
+
+## Independent security review (orchestrator-run) and fixes
+
+After this plan's original completion, the orchestrator ran a genuinely independent, read-only
+Security Engineer agent against the diff (something this session could not do itself — see the
+corrected Status note above). Its verdict: **PASS WITH FIXES**. Five findings, addressed below.
+`.env.example` is outside this plan's `files_modified`; the orchestrator explicitly authorized the
+one `TRUST_PROXY` comment edit to it. `backend/src/config.ts` and
+`backend/src/__tests__/config.test.ts` are also outside the original `files_modified`, but the
+orchestrator's fix instructions named specific edits to both, which is the authorization for
+touching them in this follow-up.
+
+1. **Rate limiter's `Map` never shrinks (`accessGate.ts:60-68` at review time).** Old entries were
+   only replaced when the same key came back, so "pruned per window" wasn't true — forged
+   `X-Forwarded-For` values or rotating addresses could grow the map without limit, with no
+   authentication required to trigger it (the limiter runs before the gate). **Fixed:**
+   `createRateLimiter` now sweeps every expired entry at most once per window (an in-closure
+   `lastSweep` timestamp gates the sweep so it's not a per-request walk), and caps distinct tracked
+   keys at `MAX_TRACKED_KEYS = 10_000` (justified in a comment: a self-hosted, passphrase-gated,
+   single-tenant deployment has no legitimate reason to see anywhere near that many distinct real
+   clients; at ~100 bytes/entry this bounds the limiter's own memory to a few MB regardless of
+   attacker behavior). Once the cap is reached, a never-seen key is folded into one shared
+   `OVERFLOW_KEY` bucket rather than getting a fresh entry — fails toward throttling (an overflowing
+   caller now shares a tighter budget), never toward bypass. `createRateLimiter` also gained an
+   optional `maxTrackedKeys` override (tests only) and a `__trackedKeyCount()` test hook on the
+   returned handler. **Tests** (`routes.test.ts`, `describe('rate-limiter map growth…')`): drives
+   1,000 distinct forced `req.ip` values through a real limiter instance, asserts
+   `__trackedKeyCount()` reads 1000, advances the injected clock past the window, sends one more
+   request, and asserts the count drops to 1; a second test uses a tiny `maxTrackedKeys: 2` override
+   to prove the third and fourth never-seen keys share one overflow bucket (tracked-key count stays
+   at 3, not 4).
+2. **`express.json` mounted globally (`server.ts:213` at review time), so non-`/api` paths had their
+   bodies parsed up to 512 KB with no passphrase check.** **Fixed:** changed to
+   `app.use('/api', express.json({ limit: JSON_BODY_LIMIT }))`. Verified every router's own routes
+   are already full `/api/...` paths (`grep` confirmed all three: `/api/unique-skill`,
+   `/api/world-engine`, `/api/intro-scene`), so this is a pure scope narrowing with no route-path
+   change needed, and the body-parser error mapping (`mapBodyParserError`) still applies unchanged
+   since it runs in the same central error handler regardless of which middleware raised the error.
+   **Test** (`routes.test.ts`): `POST /x` (a non-`/api` path) with a 1 MB body and no header now
+   returns 404, not 413 — proving the parser never ran for that path at all.
+3. **`TRUST_PROXY` unsafe without a real proxy (`config.ts:395-405` at review time).** Docker's
+   published-port networking presents connections from the bridge gateway (a `172.x` address,
+   classified "trusted" by `uniquelocal` or hop-count 1), but nothing in that path overwrites a
+   client-supplied `X-Forwarded-For`, so a caller behind plain Docker port publishing could spoof a
+   fresh IP — and a fresh rate-limit bucket — on every request. **Fixed (docs, not behaviour, per the
+   instruction):** expanded `config.ts`'s `TRUST_PROXY` doc comment and rewrote `.env.example`'s
+   `TRUST_PROXY` comment block to say explicitly: set it only when a real reverse proxy in front is
+   known to overwrite (not append to) `X-Forwarded-For`; Docker port publishing is not such a proxy;
+   prefer the smallest matching hop count over `uniquelocal` when you do set it.
+4. **Spec test gaps** (Failure Modes: "unit test that `TRUST_PROXY` changes the key", plus several
+   named edge cases). **Added** (`routes.test.ts`, unless noted):
+   - `TRUST_PROXY=1` with different `X-Forwarded-For` values → separate buckets;
+   - `TRUST_PROXY` unset with the same `X-Forwarded-For` variations → one shared bucket (both socket
+     peers are 127.0.0.1 in-test, proving the header is ignored);
+   - a whitespace-only Bearer token → 401;
+   - a tab (not a space) between `Bearer` and the token → 401 (only a single space separates scheme
+     from token, per `extractBearerToken`);
+   - `HEAD` on a gated route with no header → 401 (contrasted with `HEAD /api/health`, which is
+     exempt and returns 200);
+   - a trailing slash on a gated route (`/api/unique-skill/`) with no header → 401, not a
+     fallthrough;
+   - `Retry-After` is exactly `60` at the very start of a window and `1` at 59.5s in (injected clock,
+     exact assertions, not just "defined" or "≥1" as the earlier tests checked).
+5. **Smaller fixes, all applied:**
+   - `redact()` (`config.ts`) now determines which of the two secrets is longer and replaces that one
+     first, so a (hypothetical, currently-impossible-by-validation) case where one secret is a
+     substring of the other can't leave a fragment of the longer one behind. **Test**
+     (`config.test.ts`): sets a key and a passphrase where the passphrase is a literal substring of
+     the key, redacts a string containing the key, and asserts no fragment of either secret survives
+     in the output.
+   - `config.ts` now takes both `ANTHROPIC_API_KEY` and `SOULBOUND_PASSPHRASE` out of `process.env`
+     (via a shared `takeEnv()` helper) *before* validating either, replacing the old
+     read-delete-validate-per-secret shape where a key failure could leave the passphrase still
+     sitting in `process.env` at the exact moment of the throw (and vice versa). **Tests**
+     (`config.test.ts`, one in each of the `ANTHROPIC_API_KEY` and `SOULBOUND_PASSPHRASE` describe
+     blocks): each asserts that when the OTHER secret is the one that's invalid, both env vars are
+     still gone from `process.env` by the time the throw is caught.
+   - `buildApp`'s default clock (`server.ts`) is now `() => performance.now()`, not `Date.now`.
+     Checked first, per the instruction: the limiter only ever compares two readings of the clock to
+     each other (`t - bucket.windowStart`), never against a wall-clock/epoch value, so nothing
+     depends on `Date.now()`'s epoch semantics — a monotonic clock is strictly better here, since
+     `Date.now()` can jump on an NTP correction or a manual clock change, which could silently reopen
+     a spent window or freeze one open past 60 real seconds. No behavioral test added for this one
+     specifically (there is nothing a `vitest` assertion can distinguish here beyond what the
+     existing injected-clock tests already cover, since every test passes its own `now`), but it is
+     exercised implicitly by `main()`'s "boots and returns a listening server" test in
+     `server.test.ts`, which calls `buildApp` with no `now` override at all.
+
+**Accepted, not fixed** (per the instruction):
+- Failed-passphrase requests share a rate-limit bucket with real players — a guesser and a legitimate
+  player behind the same `req.ip` (or, with `TRUST_PROXY` set, the same forwarded address) draw from
+  one budget. This is a residual, documented risk of a per-IP fixed-window limiter with no separate
+  per-credential tracking, and splitting them would need a second dimension to the bucket key (a
+  larger change than this follow-up's scope).
+- `/api/health` stays unlimited (and ungated) — required so the compose healthcheck, which sends no
+  credentials, keeps working.
+
+### Re-run mutation table (task 3's original four, plus two new mutations)
+
+Each mutated on the committed tree (`9dd995c`), restored with `git checkout -- <file>`, confirmed
+clean with `git diff --exit-code` before the next mutation. Nothing else wrote to the tree during
+the sweep.
+
+| # | Mutation | File | Result |
+|---|---|---|---|
+| 1 | Delete `app.use('/api', createAccessGate(checkPassphrase))` | `server.ts` | **RED** — 10 tests failed |
+| 2 | Move `express.json` (now `app.use('/api', express.json(...))`) above the limiter/gate | `server.ts` | **RED** — 1 test failed (`access gate > a 1 MB unauthenticated body…` got 413 instead of 401) |
+| 3 | Replace `timingSafeEqual(candidateDigest, realDigest)` with `candidate === soulboundPassphrase.reveal()` | `config.ts` | **SURVIVED** — all 180 tests stayed green, same reasoning as the original task-3 run: behaviourally equivalent for every functional assertion; the timing property is code-review-only, not mutation-testable |
+| 4 | Drop the passphrase branch from `redact()` (key redaction only, reverting to the pre-fix single-`split` form) | `config.ts` | **RED** — 2 tests failed (the passphrase-leak route test, and 05-01's `redact()` test) |
+| 5 (new) | Disable the sweep (`sweepExpired` becomes a no-op) | `accessGate.ts` | **RED** — 1 test failed (`rate-limiter map growth… > sweeps expired entries…`: tracked-key count stayed at 1000 instead of dropping to 1 after the window advanced) |
+| 6 (new) | Mount `express.json` globally again (drop the `/api` scope) | `server.ts` | **RED** — 1 test failed (`a 1 MB body to a non-/api path…` got 413 instead of 404) |
+
+5 of 6 mutations caught by a test; #3 is the same spec-anticipated "behaviourally equivalent" case
+recorded in the original task-3 sweep, unchanged by this follow-up since `checkPassphrase` itself
+was not touched.
+
+### New counts
+
+- Backend: **167 → 180** (+13): +10 in `routes.test.ts` (the non-`/api` body test, whitespace/tab
+  token tests, `HEAD`, trailing-slash, exact `Retry-After` values, the two `TRUST_PROXY`-changes-the-
+  key tests, and the two rate-limiter map-growth tests) and +3 in `config.test.ts` (the two
+  delete-order tests and the `redact()` longer-secret-first test).
+- Full workspace: `npm run build` clean across `shared`/`backend`/`frontend`;
+  `npm test -w @soulbound/backend` → `Test Files 8 passed (8)`, `Tests 180 passed (180)`.
+
+### Files touched in this follow-up (beyond the original plan's `files_modified`)
+- `backend/src/config.ts` and `backend/src/__tests__/config.test.ts` — not in 05-02's original
+  `files_modified`, but the orchestrator's fix instructions named specific edits to both; recorded
+  here as the authorization for touching them.
+- `.env.example` — explicitly authorized by the orchestrator for the one `TRUST_PROXY` comment edit.
+
+### Commits
+- `9dd995c` — `fix(backend): apply independent security review fixes to the access gate` (committed
+  before the mutation re-run, per protocol).
