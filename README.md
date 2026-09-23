@@ -83,7 +83,7 @@ built frontend itself, so there is no second service and no proxy to configure.
 | `SOULBOUND_VERSION` | No | Image tag to run. Default `latest`. Pin a version (for example `0.1.0`) to control upgrades. |
 | `SOULBOUND_PORT` | No | Host port. Default `3001`. `ALLOWED_HOSTS` and `FRONTEND_ORIGIN` follow it automatically. |
 | `SOULBOUND_BIND` | No | Host address to bind. Default `127.0.0.1` (this machine only). |
-| `ALLOWED_HOSTS` | No | Override only if players reach the server by a name other than `localhost`, for example `ALLOWED_HOSTS=myhost.lan:3001,localhost:3001`. |
+| `ALLOWED_HOSTS` | No | Override only if players reach the server by a name other than `localhost`, for example `ALLOWED_HOSTS=myhost.lan:3001,localhost:3001`. Any override must still include `localhost:3001` — the compose healthcheck runs inside the container and always calls `localhost:3001` (the container's own port), regardless of `SOULBOUND_PORT`; without it the container never reports healthy. |
 | `RATE_LIMIT_PER_MINUTE` | No | Per-client `/api` limit. Default `30`, allowed range 1-600. |
 | `TRUST_PROXY` | No | Set only behind a real reverse proxy. See below. |
 
@@ -98,13 +98,16 @@ a network you trust.
 docker run -d --name soulbound -p 127.0.0.1:8080:3001 \
   -e ANTHROPIC_API_KEY="$SOULBOUND_ANTHROPIC_KEY" \
   -e SOULBOUND_PASSPHRASE \
-  -e ALLOWED_HOSTS=localhost:8080,127.0.0.1:8080 \
+  -e ALLOWED_HOSTS=localhost:8080,127.0.0.1:8080,localhost:3001 \
   ghcr.io/deanitservices/soulbound:latest
 ```
 
-Set `ALLOWED_HOSTS` to match the host port. Without it, the default comes from the in-container
-port (`3001`), and every request on any other host port gets 403. The compose file does this for
-you.
+Set `ALLOWED_HOSTS` to match the host port, and always keep `localhost:3001` in it too — the
+image has no built-in `HEALTHCHECK` (a plain `docker run` gets none unless you add `--health-cmd`
+yourself), but if you do add one, or front this with an orchestrator that health-checks it from
+inside the container, it will call `localhost:3001` regardless of the published port. Without
+`localhost:3001` in the allow-list, every request on any other host port gets 403. The compose
+file does this for you.
 
 **If the pull is denied.** GHCR packages can be private on first push. The repository owner makes
 the package public in its package settings on GitHub.

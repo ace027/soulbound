@@ -45,10 +45,17 @@ services:
       - ANTHROPIC_API_KEY=${SOULBOUND_ANTHROPIC_KEY:-${ANTHROPIC_API_KEY:?Set SOULBOUND_ANTHROPIC_KEY in .env}}
       - SOULBOUND_PASSPHRASE=${SOULBOUND_PASSPHRASE:?Set SOULBOUND_PASSPHRASE in .env (12+ printable ASCII characters)}
       - PORT=3001
-      # The Host allow-list must match how browsers reach the server. The
-      # default comes from SOULBOUND_PORT because the container's own port
-      # (3001) is not what a browser sends when the host port differs.
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost:${SOULBOUND_PORT:-3001},127.0.0.1:${SOULBOUND_PORT:-3001},[::1]:${SOULBOUND_PORT:-3001}}
+      # The Host allow-list must match how browsers reach the server, so the
+      # default is built from SOULBOUND_PORT. But the healthcheck below runs
+      # INSIDE the container and always calls localhost:3001 — the
+      # container's own port, not the published host port — so localhost:3001
+      # must always be allowed too, even when SOULBOUND_PORT differs (e.g.
+      # 3999), or the healthcheck gets 403 forever and the container never
+      # reports healthy. Harmless to keep: browsers never send Host:
+      # localhost:3001 unless that IS the host port. Any override of
+      # ALLOWED_HOSTS must keep localhost:3001 in the list for the same
+      # reason.
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost:${SOULBOUND_PORT:-3001},127.0.0.1:${SOULBOUND_PORT:-3001},[::1]:${SOULBOUND_PORT:-3001},localhost:3001}
       - FRONTEND_ORIGIN=${FRONTEND_ORIGIN:-http://localhost:${SOULBOUND_PORT:-3001}}
       - RATE_LIMIT_PER_MINUTE=${RATE_LIMIT_PER_MINUTE:-30}
       - TRUST_PROXY=${TRUST_PROXY:-false}

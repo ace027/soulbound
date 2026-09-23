@@ -41,3 +41,82 @@ $ docker logs <container> | grep -c <passphrase>   (must be 0)
 
 $ docker compose ... down
  Network soulbound_default Removed 
+
+# Review cycle 1 — healthcheck on a non-default port
+# date: 2026-09-23T05:39:00Z  branch: claude/legion-status-uxlaqo  base commit under review: eaf47ec
+# image: ghcr.io/deanitservices/soulbound:local (rebuilt from current tree, same content as f8c0476's image)
+# env file: .planning/phases/05-docker-image-publishing/evidence/sample.env.example (fake values only, SOULBOUND_PORT=3999)
+#
+# Finding: the original evidence above only curled http://localhost:3999/... from the HOST. It
+# never checked `docker inspect .State.Health.Status`. A host curl gets 200 regardless, because it
+# hits the published port; the healthcheck itself runs INSIDE the container against
+# localhost:3001 (the container's own port), sending Host: localhost:3001 — which the old
+# ALLOWED_HOSTS default (built only from SOULBOUND_PORT) never allow-listed. So the container was
+# unhealthy the whole time this evidence was gathered, and nobody looked.
+
+## BEFORE — old compose.selfhost.yml (as committed at eaf47ec), same image, same env file, port 3999
+
+$ git show eaf47ec:compose.selfhost.yml > <scratchpad>/compose.selfhost.old.yml
+$ docker compose -f <scratchpad>/compose.selfhost.old.yml --env-file .../sample.env.example up -d
+ Container scratchpad-soulbound-1 Created
+ Container scratchpad-soulbound-1 Starting
+ Container scratchpad-soulbound-1 Started
+
+$ CID=$(docker compose -f <scratchpad>/compose.selfhost.old.yml --env-file .../sample.env.example ps -q soulbound)
+$ for i in $(seq 1 90); do status=$(docker inspect -f '{{.State.Health.Status}}' "$CID"); ...; done
+t=10s status=starting
+t=20s status=starting
+t=30s status=starting
+t=40s status=starting
+t=50s status=unhealthy
+t=60s status=unhealthy
+t=70s status=unhealthy
+t=80s status=unhealthy
+t=90s status=unhealthy
+final status: unhealthy          <-- never reaches healthy; confirms the finding
+
+$ curl -s -o /dev/null -w 'health(host curl): %{http_code}\n' http://localhost:3999/api/health
+health(host curl): 200           <-- host curl looks fine; this is exactly what masked the bug
+
+$ docker exec "$CID" node -e "fetch('http://localhost:3001/api/health').then(r=>console.log('internal status', r.status))"
+internal status 403              <-- the healthcheck's own request, run manually, confirms the 403
+
+$ docker inspect -f '{{json .State.Health.Log}}' "$CID"   (last 3 probes)
+ExitCode=1 (x3)                  <-- `node -e "...exit(r.ok ? 0 : 1)"` exits 1 on the 403
+
+$ docker compose -f <scratchpad>/compose.selfhost.old.yml --env-file .../sample.env.example down
+ Container scratchpad-soulbound-1 Stopped/Removed
+ Network scratchpad_default Removed
+
+## AFTER — fixed compose.selfhost.yml (ALLOWED_HOSTS always includes localhost:3001), same image, same env file, port 3999
+
+$ docker compose -f compose.selfhost.yml --env-file .../sample.env.example config | grep ALLOWED_HOSTS
+ALLOWED_HOSTS: localhost:3999,127.0.0.1:3999,[::1]:3999,localhost:3001
+
+$ docker compose -f compose.selfhost.yml --env-file .../sample.env.example up -d
+ Container soulbound-soulbound-1 Created
+ Container soulbound-soulbound-1 Starting
+ Container soulbound-soulbound-1 Started
+
+$ CID=$(docker compose -f compose.selfhost.yml --env-file .../sample.env.example ps -q soulbound)
+$ for i in $(seq 1 90); do status=$(docker inspect -f '{{.State.Health.Status}}' "$CID"); ...; done
+t=1s..t=10s status=starting
+t=11s status=healthy
+REACHED HEALTHY
+
+$ docker inspect -f 'Health.Status={{.State.Health.Status}}' "$CID"
+Health.Status=healthy
+
+$ curl -s -o /dev/null -w 'health(host): %{http_code}\n' http://localhost:3999/api/health
+health(host): 200
+
+$ docker compose -f compose.selfhost.yml --env-file .../sample.env.example down
+ Container soulbound-soulbound-1 Stopped/Removed
+ Network soulbound_default Removed
+
+## Conclusion
+Fix confirmed: with `localhost:3001` always present in ALLOWED_HOSTS, the container reaches
+`.State.Health.Status == healthy` within 11s on a non-default port (3999). Without the fix (old
+compose file from eaf47ec, otherwise identical image/env), the container stays `unhealthy`
+indefinitely — verified out to a 90s timeout, well past the healthcheck's `start_period: 5s` and
+6 retries at a 10s interval. dockerd stopped at the end of this session.
