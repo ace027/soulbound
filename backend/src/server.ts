@@ -26,7 +26,8 @@ import express, {
   type Request,
   type Response,
 } from 'express';
-import { assertWorldVoiceContract } from '@soulbound/shared';
+import { ACCESS_CHECK_PATH, assertWorldVoiceContract } from '@soulbound/shared';
+import { createAccessGate, createRateLimiter } from './accessGate.js';
 import { WORLD_SYSTEM_PROMPT } from './data/worldSystemPrompt.js';
 // These three route modules never import config.ts at their own top level
 // (see each file's "Lazy import" comment) — they only reach for it inside
@@ -49,6 +50,11 @@ export interface AppConfig {
   FRONTEND_ORIGIN: string;
   ALLOWED_HOSTS: readonly string[];
   redact: (input: string) => string;
+  checkPassphrase: (candidate: string) => boolean;
+  RATE_LIMIT_PER_MINUTE: number;
+  TRUST_PROXY: false | 'loopback' | 'uniquelocal' | number;
+  /** Injectable clock for the rate limiter's tests; defaults to `Date.now`. */
+  now?: () => number;
 }
 
 /**
@@ -136,13 +142,34 @@ function mapBodyParserError(err: ApiError): { statusCode: number; code: string }
 }
 
 /**
- * Builds the real Express pipeline: Host allow-list, CORS, JSON body parsing,
- * health check, the three World Voice routes, the JSON 404, and the central
- * sanitizing error handler — in that order.
+ * Builds the real Express pipeline, in this order: Host allow-list, CORS,
+ * `GET /api/health` (no credentials needed — the compose healthcheck calls
+ * it), the `/api` rate limiter, the `/api` access gate, JSON body parsing,
+ * `GET /api/access` (the frontend's pre-flight passphrase check), the three
+ * World Voice routes, an `/api`-scoped JSON 404, a global JSON 404, and the
+ * central sanitizing error handler.
+ *
+ * The limiter runs BEFORE the gate so a passphrase-guessing burst is
+ * throttled even though every guess also gets rejected. Both run BEFORE
+ * `express.json` so an unauthenticated request's body is never parsed —
+ * `routes.test.ts` proves this with an oversized, unauthenticated body that
+ * gets 401, not 413. Every `/api` middleware is mounted with
+ * `app.use('/api', …)`, never a hand-written `req.path.startsWith` check:
+ * Express 5's router matches `/API/x`, `/api/x/` and `/api/../api/x` as
+ * `/api`, and a string-prefix check would not (verified by probe).
  */
 export function buildApp(config: AppConfig): Express {
-  const { FRONTEND_ORIGIN, ALLOWED_HOSTS, redact } = config;
+  const {
+    FRONTEND_ORIGIN,
+    ALLOWED_HOSTS,
+    redact,
+    checkPassphrase,
+    RATE_LIMIT_PER_MINUTE,
+    TRUST_PROXY,
+    now = Date.now,
+  } = config;
   const app = express();
+  app.set('trust proxy', TRUST_PROXY);
 
   // Host allow-list, FIRST — ahead of CORS and ahead of body parsing. CORS
   // headers are read by the browser only after the request has already been
@@ -170,23 +197,54 @@ export function buildApp(config: AppConfig): Express {
     next();
   });
 
-  app.use(express.json({ limit: JSON_BODY_LIMIT }));
-
+  // Registered ahead of the limiter and gate below, and ending the response
+  // itself, so it is never limited or gated — the compose healthcheck
+  // (docker-compose.yml) calls this with no credentials.
   app.get('/api/health', (_req: Request, res: Response) => {
     res.status(200).json({ status: 'ok' });
   });
 
+  // Rate limiter, then access gate, both scoped to /api and both BEFORE
+  // express.json — see this function's header comment for why the order
+  // matters. Wrong-passphrase attempts still count against the limiter.
+  app.use('/api', createRateLimiter({ perMinute: RATE_LIMIT_PER_MINUTE, now }));
+  app.use('/api', createAccessGate(checkPassphrase));
+
+  app.use(express.json({ limit: JSON_BODY_LIMIT }));
+
+  // The frontend's pre-flight check: reaching this handler at all means the
+  // limiter and gate above already passed, so there is nothing left to
+  // verify beyond returning success with no body.
+  app.get(ACCESS_CHECK_PATH, (_req: Request, res: Response) => {
+    res.sendStatus(204);
+  });
+
   // The three World Voice routes (plan 02-03). Each goes through the single
   // `callWorldVoice` helper in anthropic.ts — none builds its own request.
-  // Registered ahead of the JSON 404 handler and the error handler below so
-  // both still apply to them.
+  // Registered ahead of the JSON 404 handlers and the error handler below so
+  // all still apply to them.
   app.use(uniqueSkillRouter);
   app.use(worldEngineRouter);
   app.use(introSceneRouter);
 
-  // Unmatched routes. Without this, Express answers with its default HTML
-  // error page, which a JSON client cannot parse — the frontend's fetch
-  // wrapper would fail on JSON.parse rather than surfacing a clean 404.
+  // Unmatched /api routes get a JSON 404, scoped the same way as the limiter
+  // and gate above (never a hand-written path check). This must be
+  // registered before any later catch-all (05-04's static/SPA fallback), so
+  // nothing under /api can ever fall through to an HTML response.
+  app.use(
+    '/api',
+    (_req: Request, res: Response) => {
+      res.status(404).json({
+        error: { message: 'Not found', code: 'NOT_FOUND' },
+      });
+    },
+  );
+
+  // Unmatched non-/api routes. Without this, Express answers with its
+  // default HTML error page, which a JSON client cannot parse. 05-04 will
+  // replace this with static serving + an SPA fallback when STATIC_DIR is
+  // set; until then, every route is under /api or unmatched, so this stays
+  // reachable only when STATIC_DIR is unset (today's behaviour).
   app.use((_req: Request, res: Response) => {
     res.status(404).json({
       error: { message: 'Not found', code: 'NOT_FOUND' },

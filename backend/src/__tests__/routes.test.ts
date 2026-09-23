@@ -58,10 +58,21 @@ process.env.ALLOWED_HOSTS = '127.0.0.1';
 const config = await import('../config.js');
 const { buildApp } = await import('../server.js');
 
-/** The real pipeline from server.ts — see file header. */
+/**
+ * The real pipeline from server.ts — see file header. The shared harness
+ * runs with a high rate limit (600/min) so the ~20+ requests this file makes
+ * across its describe blocks can never exhaust the limiter based on run
+ * order (plan critique #1: a low shared limit would make these tests flaky
+ * and order-dependent). Tests that need to exercise the limiter itself build
+ * their own app with a low limit and an injected clock — see the "rate
+ * limiter" describe block below.
+ */
 function buildTestApp() {
-  return buildApp(config);
+  return buildApp({ ...config, RATE_LIMIT_PER_MINUTE: 600 });
 }
+
+/** The Bearer header every gated request in this file must send. */
+const AUTH_HEADERS = { Authorization: `Bearer ${FAKE_PASSPHRASE}` };
 
 function startServer(app: express.Express): Promise<{ server: http.Server; port: number }> {
   return new Promise((resolve) => {
@@ -79,10 +90,22 @@ interface HttpResult {
   bodyJson: unknown;
 }
 
-/** Drives the test server over loopback with node:http — see file header for why not fetch. */
+/**
+ * Drives the test server over loopback with node:http — see file header for
+ * why not fetch. Sends the gate's Bearer header by default (AUTH_HEADERS),
+ * since almost every request in this file needs to pass the gate to test
+ * what it was written to test; pass `noAuth: true` to omit it for the gate's
+ * own tests, or `headers: { Authorization: '...' }` to send a different one.
+ */
 function httpRequest(
   port: number,
-  options: { method: string; path: string; body?: string; headers?: Record<string, string> },
+  options: {
+    method: string;
+    path: string;
+    body?: string;
+    headers?: Record<string, string>;
+    noAuth?: boolean;
+  },
 ): Promise<HttpResult> {
   return new Promise((resolve, reject) => {
     const req = http.request(
@@ -94,6 +117,7 @@ function httpRequest(
         headers: {
           'content-type': 'application/json',
           ...(options.body !== undefined ? { 'content-length': Buffer.byteLength(options.body) } : {}),
+          ...(options.noAuth === true ? {} : AUTH_HEADERS),
           ...(options.headers ?? {}),
         },
       },
@@ -445,6 +469,126 @@ describe('World Voice routes (mocked SDK boundary)', () => {
     });
   });
 
+  describe('access gate', () => {
+    it('no header returns 401 PASSPHRASE_REQUIRED and never reaches the SDK', async () => {
+      const res = await httpRequest(port, {
+        method: 'POST',
+        path: '/api/unique-skill',
+        body: JSON.stringify(uniqueSkillRequestBody),
+        noAuth: true,
+      });
+
+      expect(res.status).toBe(401);
+      expect(res.bodyJson).toEqual({
+        error: { message: 'Passphrase required', code: 'PASSPHRASE_REQUIRED' },
+      });
+      expect(createSpy).not.toHaveBeenCalled();
+    });
+
+    it('the wrong passphrase returns 401 and never reaches the SDK', async () => {
+      const res = await httpRequest(port, {
+        method: 'POST',
+        path: '/api/unique-skill',
+        body: JSON.stringify(uniqueSkillRequestBody),
+        headers: { Authorization: 'Bearer definitely-not-it' },
+      });
+
+      expect(res.status).toBe(401);
+      expect(res.bodyJson).toMatchObject({ error: { code: 'PASSPHRASE_REQUIRED' } });
+      expect(createSpy).not.toHaveBeenCalled();
+    });
+
+    it('GET /api/health works with no header at all', async () => {
+      const res = await httpRequest(port, { method: 'GET', path: '/api/health', noAuth: true });
+      expect(res.status).toBe(200);
+      expect(res.bodyJson).toEqual({ status: 'ok' });
+    });
+
+    it('GET /api/access returns 204 with the correct header, 401 without one', async () => {
+      const authorized = await httpRequest(port, { method: 'GET', path: '/api/access' });
+      expect(authorized.status).toBe(204);
+
+      const unauthorized = await httpRequest(port, {
+        method: 'GET',
+        path: '/api/access',
+        noAuth: true,
+      });
+      expect(unauthorized.status).toBe(401);
+      expect(unauthorized.bodyJson).toMatchObject({ error: { code: 'PASSPHRASE_REQUIRED' } });
+    });
+
+    it('a mixed-case /API path with no header still gets 401, not the SPA/route behind it', async () => {
+      const res = await httpRequest(port, {
+        method: 'POST',
+        path: '/API/unique-skill',
+        body: JSON.stringify(uniqueSkillRequestBody),
+        noAuth: true,
+      });
+      expect(res.status).toBe(401);
+      expect(createSpy).not.toHaveBeenCalled();
+    });
+
+    it('a 1 MB unauthenticated body gets 401, not 413 — the gate runs before express.json', async () => {
+      const oversized = JSON.stringify({
+        ...uniqueSkillRequestBody,
+        padding: 'x'.repeat(1_000_000),
+      });
+      const res = await httpRequest(port, {
+        method: 'POST',
+        path: '/api/unique-skill',
+        body: oversized,
+        noAuth: true,
+      });
+      expect(res.status).toBe(401);
+      expect(createSpy).not.toHaveBeenCalled();
+    });
+
+    it('OPTIONS /api/world-engine returns 204 with no header — CORS answers preflights before the gate', async () => {
+      const res = await httpRequest(port, {
+        method: 'OPTIONS',
+        path: '/api/world-engine',
+        noAuth: true,
+      });
+      expect(res.status).toBe(204);
+    });
+
+    describe('rate limiter (own app, own clock, low limit — never shares the 600/min harness bucket)', () => {
+      it('a burst past the limit gets 429 before the gate, and wrong-passphrase attempts count too', async () => {
+        let t = 5_000_000;
+        const limitedApp = buildApp({ ...config, RATE_LIMIT_PER_MINUTE: 3, now: () => t });
+        const { server: limitedServer, port: limitedPort } = await startServer(limitedApp);
+        try {
+          // Two wrong-passphrase attempts and one correct one all count.
+          const first = await httpRequest(limitedPort, {
+            method: 'GET',
+            path: '/api/access',
+            headers: { Authorization: 'Bearer wrong-one' },
+          });
+          expect(first.status).toBe(401);
+
+          const second = await httpRequest(limitedPort, {
+            method: 'GET',
+            path: '/api/access',
+            headers: { Authorization: 'Bearer wrong-two' },
+          });
+          expect(second.status).toBe(401);
+
+          const third = await httpRequest(limitedPort, { method: 'GET', path: '/api/access' });
+          expect(third.status).toBe(204);
+
+          // Fourth request in the same window, regardless of credentials —
+          // the limiter runs BEFORE the gate.
+          const fourth = await httpRequest(limitedPort, { method: 'GET', path: '/api/access' });
+          expect(fourth.status).toBe(429);
+          expect(fourth.bodyJson).toMatchObject({ error: { code: 'TOO_MANY_REQUESTS' } });
+          expect(fourth.headers['retry-after']).toBeDefined();
+        } finally {
+          await new Promise<void>((resolve) => limitedServer.close(() => resolve()));
+        }
+      });
+    });
+  });
+
   describe('Host allow-list (DNS rebinding)', () => {
     // Binding to loopback is not a boundary on its own: a page on the public
     // internet can resolve a hostname it controls to 127.0.0.1 and have the
@@ -499,6 +643,22 @@ describe('World Voice routes (mocked SDK boundary)', () => {
 
       expect(res.status).toBe(403);
       expect(res.headers['access-control-allow-origin']).toBeUndefined();
+    });
+
+    it('TRUST_PROXY does not change Host handling — a rebound Host still gets 403 with TRUST_PROXY=1', async () => {
+      const trustingApp = buildApp({ ...config, RATE_LIMIT_PER_MINUTE: 600, TRUST_PROXY: 1 });
+      const { server: trustingServer, port: trustingPort } = await startServer(trustingApp);
+      try {
+        const res = await httpRequest(trustingPort, {
+          method: 'GET',
+          path: '/api/health',
+          headers: { host: 'evil.example', 'x-forwarded-for': '1.2.3.4' },
+          noAuth: true,
+        });
+        expect(res.status).toBe(403);
+      } finally {
+        await new Promise<void>((resolve) => trustingServer.close(() => resolve()));
+      }
     });
   });
 
@@ -631,7 +791,10 @@ describe('buildApp middleware', () => {
     const app = buildTestApp();
     const { server, port } = await startServer(app);
     try {
-      const res = await fetch(`http://127.0.0.1:${port}/api/nope`, { method: 'POST' });
+      const res = await fetch(`http://127.0.0.1:${port}/api/nope`, {
+        method: 'POST',
+        headers: AUTH_HEADERS,
+      });
       expect(res.status).toBe(404);
       // The point of the handler: a JSON client must be able to parse the body.
       expect(res.headers.get('content-type')).toMatch(/application\/json/);
