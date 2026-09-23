@@ -93,5 +93,5 @@ citations that deletion would strand each earned their own plan. Only one plan s
 | 2. Backend & World Voice | 5 | 5 | **Shipped** 2026-09-17 — review passed (3 cycles) · [PR #1](https://github.com/DeanItServices/soulbound/pull/1) |
 | 3. Frontend Port | 10 | 10 | **Shipped** 2026-09-18 — review passed (2 cycles, 3-reviewer panel) · [PR #2](https://github.com/DeanItServices/soulbound/pull/2) (merged) |
 | 4. Parity & Verification | 6 | 6 | **Shipped** 2026-09-18 — review passed (3 cycles, 3-reviewer panel) · [PR #3](https://github.com/DeanItServices/soulbound/pull/3) |
-| 5. Docker Image Publishing | 6 | 3 | In progress — wave 3/6 done |
-| **Total** | **33** | **30** | 90% |
+| 5. Docker Image Publishing | 6 | 4 | In progress — wave 4/6 done |
+| **Total** | **33** | **31** | 93% |
