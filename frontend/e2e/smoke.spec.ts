@@ -632,4 +632,32 @@ test('the passphrase form is visible, usable and on screen', async ({ page }) =>
 
   await page.setViewportSize(DESKTOP);
   await assertFormOnScreen(false);
+
+  // A real submit. `/api/access` is the one path the no-paid-call guard
+  // exempts (see beforeEach above), so re-routing it here costs nothing.
+  // A route registered later takes priority for the same pattern, so this
+  // supersedes both the `beforeEach`'s 204 and the 401 registered above it
+  // for the rest of this test.
+  const submittedAuth: (string | undefined)[] = [];
+  await page.route('**/api/access', (route) => {
+    const auth = route.request().headers()['authorization'];
+    submittedAuth.push(auth);
+    if (auth === 'Bearer the-right-passphrase') {
+      return route.fulfill({ status: 204 });
+    }
+    return route.fulfill({
+      status: 401,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: { message: 'Passphrase required', code: 'PASSPHRASE_REQUIRED' },
+      }),
+    });
+  });
+
+  const input = page.getByLabel('Passphrase');
+  await input.fill('the-right-passphrase');
+  await input.press('Enter');
+
+  await expect(page.getByText('The Soulbound Chronicles')).toBeVisible();
+  expect(submittedAuth).toContain('Bearer the-right-passphrase');
 });
