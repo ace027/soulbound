@@ -48,3 +48,16 @@ note: 7 of 7 prior action items closed (first time; AI-5 and AI-6 had each been 
   because findings were derived while fixes were reasoned about. Rule adopted — a fix is a
   claim, and carries the same derivation burden as a finding.
 
+
+## Phase 5 — Review passed 2026-09-23
+task_type: quality-review
+agent: engineering-security-engineer, testing-qa-verification-specialist, engineering-infrastructure-devops
+result: success
+importance: 3
+cycles: 3
+summary: Phase 5 review passed in 3 cycles. 1 blocker (self-host healthcheck 403 on non-default
+  ports — missed because port evidence curled from the host and never read .State.Health) and 7
+  warnings fixed. Lesson: a passing healthcheck is not reachability, and a curl from outside is not
+  a healthcheck — check both. Every fix round again seeded a smaller same-class defect (the
+  byte-identical claim, the re-dispatch remedy), each caught by the next cycle.
+tags: docker-image-publishing, review-passed, 3-cycles
