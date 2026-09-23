@@ -62,6 +62,37 @@ misread it.
 - **Standing rule** (`STATE.md`, Phase 3/4 carry-forward): no middleware in `server.ts` without a
   test asserting what it emits.
 
+## Execution protocol — applies to every plan (added after plan critique)
+
+1. **Commit points.** Commit when a task's verify passes, and always **before** any mutation step.
+   End every plan with a commit containing its SUMMARY. Use conventional messages
+   (`feat(backend): …`, `test(frontend): …`, `docs(legion): …`) with the session's attribution
+   trailer. Push only in the plans that say to (05-05, 05-06).
+2. **Mutation restore.** Mutate only a committed tree. Restore with `git checkout -- <file>` against
+   that commit, and confirm with `git diff --exit-code` before the next mutation. **Never
+   `git stash`** (it silently carries uncommitted plan work). Never mutate while another agent holds
+   the tree (AI-5).
+3. **Every `docker build` passes the CA secret**, which a plain build otherwise never receives (only
+   compose wires `NPM_CA_FILE`, `docker-compose.yml:110-117`):
+   `DOCKER_BUILDKIT=1 docker build --secret id=npm_ca,src=${NPM_CA_FILE:-/dev/null} …`. On a normal
+   machine the `/dev/null` default is a no-op (`backend/Dockerfile:21` tests `-s`).
+4. **Building an old commit** (for example the pre-gate `7856b7d` image): use
+   `git worktree add <scratchpad>/base 7856b7d`, build from there, then
+   `git worktree remove <scratchpad>/base`. Never check out an old commit in the main tree.
+5. **New executable files.** `chmod +x`, then confirm `git ls-files -s <file>` shows `100755` after
+   `git add`. Files created by an editor tool start at 0644.
+6. **GitHub checks.** Read CI results with the GitHub MCP tools (`actions_list`, `get_job_logs`).
+   There's no `gh` CLI here. **If the MCP is unavailable**, record the check as UNTESTED in the
+   SUMMARY with the exact URL and who should confirm it. Don't block the plan and don't guess.
+7. **Accepted gap, named so nobody rediscovers it:** if the backend is down when the page loads,
+   `checkAccess` returns `'unknown'` and the UI opens. A character creation started before the backend
+   returns and hits a 401 still strands on the loading screen (`App.tsx:267-269`). That needs two
+   rare conditions at once, and fixing it means editing `App.tsx`, so it's accepted and recorded in
+   the design log.
+8. **Older scripts get 401 now.** The Phase 2 and 4 evidence scripts (`playthrough.mjs`,
+   `live-verification.mjs` under `.planning/`) send no passphrase header, so re-running them now gets
+   401. They are historical evidence; don't edit them. The design log mentions it.
+
 ## Environment facts
 
 - Docker is installed but the daemon isn't running. Start it with
