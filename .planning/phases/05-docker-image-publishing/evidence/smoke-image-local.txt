@@ -1,0 +1,48 @@
+# scripts/smoke-image.sh local evidence
+
+## Positive run
+
+Image: soulbound:05-04
+Image ID: sha256:9ea5325bf81db7fb1727184f711b6860823a149071548a68069699c7ebd32a90
+Date: 2026-09-23T04:51:15Z
+Command: bash scripts/smoke-image.sh soulbound:05-04
+
+```
+[smoke] image=soulbound:05-04 host_port=51285 container=soulbound-smoke-14081
+PASS: 1: GET /api/health returns 200 (got 200)
+PASS: 2: GET / returns 200 text/html (got code=200 content-type='Content-Type: text/html; charset=utf-8')
+PASS: 3: GET /api/access with no header returns 401 PASSPHRASE_REQUIRED (got 401, body={"error":{"message":"Passphrase required","code":"PASSPHRASE_REQUIRED"}})
+PASS: 4: GET /api/access with the correct header returns 204 (got 204)
+PASS: 5: GET /api/x with header returns 404 application/json (got code=404 content-type='Content-Type: application/json; charset=utf-8')
+PASS: 6: request #1 of 4 extra /api/access calls returns 429 TOO_MANY_REQUESTS with a valid Retry-After (tripped=1 retry_after_ok=1)
+PASS: 7: docker logs do not contain the passphrase
+---
+7/7 passed
+```
+
+## Negative run (pre-gate base commit 7856b7d, built in a worktree)
+
+Image: soulbound:pre-gate-7856b7d
+Built from: git worktree add <scratchpad>/base 7856b7d; docker build -f backend/Dockerfile .
+Date: 2026-09-23T04:51:15Z
+Command: bash scripts/smoke-image.sh soulbound:pre-gate-7856b7d
+
+Expected and confirmed: this commit predates the access gate (R17) and
+the single-image static serving (R20), so checks 2, 3, 4 and 6 all FAIL
+on their own merits (not because an earlier check stopped the run —
+the script runs all 7 unconditionally). Checks 1, 5 and 7 still pass
+because /api/health, the JSON 404 handler, and the (non-existent)
+passphrase-in-logs check don't depend on the gate or static serving.
+
+```
+[smoke] image=soulbound:pre-gate-7856b7d host_port=51731 container=soulbound-smoke-13832
+PASS: 1: GET /api/health returns 200 (got 200)
+FAIL: 2: GET / returns 200 text/html (got code=404 content-type='Content-Type: application/json; charset=utf-8')
+FAIL: 3: GET /api/access with no header returns 401 PASSPHRASE_REQUIRED (got 404, body={"error":{"message":"Not found","code":"NOT_FOUND"}})
+FAIL: 4: GET /api/access with the correct header returns 204 (got 404)
+PASS: 5: GET /api/x with header returns 404 application/json (got code=404 content-type='Content-Type: application/json; charset=utf-8')
+FAIL: 6: request #0 of 4 extra /api/access calls returns 429 TOO_MANY_REQUESTS with a valid Retry-After (tripped=0 retry_after_ok=0)
+PASS: 7: docker logs do not contain the passphrase
+---
+3/7 passed
+```
