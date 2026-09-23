@@ -1,13 +1,14 @@
 # Project State
 
 ## Current Position
-- **Phase**: 5 of 5 (executing — wave 5/6 done)
+- **Phase**: 5 of 5 (executed, pending review)
 - **Phase 5 results**: 05-01 ✅ `5c45340`, `421d896` — passphrase required at boot, config readers, shared contract; backend tests 117 → 146, 3/3 mutations caught
   05-02 ✅ `846d7e8`..`95609ae` — rate limiter + gate before body parsing, `/api/access`; independent Security Engineer review (orchestrator-run) PASS WITH FIXES → all fixed (map sweep + 10k cap, `/api`-scoped JSON parsing, TRUST_PROXY Docker warning, test gaps); backend tests 146 → 180; mutations 5/6 caught, 1 behaviourally-equivalent (`===` vs timingSafeEqual) recorded
   05-03 ✅ `0f16655`..`aa886bf` — passphrase store, Bearer header + `checkAccess`, `AccessGate` wrapping `App` in `main.tsx`; `App.tsx` byte-identical; frontend tests 150 → 184; e2e 6/6 (guard narrowed to `/api/access` only); mutations 2/2 caught
   05-04 ✅ `b9181de`..`a400774` — backend serves the bundle (`STATIC_DIR`; no fallback for file paths; `/api` 404 first); `backend/Dockerfile` builder → frontend-build (`$BUILDPLATFORM`) → api → runtime; dev compose targets `api`; frontend `runtime` stage removed; image `soulbound:05-04` 373MB, uid 1000; backend tests 180 → 187; mutations 2/2 caught
   05-05 ✅ `a54ddeb`..`236b006` — `scripts/smoke-image.sh` (7/7 local; negative run on pre-gate `7856b7d` fails checks 2,3,4,6); CI `smoke-image` job green on `af876ca` (run 78); `release.yml` dispatch-only, fail-closed overwrite check verified under `bash -e`. UNTESTED until first dispatch after merge: GHCR push, arm64, real GHCR existence response
-- **Status**: **Phase 5 planned — 6 plans across 6 serial waves** (`.planning/phases/05-docker-image-publishing/`).
+  05-06 ✅ `87f3f0a`, `2900ccc`, `706d62d` — `compose.selfhost.yml` (verified on :3999), README/design log/CLAUDE.md (+2/−0)/PROJECT.md, `0.1.0`; phase-close re-verification: 187 + 184 tests, e2e 6/6, App.tsx unchanged, fresh-build smoke 7/7, mutations 11/12 caught (#6 equivalent, as recorded)
+- **Status**: **Phase 5 complete — all 6 plans executed successfully** (serial waves; was: planned — 6 plans across 6 serial waves) (`.planning/phases/05-docker-image-publishing/`).
   Spec critiqued once (REWORK → 12 findings applied), plans critiqued once (CAUTION → 29 findings
   applied; see `05-CONTEXT.md` → Execution protocol). Zero Anthropic spend planned.
 - **Phases 1-4**: **All four phases complete and shipped.** Phase 4 review PASSED after 3 cycles (3-reviewer panel, 29 findings, 0 blockers); shipped as [PR #3](https://github.com/DeanItServices/soulbound/pull/3), 15 commits / 48 files / +4,757−1,474. R13, R14, R15, R16 close. The legacy artifact is deleted — recover it with `git show 3d01fa5:legacy/souldbound-world.jsx` (the `parity-oracle` tag is local-only and cannot be pushed from this environment; the SHA is on the branch and works everywhere).
@@ -19,9 +20,10 @@
   architecture **Pragmatic + 2 from Clean** (one image, the backend serves the bundle; gate and
   limiter before `express.json`; `Authorization: Bearer`), chosen from three read-only proposals.
   Spec: `.planning/specs/05-docker-image-publishing-spec.md`. ROADMAP now lists Phase 5 (0/6).
-- **Next Action**: Run `/legion:build` to execute Phase 5: Docker Image Publishing.
-  ⚠️ Plan 05-01 makes `SOULBOUND_PASSPHRASE` **required at boot** — the dev stack will refuse to
-  start until `.env` has one (12+ printable ASCII characters).
+- **Next Action**: Run `/legion:review` to verify Phase 5: Docker Image Publishing.
+  After merge: dispatch `release.yml` once (GitHub → Actions → Release → Run workflow) — the GHCR
+  publish is the one UNTESTED step. ⚠️ `SOULBOUND_PASSPHRASE` is now **required at boot** — add it to
+  `.env` (12+ printable ASCII characters).
 - **Branch**: work continues on `claude/legion-status-uxlaqo`, which descends from `origin/main`
   (`f70aa31`) and carries this session's commits. It needs a NEW pull request; #5 is merged and
   cannot track it.

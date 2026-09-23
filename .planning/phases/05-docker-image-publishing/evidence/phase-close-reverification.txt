@@ -1,0 +1,72 @@
+# 05-06 task 3 — phase-close re-verification on the final tree
+# date: 2026-09-23T05:05:45Z  HEAD: 706d62d
+
+## 1. npm ci && npm run build && npm test
+npm ci: ok
+build: ok (shared, backend, frontend)
+ Test Files  8 passed (8)
+      Tests  187 passed (187)
+ Test Files  13 passed (13)
+      Tests  184 passed (184)
+
+## 2. e2e
+
+  6 passed (14.9s)
+
+## 3. App.tsx byte-identical to 7856b7d
+exit 0 — unchanged
+
+## 4. compose files parse
+dev compose: exit 0
+self-host compose: exit 0
+
+## 5. fresh build + smoke
+sha256:3345407d7460cf1534bc6bf88800d5a29e4125110f75e0b27ad4bd1e5bb15b05
+[smoke] image=soulbound:phase5-final host_port=50785 container=soulbound-smoke-16996
+PASS: 1: GET /api/health returns 200 (got 200)
+PASS: 2: GET / returns 200 text/html (got code=200 content-type='Content-Type: text/html; charset=utf-8')
+PASS: 3: GET /api/access with no header returns 401 PASSPHRASE_REQUIRED (got 401, body={"error":{"message":"Passphrase required","code":"PASSPHRASE_REQUIRED"}})
+PASS: 4: GET /api/access with the correct header returns 204 (got 204)
+PASS: 5: GET /api/x with header returns 404 application/json (got code=404 content-type='Content-Type: application/json; charset=utf-8')
+PASS: 6: request #1 of 4 extra /api/access calls returns 429 TOO_MANY_REQUESTS with a valid Retry-After (tripped=1 retry_after_ok=1)
+PASS: 7: docker logs do not contain the passphrase
+---
+7/7 passed
+
+## 6. mutation re-run (12 rows; #2 and #7 are the same edit, run once)
+#1 [05-01] backend/src/config.ts: CAUGHT | Tests  3 failed | 184 passed (187) | restored-clean=True
+     is removed from process.env even when SOULBOUND_PASSPHRASE is the one that is invalid 13ms
+     is removed from process.env once read 4ms
+     is removed from process.env even when ANTHROPIC_API_KEY is the one that is invalid 8ms
+#2+7 [05-01/05-02] backend/src/config.ts: CAUGHT | Tests  2 failed | 185 passed (187) | restored-clean=True
+     strips both the API key and the passphrase from one string 15ms
+     a thrown error echoing the passphrase is redacted from both the log and the response body 20ms
+     src/__tests__/config.test.ts > redact() > strips both the API key and the passphrase from one string
+#3 [05-01] backend/src/config.ts: CAUGHT | Tests  1 failed | 186 passed (187) | restored-clean=True
+     rejects "true" — every hop is spoofable with no proxy in front 15ms
+     src/__tests__/config.test.ts > TRUST_PROXY > rejects "true" — every hop is spoofable with no proxy in front
+#4 [05-02] backend/src/server.ts: CAUGHT | Tests  11 failed | 176 passed (187) | restored-clean=True
+     no header returns 401 PASSPHRASE_REQUIRED and never reaches the SDK 1322ms
+     the wrong passphrase returns 401 and never reaches the SDK 1252ms
+     GET /api/access returns 204 with the correct header, 401 without one 3ms
+#5 [05-02] backend/src/server.ts: CAUGHT | Tests  1 failed | 186 passed (187) | restored-clean=True
+     a 1 MB unauthenticated body gets 401, not 413 — the gate runs before express.json 24ms
+     src/__tests__/routes.test.ts > World Voice routes (mocked SDK boundary) > access gate > a 1 MB unauthenticated body gets 401, not 413 — the gate runs 
+#6 [05-02] backend/src/config.ts: SURVIVED | Tests  187 passed (187) | restored-clean=True
+#8 [05-03] frontend/src/lib/api.ts: CAUGHT | Tests  3 failed | 181 passed (184) | restored-clean=True
+     renders children on a 502 (unknown) — fails open in the UI 1017ms
+     maps a 502 text/plain (Vite proxy, no backend) to unknown 12ms
+     maps a 200 HTML body to unknown 2ms
+#9 [05-03] frontend/src/lib/api.ts: CAUGHT | Tests  1 failed | 183 passed (184) | restored-clean=True
+     401 AUTHENTICATION_FAILED does NOT clear the stored passphrase 11ms
+     src/lib/__tests__/api.test.ts > the access-gate header > 401 AUTHENTICATION_FAILED does NOT clear the stored passphrase
+#10 [05-04] backend/src/server.ts: CAUGHT | Tests  2 failed | 185 passed (187) | restored-clean=True
+     returns a JSON 404 for an unmatched /api path, both GET and POST 8ms
+     returns a JSON 404 for a mixed-case /api path with a valid passphrase, never HTML 13ms
+     src/__tests__/routes.test.ts > static serving (STATIC_DIR set) > returns a JSON 404 for an unmatched /api path, both GET and POST
+#11 [05-04] backend/src/server.ts: CAUGHT | Tests  1 failed | 186 passed (187) | restored-clean=True
+     returns a JSON 404 for a mixed-case /api path with a valid passphrase, never HTML 7ms
+     src/__tests__/routes.test.ts > static serving (STATIC_DIR set) > returns a JSON 404 for a mixed-case /api path with a valid passphrase, never HTML
+#12 [05-04] backend/src/server.ts: CAUGHT | Tests  1 failed | 186 passed (187) | restored-clean=True
+     returns a plain 404, never HTML, for a missing/stale asset chunk 9ms
+     src/__tests__/routes.test.ts > static serving (STATIC_DIR set) > returns a plain 404, never HTML, for a missing/stale asset chunk

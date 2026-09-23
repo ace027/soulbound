@@ -6,7 +6,7 @@
 - [x] **Phase 2: Backend & World Voice** — three routes on the official SDK, structured outputs, caching verified
 - [x] **Phase 3: Frontend Port** — components, screens, game logic, saves
 - [x] **Phase 4: Parity & Verification** — end-to-end playthrough, constraint audit, doc updates
-- [ ] **Phase 5: Docker Image Publishing** — access gate, single image, GHCR release, self-host package
+- [x] **Phase 5: Docker Image Publishing** — access gate, single image, GHCR release, self-host package
 
 ## Phase Details
 
@@ -93,5 +93,5 @@ citations that deletion would strand each earned their own plan. Only one plan s
 | 2. Backend & World Voice | 5 | 5 | **Shipped** 2026-09-17 — review passed (3 cycles) · [PR #1](https://github.com/DeanItServices/soulbound/pull/1) |
 | 3. Frontend Port | 10 | 10 | **Shipped** 2026-09-18 — review passed (2 cycles, 3-reviewer panel) · [PR #2](https://github.com/DeanItServices/soulbound/pull/2) (merged) |
 | 4. Parity & Verification | 6 | 6 | **Shipped** 2026-09-18 — review passed (3 cycles, 3-reviewer panel) · [PR #3](https://github.com/DeanItServices/soulbound/pull/3) |
-| 5. Docker Image Publishing | 6 | 5 | In progress — wave 5/6 done |
-| **Total** | **33** | **32** | 96% |
+| 5. Docker Image Publishing | 6 | 6 | **Executed** 2026-09-23 — pending review · GHCR publish UNTESTED until first dispatch |
+| **Total** | **33** | **33** | 100% |
