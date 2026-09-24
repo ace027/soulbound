@@ -213,7 +213,7 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 | 3. Frontend Port | 10 | 10 | **Shipped** 2026-09-18 — review passed (2 cycles, 3-reviewer panel) · [PR #2](https://github.com/DeanItServices/soulbound/pull/2) (merged) |
 | 4. Parity & Verification | 6 | 6 | **Shipped** 2026-09-18 — review passed (3 cycles, 3-reviewer panel) · [PR #3](https://github.com/DeanItServices/soulbound/pull/3) |
 | 5. Docker Image Publishing | 6 | 6 | **Shipped** 2026-09-24 — review passed (3 cycles, 3-reviewer panel) · [PR #6](https://github.com/DeanItServices/soulbound/pull/6) (merged `86faa9f`) · GHCR publish UNTESTED until first dispatch |
-| 6. Hosted Mode & Accounts | 7 | 5 | **Building** — waves 1-5 done · planned 2026-09-24 — 7 plans, 7 serial waves · spec `.planning/specs/06-hosted-mode-accounts-spec.md` · run `/legion:build` |
+| 6. Hosted Mode & Accounts | 7 | 6 | **Building** — waves 1-6 done · planned 2026-09-24 — 7 plans, 7 serial waves · spec `.planning/specs/06-hosted-mode-accounts-spec.md` · run `/legion:build` |
 | 7. Server Saves & Shared-World Seams | TBD | 0 | Pending |
 | 8. Metering & Allowance | TBD | 0 | Pending |
 | 9. Follow-ability, then Friends | TBD | 0 | Pending |
