@@ -138,6 +138,7 @@ Every phase ships to the real hosted environment, so deployment risk isn't saved
   - [ ] A per-call usage ledger; the monthly turn allowance (250); the creation counter (3 free, then 2 turns).
   - [ ] Remaining turns shown in the UI; a per-user rate limit.
   - [ ] An operator cost view and a **daily-spend alert**.
+  - [ ] Before inviting anyone: check Anthropic's usage-policy requirements for consumer apps, and show a short privacy notice at sign-up ("your in-game text is processed by Anthropic's API").
   - [ ] **Then invite friends, free**: the developer funds it, and all caps are enforced. Worst case is ~$7 per friend per month.
 - [ ] **Phase 9, Subscription billing, priced from friends' usage:**
   - [ ] Re-derive cost per turn from the Phase 8 ledger, and confirm or adjust $10 / 250.
@@ -145,9 +146,8 @@ Every phase ships to the real hosted environment, so deployment risk isn't saved
   - [ ] What happens when a payment fails or a subscription lapses.
   - [ ] No card data ever touches the server.
 - [ ] **Phase 10, Launch hardening and conversion:**
-  - [ ] Terms of Service and a privacy policy (player text goes to Anthropic).
+  - [ ] Full Terms of Service and a privacy policy, replacing Phase 8's short notice.
   - [ ] Error monitoring; a restore drill re-run; CSP.
-  - [ ] Research Anthropic's usage-policy requirements for consumer apps.
   - [ ] Move friends to paid, with notice.
   - [ ] Open a waitlist for the public beta.
 
@@ -207,7 +207,7 @@ Every phase ships to the real hosted environment, so deployment risk isn't saved
 - ~~**Does character creation count against the allowance?**~~ Settled 2026-09-24: 3 free per month, then 2 turns each; save slots capped at 20 (see Pricing).
 - ~~**Pay from day one for friends?**~~ Settled 2026-09-24: friends play free after Phase 8, on the same 250-turn allowance, and move to paid in Phase 10 with notice.
 - **Which auth library, and which email provider?** Verify Better Auth's Express + Postgres support and its magic-link and Discord support when planning Phase 6.
-- **Anthropic usage-policy requirements for a consumer app** (age minimum, AI disclosure, content handling), and the ToS/privacy wording. Research before Phase 10 and record it in the design log.
+- **Anthropic usage-policy requirements for a consumer app** (age minimum, AI disclosure, content handling), and the ToS/privacy wording. Research at the end of Phase 8, **before inviting friends**, and record it in the design log. The full ToS comes in Phase 10.
 - **How long to keep data after cancellation**, for saves and usage rows. Default proposal: saves kept 90 days read-only, then deleted; usage kept for accounting.
 - **Anti-framing header / CSP:** make the call in Phase 6, since logged-in sessions raise the stakes of clickjacking.
 
