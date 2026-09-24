@@ -1,7 +1,8 @@
 # Project State
 
 ## Current Position
-- **Phase**: 6 of 13 — **pending planning**. Phases 1-5 shipped; [PR #6](https://github.com/DeanItServices/soulbound/pull/6) merged 2026-09-24 as `86faa9f`.
+- **Phase**: 6 of 13 — **planned** (2026-09-24): 7 plans across 7 serial waves in `.planning/phases/06-hosted-mode-accounts/`. Host Render, email Resend, architecture Pragmatic + 2 from Clean. Spec `.planning/specs/06-hosted-mode-accounts-spec.md` critiqued once (QA REWORK + security CAUTION, 6 blockers → all applied, rows 1-19), plus a planning addendum (row 20: `checkAccess` unchanged, new `getAccessState` + `Soulbound-Mode` header). Baseline at `7c737a6`: 187 backend + 190 frontend. 06-07's live steps need the developer (runbook).
+- **Previously**: Phase 6 pending planning. Phases 1-5 shipped; [PR #6](https://github.com/DeanItServices/soulbound/pull/6) merged 2026-09-24 as `86faa9f`.
 - **Roadmap extended 2026-09-24**: Phases 6-13 (hosted mode + gameplay) added from `.planning/explorations/2026-09-24-hosted-multiplayer-saas-design.md`. Requirements R23-R35 in PROJECT.md. Reversals (single-tenant auth scope and CLAUDE.md #2, hosted mode only; PROJECT.md out-of-scope) recorded in CLAUDE.md (+3/−0) and the design log → "Hosted mode (2026-09-24)".
 - **Review cycle 3**: Security PASS, QA PASS, Infra PASS — **review PASSED (3 cycles)**. Cycle-3 suggestions applied in `3c50def`. Full record: `.planning/phases/05-docker-image-publishing/05-REVIEW.md`. Tests at close: 187 backend + 190 frontend, e2e 6/6.
 - **Review cycle 2**: Security PASS, QA PASS, Infra NEEDS WORK (1 warning: the pushed amd64 image was claimed byte-identical to the smoke-tested one, unenforced). Fixed: `fdb1306` (matching labels + post-push amd64 diff-ID check that fails closed; `github.ref` injection removed; arm64 cache), `585330c` (README 403 cause), `efb4829` (rejected passphrase cleared; stored non-ASCII value dropped; each mutation-verified), plus summary wording corrections. Tests 187 + 189, e2e 6/6.
@@ -33,7 +34,7 @@
     - `release.yml` derives the image name from the repo owner, so it follows the move automatically.
     - After the move, update the hardcoded `ghcr.io/deanitservices/soulbound` in `compose.selfhost.yml:41` and `README.md` (lines 68, 72, 115). Leave the historical mention in `docs/design-decisions-log.md` as it is.
   - **Key rotation is deferred by the developer**, who will rotate before friends are invited. It's tracked as a Phase 9 invite-gate item, so don't raise it again before then.
-- **Next Action**: Run `/legion:plan 6` (Hosted Mode & Accounts). (Superseded note, kept for history: **rotate the sandbox's Anthropic key** (exposed in a fix agent's transcript during review). Decide on the anti-framing header (05-REVIEW.md → Not taken).
+- **Next Action**: Run `/legion:build` (Phase 6, wave 1: 06-01). Plan critique was offered at the end of planning; see Last Activity. (Previous: run `/legion:plan 6`.) (Superseded note, kept for history: **rotate the sandbox's Anthropic key** (exposed in a fix agent's transcript during review). Decide on the anti-framing header (05-REVIEW.md → Not taken).
   After merge: dispatch `release.yml` once (GitHub → Actions → Release → Run workflow) — the GHCR
   publish is the one UNTESTED step. ⚠️ `SOULBOUND_PASSPHRASE` is now **required at boot** — add it to
   `.env` (12+ printable ASCII characters).
