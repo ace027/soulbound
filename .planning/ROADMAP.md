@@ -155,7 +155,7 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
   - The MUST NOT addition is guarded by `prompts.test.ts`.
   - The adversarial turn tests are re-run live, and they hold.
 - **Recap:** it works at zero API cost in both modes, verified by a request count.
-- **Invite gate:** all 10 "ready to invite friends" checklist items are demonstrated on the live host, with evidence. A Discord link is in the game. Friends are invited.
+- **Invite gate:** all "ready to invite friends" checklist items are demonstrated on the live host, with evidence. That includes the **Anthropic key rotated** (deferred to here by the developer on 2026-09-24). A Discord link is in the game. Friends are invited.
 **Plans**: TBD
 
 ### Phase 10: Quests & Objectives

@@ -95,7 +95,7 @@ Initially the developer and their playtester. Then self-hosting deployers who su
   - A capped `gameState.quests`, a Codex section, and a bounded `ACTIVE QUESTS` block in the prompt.
   - MUST NOT additions: quests never grant skills, and never resolve the protected ambiguities.
 - **R34** — Condition and inventory: its own design pass first (`/legion:explore`), then contract and MUST NOT additions. Items never grant or evolve skills.
-- **R35** — "Ready to invite friends" gate: a 10-item checklist, each item demonstrated on the live host before invites (see design doc → Launch & operations).
+- **R35** — "Ready to invite friends" gate: an 11-item checklist, including rotating the Anthropic key, with each item demonstrated on the live host before invites (see design doc → Launch & operations).
 
 ### Out of Scope
 - Multiplayer / shared persistent world; server-authoritative turns (only the R27 seams are in scope)

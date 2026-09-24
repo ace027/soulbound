@@ -305,6 +305,7 @@ Every hosting phase ships to the real hosted environment. Every game phase works
     - [ ] Account deletion exercised end to end, with the 7-day purge verified on a test account (grace shortened in a test environment).
     - [ ] Self-host image still passing `scripts/smoke-image.sh` 7/7.
     - [ ] The Discord invite link working in the game.
+    - [ ] The Anthropic API key rotated (the sandbox key was exposed in a Phase 5 review transcript; the developer deferred rotation to this gate on 2026-09-24).
 - **Testing:** the existing suite must stay green in self-host mode throughout. Hosted-mode tests run against a throwaway Postgres in CI (a service container), plus Stripe webhooks in test mode.
 
 ## Open Questions

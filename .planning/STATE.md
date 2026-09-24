@@ -28,7 +28,12 @@
   architecture **Pragmatic + 2 from Clean** (one image, the backend serves the bundle; gate and
   limiter before `express.json`; `Authorization: Bearer`), chosen from three read-only proposals.
   Spec: `.planning/specs/05-docker-image-publishing-spec.md`. ROADMAP now lists Phase 5 (0/6).
-- **Next Action**: Run `/legion:plan 6` (Hosted Mode & Accounts). Still open from Phase 5: **rotate the sandbox's Anthropic key** (exposed in a fix agent's transcript during review). Decide on the anti-framing header (05-REVIEW.md → Not taken).
+- **Developer decisions 2026-09-24:**
+  - **First release is deliberately on hold** until the repo moves from `DeanItServices` to the developer's personal GitHub. Don't dispatch `release.yml` before then.
+    - `release.yml` derives the image name from the repo owner, so it follows the move automatically.
+    - After the move, update the hardcoded `ghcr.io/deanitservices/soulbound` in `compose.selfhost.yml:41` and `README.md` (lines 68, 72, 115). Leave the historical mention in `docs/design-decisions-log.md` as it is.
+  - **Key rotation is deferred by the developer**, who will rotate before friends are invited. It's tracked as a Phase 9 invite-gate item, so don't raise it again before then.
+- **Next Action**: Run `/legion:plan 6` (Hosted Mode & Accounts). (Superseded note, kept for history: **rotate the sandbox's Anthropic key** (exposed in a fix agent's transcript during review). Decide on the anti-framing header (05-REVIEW.md → Not taken).
   After merge: dispatch `release.yml` once (GitHub → Actions → Release → Run workflow) — the GHCR
   publish is the one UNTESTED step. ⚠️ `SOULBOUND_PASSPHRASE` is now **required at boot** — add it to
   `.env` (12+ printable ASCII characters).
