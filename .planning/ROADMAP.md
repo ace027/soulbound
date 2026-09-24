@@ -7,6 +7,14 @@
 - [x] **Phase 3: Frontend Port** — components, screens, game logic, saves
 - [x] **Phase 4: Parity & Verification** — end-to-end playthrough, constraint audit, doc updates
 - [x] **Phase 5: Docker Image Publishing** — access gate, single image, GHCR release, self-host package
+- [ ] **Phase 6: Hosted Mode & Accounts** — mode switch, sign-in, invites, live hosted skeleton, ops baseline
+- [ ] **Phase 7: Server Saves & Shared-World Seams** — per-account saves, import, backups, turn logic in `shared/`, turn log
+- [ ] **Phase 8: Metering & Allowance** — usage ledger, 250-turn allowance, creation cap, daily spend cap
+- [ ] **Phase 9: Follow-ability, then Friends** — suggested actions, free recap, invite gate, invite friends free
+- [ ] **Phase 10: Quests & Objectives** — tracked quests in the contract, Codex and prompt
+- [ ] **Phase 11: Subscription Billing** — Stripe, priced from friends' real usage
+- [ ] **Phase 12: Condition & Inventory** — own design pass first, then contract + balance rules
+- [ ] **Phase 13: Launch Hardening & Conversion** — ToS/privacy, CSP, friends to paid, public-beta waitlist
 
 ## Phase Details
 
@@ -85,6 +93,117 @@ citations that deletion would strand each earned their own plan. Only one plan s
 - `compose.selfhost.yml` runs on a non-default port end to end; README, design log, CLAUDE.md and PROJECT.md match what shipped; versions at `0.1.0`
 **Plans**: 6 (planned 2026-09-23 from the spec; serial waves per retro AI-5. Architecture chosen from three competing proposals: Pragmatic + 2 from Clean. See 05-CONTEXT.md.)
 
+### Phases 6-13: design source
+All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer-saas-design.md` (explored and refined 2026-09-24). **Two modes, one codebase:** every phase must leave `SOULBOUND_MODE=selfhost` behaving exactly as Phase 5 shipped, proven by the existing suite plus `scripts/smoke-image.sh`. Deliberate reversals (single-tenant auth scope, CLAUDE.md #2, PROJECT.md out-of-scope) are recorded in CLAUDE.md and the design log → "Hosted mode (2026-09-24)". Plan counts are set by `/legion:plan N`.
+
+### Phase 6: Hosted Mode & Accounts
+**Goal**: A hosted instance that the developer alone can sign into, deployed from day one, with self-host untouched.
+**Requirements**: R23, R24, R25
+**Recommended Agents**: Backend Architect, Security Engineer, Infrastructure & DevOps Engineer
+**Success Criteria**:
+- `SOULBOUND_MODE` defaults to `selfhost`; the existing suite and the smoke test (7/7) still pass unchanged
+- **Sign-in:**
+  - Email link, Google and Discord all work on the live host.
+  - Sessions last 30 days, rolling.
+  - Every state-changing route rejects a foreign Origin (tested).
+- **Access:** single-use invite codes; an anti-framing header present.
+- **Account deletion:**
+  - An inline confirm, never a native dialog (CLAUDE.md #1).
+  - The account is hidden at once and purged after 7 days (tested with a shortened grace).
+- **Mount order:** the auth handler sits before `express.json`, and each ordering claim has a test that fails when the order breaks.
+- **Ops baseline:** the Anthropic Console spend limit is set, error-tracker redaction is tested, and the uptime alert is received.
+**Plans**: TBD
+
+### Phase 7: Server Saves & Shared-World Seams
+**Goal**: Saves follow the player across devices in hosted mode, and the data model is ready for a shared world later.
+**Requirements**: R26, R27
+**Recommended Agents**: Backend Architect, Frontend Developer, QA Verification Specialist
+**Success Criteria**:
+- **Saves:**
+  - `/api/saves` rejects another player's save (tested).
+  - The adapter keeps `App.tsx` byte-identical and keeps the save synchronous inside `setLog`.
+  - Browser saves import once.
+  - The 20-slot cap never blocks autosave to an existing slot.
+- **Backups:** a restore has been rehearsed on the live database.
+- **Turn logic in `shared/`:**
+  - `applyWorldUpdate` and `mergeNarrativeMemory` live there, re-exported at the old paths.
+  - All 14 `MUTANT` annotations still pass.
+  - The mutation spot-check is re-run.
+- **Data seams:** `world_id` on every save; entity IDs backfilled on old saves; a `turn_events` row per World Voice call.
+**Plans**: TBD
+
+### Phase 8: Metering & Allowance
+**Goal**: Every paid call is metered and bounded per player and app-wide, before anyone else plays on the operator's key.
+**Requirements**: R28
+**Recommended Agents**: Backend Architect, Security Engineer, QA Verification Specialist
+**Success Criteria**:
+- **Metering:** each call writes a usage row from the real `usage` fields; turn cost is re-derived from the ledger.
+- **Allowance:** 250 turns a month, checked before each call and debited after, with remaining turns shown in the UI.
+- **Character creation:** 3 free a month, then 2 turns each, counted at `/api/unique-skill`.
+- **Daily spend cap:** alerts at 50% and 80%. At 100% it pauses paid calls with an in-UI message while saves still work.
+- **Before invites:** the usage-policy check is recorded, and the privacy notice shows at sign-up.
+**Plans**: TBD
+
+### Phase 9: Follow-ability, then Friends
+**Goal**: Fix the playtest's "hard to follow / hard to use my skill" friction, then invite friends to play free.
+**Requirements**: R31, R32, R35
+**Recommended Agents**: AI Engineer, Frontend Developer, QA Verification Specialist
+**Success Criteria**:
+- **Suggested actions:**
+  - `suggested_actions` is added to the prompt, shared schema, `CONTRACT_FIELD_NAMES`, the parser and CLAUDE.md #4, all in one commit.
+  - Chips fill the action box and never auto-submit.
+  - The MUST NOT addition is guarded by `prompts.test.ts`.
+  - The adversarial turn tests are re-run live, and they hold.
+- **Recap:** it works at zero API cost in both modes, verified by a request count.
+- **Invite gate:** all 10 "ready to invite friends" checklist items are demonstrated on the live host, with evidence. A Discord link is in the game. Friends are invited.
+**Plans**: TBD
+
+### Phase 10: Quests & Objectives
+**Goal**: Sessions have direction the player can see, built while friends play.
+**Requirements**: R33
+**Recommended Agents**: AI Engineer, Frontend Developer
+**Success Criteria**:
+- **Contract:** `quest_updates` is in the contract (prompt, schema and parser in one commit).
+- **Game state:** quests are capped and carry stable IDs. Old saves load with no quests.
+- **Prompt:** the `ACTIVE QUESTS` block is bounded, with the cached prefix unchanged (it sits outside the system blocks).
+- **Rules:** the MUST NOT additions are guarded by tests; a live run shows quests opening and completing.
+**Plans**: TBD
+
+### Phase 11: Subscription Billing
+**Goal**: Hosted play pays for itself, at a price set from real usage.
+**Requirements**: R29
+**Recommended Agents**: Backend Architect, Security Engineer
+**Success Criteria**:
+- **Price:** $10 / 250 turns is confirmed or adjusted from the Phase 8 ledger, with the derivation recorded.
+- **Stripe:**
+  - Checkout and the Customer Portal work in test mode.
+  - Webhooks are signature-verified on the raw body, mounted before `express.json`.
+  - Handling for lapsed and failed payments is tested.
+  - No card data reaches our servers.
+**Plans**: TBD
+
+### Phase 12: Condition & Inventory
+**Goal**: Consequences that stick, judged with real players.
+**Requirements**: R34
+**Recommended Agents**: AI Engineer, QA Verification Specialist
+**Success Criteria**:
+- **Design first:** a `/legion:explore` design is approved first, covering defeat semantics, item and tier rules, and what the World Voice may change.
+- **Contract:** the contract and MUST NOT additions land together.
+- **Testing:** the adversarial turn tests are re-run; old saves still load.
+**Plans**: TBD
+
+### Phase 13: Launch Hardening & Conversion
+**Goal**: Ready for paying players beyond the invite list.
+**Requirements**: R30
+**Recommended Agents**: Security Engineer, Technical Writer, Infrastructure & DevOps Engineer
+**Success Criteria**:
+- ToS and a privacy policy are published.
+- CSP is live.
+- A restore drill is re-run.
+- Friends are moved to paid with notice.
+- The public-beta waitlist is open.
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Plans | Completed | Status |
@@ -93,5 +212,13 @@ citations that deletion would strand each earned their own plan. Only one plan s
 | 2. Backend & World Voice | 5 | 5 | **Shipped** 2026-09-17 — review passed (3 cycles) · [PR #1](https://github.com/DeanItServices/soulbound/pull/1) |
 | 3. Frontend Port | 10 | 10 | **Shipped** 2026-09-18 — review passed (2 cycles, 3-reviewer panel) · [PR #2](https://github.com/DeanItServices/soulbound/pull/2) (merged) |
 | 4. Parity & Verification | 6 | 6 | **Shipped** 2026-09-18 — review passed (3 cycles, 3-reviewer panel) · [PR #3](https://github.com/DeanItServices/soulbound/pull/3) |
-| 5. Docker Image Publishing | 6 | 6 | **Shipped** 2026-09-24 — review passed (3 cycles, 3-reviewer panel) · [PR #6](https://github.com/DeanItServices/soulbound/pull/6) · GHCR publish UNTESTED until first dispatch |
-| **Total** | **33** | **33** | 100% |
+| 5. Docker Image Publishing | 6 | 6 | **Shipped** 2026-09-24 — review passed (3 cycles, 3-reviewer panel) · [PR #6](https://github.com/DeanItServices/soulbound/pull/6) (merged `86faa9f`) · GHCR publish UNTESTED until first dispatch |
+| 6. Hosted Mode & Accounts | TBD | 0 | Pending — plan with `/legion:plan 6` |
+| 7. Server Saves & Shared-World Seams | TBD | 0 | Pending |
+| 8. Metering & Allowance | TBD | 0 | Pending |
+| 9. Follow-ability, then Friends | TBD | 0 | Pending |
+| 10. Quests & Objectives | TBD | 0 | Pending |
+| 11. Subscription Billing | TBD | 0 | Pending |
+| 12. Condition & Inventory | TBD | 0 | Pending (design pass first) |
+| 13. Launch Hardening & Conversion | TBD | 0 | Pending |
+| **Total** | **33 + TBD** | **33** | Phases 1-5 shipped; 6-13 pending |

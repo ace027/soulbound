@@ -235,6 +235,36 @@ Playtest feedback: it was hard to tell what the Unique Skill actually did, so a 
 
 **This touched the Tier 0 stress-tested prompt**, so the three tests were re-run live (see "Adversarial testing of the questionnaire" below) and all three held. Requiring a stated cost or limit is also half of the hardening that section planned. Evidence is in `.planning/experiments/2026-09-24-unique-skill-clarity/`. The call is still system-blind (CLAUDE.md #8), and the response schema is unchanged. The world-engine `description` field on a skill is optional, so older saves still load.
 
+## Hosted mode (2026-09-24) — decided, not yet built
+**One codebase, two modes.** `SOULBOUND_MODE=selfhost` (the default) stays exactly as Phase 5 shipped. `hosted` adds accounts, server saves and a subscription. The full design, research and alternatives are in `.planning/explorations/2026-09-24-hosted-multiplayer-saas-design.md`. This entry records **what it reverses and why**, so a later session doesn't treat either state as drift.
+
+**Three settled items, deliberately reversed for hosted mode only:**
+1. **CLAUDE.md "Auth architecture — do not re-litigate"** (single-tenant). Hosted mode adds player accounts.
+   - The key architecture does *not* change: the backend holds the operator's key and players never see it.
+   - **BYOK stays rejected**: players pay a subscription and never bring a key.
+2. **CLAUDE.md constraint #2** (`localStorage` saves). Hosted saves live in Postgres per account, behind a synchronous write-through adapter, so `App.tsx` stays byte-identical. Self-host keeps `localStorage`.
+3. **PROJECT.md out of scope** ("server-side saves, user accounts", "Monetization"). These move into scope as R23-R35. The shared world, server-authoritative turns, local inference and credits stay out.
+
+**Why:** the developer wants friends, and later the public, to play without being handed a key or a passphrase. Today's measured cost makes a subscription viable:
+- **Cost per turn:** about **$0.022**, from the `2026-09-24` usage logs at Sonnet 5 rates. The older $0.072 figure predates the Sonnet switch.
+- **What $10 covers:** 250 turns leaves a margin (≈28%) even at the worst turn cost observed.
+
+**Key choices:**
+- **Accounts:** Better Auth (Lucia was deprecated in 2025; Auth.js is on security-only maintenance), with email link, Google and Discord; 30-day rolling sessions.
+- **Price:** $10 for 250 turns, configurable. 3 free characters a month (reroll-fishing guard), then 2 turns each; 20 save slots.
+- **Spend protection, three layers:** the allowance, an app-wide daily cap, and the Anthropic Console limit.
+- **Shared-world seams now, authority later:** turn logic moves into `shared/`, plus `world_id`, stable entity IDs and a `turn_events` log.
+
+**Order:** deploy early (Phase 6). Friends play free after Phase 9, which adds suggested actions and a recap. Billing is priced from their real usage (Phase 11).
+
+**Game phases in the same plan:**
+- Suggested actions (Phase 9): a contract change plus a MUST NOT addition.
+- Zero-cost recap (Phase 9).
+- Quests (Phase 10): a contract change.
+- Condition & inventory (Phase 12): its own design pass first.
+
+Each contract change updates the prompt, schema and parser together (CLAUDE.md #4). Each MUST NOT addition re-runs the adversarial turn tests.
+
 ## Questionnaire Design
 Originally multiple-choice (5 options per question). Changed to fully open-ended free-text per the explicit reasoning that richer, longer answers produce a better-defined Unique Skill before the player ever enters the world. Each question has a `hint` line for guidance but no character limit. The Continue button is disabled until something is written, with a Back button to revise prior answers.
 

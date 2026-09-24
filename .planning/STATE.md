@@ -1,7 +1,8 @@
 # Project State
 
 ## Current Position
-- **Phase**: 5 of 5 (shipped — [PR #6](https://github.com/DeanItServices/soulbound/pull/6), open against `main`)
+- **Phase**: 6 of 13 — **pending planning**. Phases 1-5 shipped; [PR #6](https://github.com/DeanItServices/soulbound/pull/6) merged 2026-09-24 as `86faa9f`.
+- **Roadmap extended 2026-09-24**: Phases 6-13 (hosted mode + gameplay) added from `.planning/explorations/2026-09-24-hosted-multiplayer-saas-design.md`. Requirements R23-R35 in PROJECT.md. Reversals (single-tenant auth scope and CLAUDE.md #2, hosted mode only; PROJECT.md out-of-scope) recorded in CLAUDE.md (+3/−0) and the design log → "Hosted mode (2026-09-24)".
 - **Review cycle 3**: Security PASS, QA PASS, Infra PASS — **review PASSED (3 cycles)**. Cycle-3 suggestions applied in `3c50def`. Full record: `.planning/phases/05-docker-image-publishing/05-REVIEW.md`. Tests at close: 187 backend + 190 frontend, e2e 6/6.
 - **Review cycle 2**: Security PASS, QA PASS, Infra NEEDS WORK (1 warning: the pushed amd64 image was claimed byte-identical to the smoke-tested one, unenforced). Fixed: `fdb1306` (matching labels + post-push amd64 diff-ID check that fails closed; `github.ref` injection removed; arm64 cache), `585330c` (README 403 cause), `efb4829` (rejected passphrase cleared; stored non-ASCII value dropped; each mutation-verified), plus summary wording corrections. Tests 187 + 189, e2e 6/6.
 - **Review cycle 1** (3-reviewer panel: Security, QA, Infra): NEEDS WORK — 1 blocker (self-host healthcheck 403 on any non-default port), 6 warnings, 12 suggestions. Fixed: `8e382e0`..`3f64eb3` (healthcheck proven healthy on :3999; release perms scoped to publish, main-only, smoke the pushed build, runbook, unpublished-image note, timeouts; AccessGate non-ASCII + unreachable-server recovery; wrong-passphrase test; real e2e submit; length-mismatch mutation recorded as caught). Not taken: CSP/anti-framing headers (CSP is out of scope in PROJECT.md — developer decision), SHA-pinning `docker/*` actions, build/npm caches.
@@ -27,7 +28,7 @@
   architecture **Pragmatic + 2 from Clean** (one image, the backend serves the bundle; gate and
   limiter before `express.json`; `Authorization: Bearer`), chosen from three read-only proposals.
   Spec: `.planning/specs/05-docker-image-publishing-spec.md`. ROADMAP now lists Phase 5 (0/6).
-- **Next Action**: All phases shipped. Merge [PR #6](https://github.com/DeanItServices/soulbound/pull/6). **Rotate the sandbox's Anthropic key** (exposed in a fix agent's transcript during review). Decide on the anti-framing header (05-REVIEW.md → Not taken).
+- **Next Action**: Run `/legion:plan 6` (Hosted Mode & Accounts). Still open from Phase 5: **rotate the sandbox's Anthropic key** (exposed in a fix agent's transcript during review). Decide on the anti-framing header (05-REVIEW.md → Not taken).
   After merge: dispatch `release.yml` once (GitHub → Actions → Release → Run workflow) — the GHCR
   publish is the one UNTESTED step. ⚠️ `SOULBOUND_PASSPHRASE` is now **required at boot** — add it to
   `.env` (12+ printable ASCII characters).
