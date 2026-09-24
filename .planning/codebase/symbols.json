@@ -1,11 +1,29 @@
 {
   "map_schema_version": 1,
-  "generated_at": "2026-09-23",
-  "analyzed_commit": "1506c3ada62ac101c9b83828f449e1df73dae787",
-  "symbol_count": 127,
+  "generated_at": "2026-09-24",
+  "analyzed_commit": "35ac80904b435a4002ab6bba91735b6f7f7e27ad",
+  "symbol_count": 150,
   "symbols": {
+    "ACCESS_CHECK_PATH": [
+      "shared/src/accessGate.ts"
+    ],
+    "ACCESS_HEADER": [
+      "shared/src/accessGate.ts"
+    ],
+    "ACCESS_SCHEME": [
+      "shared/src/accessGate.ts"
+    ],
+    "ACCESS_STORAGE_KEY": [
+      "shared/src/accessGate.ts"
+    ],
     "ALLOWED_HOSTS": [
       "backend/src/config.ts"
+    ],
+    "AccessGate": [
+      "frontend/src/components/AccessGate.tsx"
+    ],
+    "AccessGateProps": [
+      "frontend/src/components/AccessGate.tsx"
     ],
     "ActionBar": [
       "frontend/src/components/ActionBar.tsx"
@@ -70,6 +88,9 @@
     "MAX_NARRATIVE_NOTES": [
       "shared/src/gameState.ts"
     ],
+    "MIN_PASSPHRASE_LENGTH": [
+      "shared/src/accessGate.ts"
+    ],
     "MOBILE_BREAKPOINT": [
       "frontend/src/hooks/useIsMobile.ts"
     ],
@@ -97,8 +118,14 @@
     "NewSkillGrantedSchema": [
       "shared/src/worldVoice.ts"
     ],
+    "PASSPHRASE_REQUIRED": [
+      "shared/src/accessGate.ts"
+    ],
     "PORT": [
       "backend/src/config.ts"
+    ],
+    "PRINTABLE_ASCII": [
+      "frontend/src/lib/passphrase.ts"
     ],
     "Phase": [
       "frontend/src/App.tsx"
@@ -121,6 +148,9 @@
     "RACES": [
       "frontend/src/data/races.ts"
     ],
+    "RATE_LIMIT_PER_MINUTE": [
+      "backend/src/config.ts"
+    ],
     "Race": [
       "shared/src/gameState.ts"
     ],
@@ -133,6 +163,9 @@
     "RaceScreenProps": [
       "frontend/src/screens/RaceScreen.tsx"
     ],
+    "RateLimiterHandler": [
+      "backend/src/accessGate.ts"
+    ],
     "SAVE_INDEX_KEY": [
       "shared/src/gameState.ts"
     ],
@@ -141,6 +174,9 @@
     ],
     "SAVE_SCHEMA_VERSION": [
       "shared/src/gameState.ts"
+    ],
+    "STATIC_DIR": [
+      "backend/src/config.ts"
     ],
     "SaveIndexEntry": [
       "shared/src/gameState.ts"
@@ -201,6 +237,12 @@
     ],
     "TIER_STYLE": [
       "shared/src/gameState.ts"
+    ],
+    "TOO_MANY_REQUESTS": [
+      "shared/src/accessGate.ts"
+    ],
+    "TRUST_PROXY": [
+      "backend/src/config.ts"
     ],
     "TitleScreen": [
       "frontend/src/screens/TitleScreen.tsx"
@@ -304,6 +346,21 @@
     "callWorldVoice": [
       "backend/src/anthropic.ts"
     ],
+    "checkAccess": [
+      "frontend/src/lib/api.ts"
+    ],
+    "checkPassphrase": [
+      "backend/src/config.ts"
+    ],
+    "clearPassphrase": [
+      "frontend/src/lib/passphrase.ts"
+    ],
+    "createAccessGate": [
+      "backend/src/accessGate.ts"
+    ],
+    "createRateLimiter": [
+      "backend/src/accessGate.ts"
+    ],
     "defineConfig": [
       "backend/vitest.config.ts",
       "frontend/playwright.config.ts",
@@ -315,6 +372,9 @@
     ],
     "determineUniqueSkill": [
       "frontend/src/lib/api.ts"
+    ],
+    "emitPassphraseRequired": [
+      "frontend/src/lib/passphrase.ts"
     ],
     "extractContractFieldPaths": [
       "shared/src/worldVoice.ts"
@@ -330,6 +390,9 @@
     ],
     "getAnthropicApiKey": [
       "backend/src/config.ts"
+    ],
+    "getPassphrase": [
+      "frontend/src/lib/passphrase.ts"
     ],
     "isHostAllowed": [
       "backend/src/server.ts"
@@ -349,6 +412,9 @@
     "newSlotId": [
       "frontend/src/lib/saves.ts"
     ],
+    "onPassphraseRequired": [
+      "frontend/src/lib/passphrase.ts"
+    ],
     "redact": [
       "backend/src/config.ts"
     ],
@@ -365,6 +431,9 @@
       "backend/src/routes/introScene.ts",
       "backend/src/routes/uniqueSkill.ts",
       "backend/src/routes/worldEngine.ts"
+    ],
+    "setPassphrase": [
+      "frontend/src/lib/passphrase.ts"
     ],
     "sharedBg": [
       "frontend/src/screens/sharedBg.ts"

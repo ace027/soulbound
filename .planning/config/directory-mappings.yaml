@@ -2,14 +2,15 @@
 # Consumed by /legion:plan when recommending agents, and by /legion:build when
 # constructing execution prompts.
 map_schema_version: 1
-generated_at: "2026-09-23"  # refreshed after PR #4/#5 (commit 1506c3a)
+generated_at: "2026-09-24"  # refreshed after Phase 5 + playtest fixes (commit 35ac809)
 
 mappings:
   - path: shared/src
     domain: contract
     description: >-
       The World Voice JSON contract as Zod schemas plus derived JSON Schema, and the
-      game-state types both sides share. Single source of truth for CLAUDE.md constraint #4.
+      game-state types both sides share, and the access-gate constants. Single source of truth for
+      CLAUDE.md constraint #4.
     preferred_agents: [engineering-backend-architect, orchestrator]
     touch_with_care: true
 
@@ -26,12 +27,16 @@ mappings:
 
   - path: backend/src
     domain: backend
-    description: Anthropic client, config (models + key), Express app, untrusted-text guard.
+    description: >-
+      Anthropic client, config (models, key, passphrase), Express app, access gate and rate
+      limiter, untrusted-text guard. Middleware order in buildApp() is the security model.
     preferred_agents: [engineering-backend-architect, engineering-security-engineer]
 
   - path: frontend/src/lib
     domain: frontend-io
-    description: Backend API client and localStorage saves. Save key names are byte-identical by requirement (R11).
+    description: >-
+      Backend API client (Bearer header, checkAccess), localStorage saves and the stored
+      passphrase. Save key names are byte-identical by requirement (R11).
     preferred_agents: [engineering-frontend-developer]
 
   - path: frontend/src/game
@@ -50,7 +55,9 @@ mappings:
 
   - path: frontend/src/components
     domain: frontend-components
-    description: Four presentational components, ported verbatim. Prop-driven; none reach storage or the API.
+    description: >-
+      Four presentational components, ported verbatim and prop-driven, plus AccessGate (Phase 5,
+      new code), the one component that reaches storage and the API.
     preferred_agents: [engineering-frontend-developer]
 
   - path: frontend/src/data
@@ -63,11 +70,24 @@ mappings:
     description: >-
       Playwright smoke test — the ONLY place in this repo with a real layout engine. Asserts
       geometry (overflow, scrolling, action-bar position, no collapsed panel) that jsdom cannot see.
-      Runs under `test:e2e`, not `npm test`, and nothing runs it automatically. Zero API calls by
+      Also covers the passphrase form. Runs under `test:e2e`, not `npm test`, and CI does not run it. Zero API calls by
       design: it seeds a localStorage save. Never run `npx playwright install` in the sandbox.
     preferred_agents: [engineering-frontend-developer]
 
+  - path: .github/workflows
+    domain: infrastructure
+    description: >-
+      ci.yml (build, test, image smoke) and release.yml (dispatch-only GHCR publish, main only,
+      fail-closed overwrite and layer checks). The first publish has never run.
+    preferred_agents: [engineering-infrastructure-devops, engineering-security-engineer]
+    touch_with_care: true
+
+  - path: scripts
+    domain: infrastructure
+    description: smoke-image.sh — 7 checks against a built image; shared by CI and release.
+    preferred_agents: [engineering-infrastructure-devops]
+
 # REMOVED after Phase 4: the `legacy/` mapping. `legacy/souldbound-world.jsx` was the parity
-# oracle and was deleted once parity was confirmed. 25 files still cite its line numbers; those
+# oracle and was deleted once parity was confirmed. 13 source files still cite its line numbers; those
 # resolve via `git show 3d01fa5:legacy/souldbound-world.jsx`. Do not re-add the directory, and do
 # not rebase this branch — nine documents reference that SHA by name.

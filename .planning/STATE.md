@@ -102,11 +102,11 @@ on :3001 and `vite` on :5173, with Playwright driving the pre-installed Chromium
 
 ## Recent Decisions
 - **Design source**: `.planning/explorations/2026-09-17-soulbound-artifact-to-app-design.md` (committed `e56f400`)
-- **Codebase map**: ✅ refreshed 2026-09-23 at commit `1506c3a` — `.planning/CODEBASE.md` plus the
-  `.planning/codebase/` dataset (**56 chunks, 127 symbols, fingerprint `9ff2babb3c9f807f`**).
-  Picks up PR #4 (`game/narrativeMemory.ts`, swapped model split, 1h TTL). Previous dataset was
-  `3288223` / `29353e65f863b7d1`. The fingerprint command sorts blob hashes by hash — see
-  `.planning/codebase/search.md`.
+- **Codebase map**: ✅ refreshed 2026-09-24 at commit `35ac809` — `.planning/CODEBASE.md` plus the
+  `.planning/codebase/` dataset (**63 chunks, 150 symbols, fingerprint `76035132f82dfdd9`**).
+  Picks up Phase 5 (access gate, limiter, single image, `AccessGate.tsx`, `passphrase.ts`) and the
+  2026-09-24 prompt changes. Previous dataset was `1506c3a` / `9ff2babb3c9f807f`. The fingerprint
+  command sorts blob hashes by hash — see `.planning/codebase/search.md`.
 - **Scope**: full migration to playable, not a scaffold or vertical slice
 - **Language**: TypeScript both sides; the World Voice contract lives in `shared/` so prompt/parser drift becomes a compile error
 - **JSON contract**: structured outputs (`output_config.format`), field names unchanged
