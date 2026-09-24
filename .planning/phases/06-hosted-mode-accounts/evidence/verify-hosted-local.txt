@@ -1,0 +1,118 @@
+# verify-hosted.sh: local dry run of the hosted image (plan 06-07, task 1, retro AI-4)
+# Date: 2026-09-24. Tree: 15f9fb2 (the /api/debug/ip commit) plus the uncommitted
+# render.yaml / scripts/verify-hosted.sh of this plan. No secret appears below:
+# every value was fake, and the local DB password (48 hex chars, its own role) is
+# never printed.
+#
+# NOT the live check. This proves the script and the image against a LOCAL hosted
+# build. The Render deploy (runbook step 4) is UNTESTED - awaiting developer.
+
+## Image
+$ DOCKER_BUILDKIT=1 docker build --secret id=npm_ca,src=/root/.ccr/ca-bundle.crt -f backend/Dockerfile -t soulbound:verify-0607 .
+(no --target: the last stage, runtime, as Render builds it)  -> rc=0, image sha256:de5d0fddb7877c5c59c4835bc3cf6c1da8c96ff09c8aa43b213383b8d01fbba8
+
+## Database
+Local PostgreSQL 16.13 from scripts/test-db.sh (127.0.0.1:54329). A throwaway role
+verify0607 (LOGIN, 48-char password) owns a throwaway database verify0607.
+
+## Migrate, as Render's preDeployCommand runs it (same image, same command)
+$ docker run --rm --network host --read-only --cap-drop ALL --security-opt no-new-privileges \
+    -e DATABASE_URL=postgres://verify0607:<48 chars>@127.0.0.1:54329/verify0607 \
+    soulbound:verify-0607 node backend/dist/migrate.js
+[migrate] > Migrating files:
+[migrate] > - 001_better-auth
+[migrate] > - 002_soulbound-hosted
+[migrate] ### MIGRATION 001_better-auth (UP) ###
+[migrate] ### MIGRATION 002_soulbound-hosted (UP) ###
+[migrate] done: 2 migration(s) applied
+exit=0
+
+## Hosted container (fake secrets; Render-like: TRUST_PROXY=1, read-only root, all caps dropped)
+$ env -u SOULBOUND_ANTHROPIC_KEY -u ANTHROPIC_API_KEY docker run -d --name sb-verify-0607 --network host \
+    --read-only --cap-drop ALL --security-opt no-new-privileges \
+    -e SOULBOUND_MODE=hosted -e NODE_ENV=development -e PORT=3001 -e TRUST_PROXY=1 \
+    -e ALLOWED_HOSTS=localhost:3001 -e DATABASE_URL=<as above> \
+    -e ANTHROPIC_API_KEY=<fake, 45 chars> -e BETTER_AUTH_SECRET=<fake, 51 chars> \
+    -e BETTER_AUTH_URL=http://localhost:3001 -e FRONTEND_ORIGIN=http://localhost:3001 \
+    -e RESEND_API_KEY=<fake, 37 chars> -e 'EMAIL_FROM=Soulbound <auth@localhost.invalid>' \
+    soulbound:verify-0607
+docker logs (first boot, after all requests below and the 30 s first purge):
+[soulbound-backend] listening on port 3001
+[purge] purged 0 account(s); invites reconciled: 0 marked, 0 orphan(s) removed
+(grep for the DB password and every fake secret in those logs: 0 matches)
+NODE_ENV=development is needed only because BETTER_AUTH_URL is http://localhost;
+on Render NODE_ENV=production and BETTER_AUTH_URL is https.
+
+## scripts/verify-hosted.sh http://localhost:3001   (no session)
+[verify-hosted] target http://localhost:3001
+PASS  1 GET /api/health -> 200
+PASS  2 frame headers: X-Frame-Options DENY, frame-ancestors 'none', Referrer-Policy no-referrer
+PASS  3 GET / -> 200 text/html
+PASS  4 POST /api/invites/redeem, foreign Origin -> 403 ORIGIN_REJECTED
+PASS  5 GET /api/access, no cookie -> 401 SIGN_IN_REQUIRED, Soulbound-Mode: hosted
+PASS  6 POST /api/invites/redeem, own Origin, bad code -> 400 INVITE_INVALID
+PASS  7 GET /api/debug/ip, no cookie -> 401 (DEBUG_PROXY_HOPS is off)
+[verify-hosted] 7/7 passed
+exit=0
+
+## --session, with a real session row
+A user, a session and a google account row were inserted into verify0607 directly,
+and the cookie was signed with better-call's own serializeSignedCookie and the same
+fake BETTER_AUTH_SECRET: the exact cookie Better Auth would issue. (No real sign-in
+can run locally: Resend and the OAuth providers need the developer's accounts.)
+$ SB_SESSION_COOKIE=<signed cookie, 118 chars> scripts/verify-hosted.sh http://localhost:3001 --session
+[verify-hosted] target http://localhost:3001
+PASS  1 GET /api/health -> 200
+PASS  2 frame headers: X-Frame-Options DENY, frame-ancestors 'none', Referrer-Policy no-referrer
+PASS  3 GET / -> 200 text/html
+PASS  4 POST /api/invites/redeem, foreign Origin -> 403 ORIGIN_REJECTED
+PASS  5 GET /api/access, no cookie -> 401 SIGN_IN_REQUIRED, Soulbound-Mode: hosted
+PASS  6 POST /api/invites/redeem, own Origin, bad code -> 400 INVITE_INVALID
+PASS  7 GET /api/debug/ip, no cookie -> 401 (DEBUG_PROXY_HOPS is off)
+PASS  8 GET /api/access with the session cookie -> 204, Soulbound-Mode: hosted
+NOTE  cookie flags (Secure; HttpOnly; SameSite=Lax): attested by the devtools screenshot, not by this script
+NOTE  account rows by provider: counted in the Render shell (runbook step 9)
+NOTE  sign out in the browser now: it revokes the session you pasted
+[verify-hosted] 8/8 passed
+exit=0
+(the cookie value appears 0 times in that output)
+
+Negative control, a forged cookie:
+$ SB_SESSION_COOKIE='__Secure-better-auth.session_token=forgedforgedforged.AAAA' scripts/verify-hosted.sh http://localhost:3001 --session
+FAIL  8 GET /api/access with the session cookie -> 401, Soulbound-Mode='hosted' (expected 204, hosted)
+[verify-hosted] 7/8 passed
+exit=1
+
+## Runbook step 9 commands, run inside the container (what a Render shell has: the service env, /app)
+$ docker exec sb-verify-0607 sh -c 'cd /app && node backend/dist/scripts/createInvite.js --days 7'
+http://localhost:3001/#invite=<22-char code, not recorded>
+[invite] expires 2026-10-01T21:50:02.423Z. It is shown only once; only its hash is stored.
+exit=0
+$ curl -X POST -H 'Origin: http://localhost:3001' --data '{"code":"<that code>"}' .../api/invites/redeem
+redeem with the new code -> 204
+
+$ docker exec sb-verify-0607 sh -c 'cd /app && node -e <the count one-liner from runbook step 9>'
+account:google 1
+invites_used 0
+users 1
+(invites_used is 0 because the seeded user never went through a sign-up; the
+redeemed invite is only reserved by a real sign-up.)
+
+## Runbook step 5 procedure, with DEBUG_PROXY_HOPS=1 (same container flags plus -e DEBUG_PROXY_HOPS=1)
+docker logs:
+[soulbound-backend] /api/debug/ip is enabled (DEBUG_PROXY_HOPS=1); unset it once TRUST_PROXY is set
+[soulbound-backend] listening on port 3001
+$ curl -sS http://localhost:3001/api/debug/ip
+{"ip":"127.0.0.1","ips":[],"xffHops":0}
+$ curl -sS -H "X-Forwarded-For: 198.51.100.7" http://localhost:3001/api/debug/ip
+{"ip":"198.51.100.7","ips":["198.51.100.7"],"xffHops":1}
+$ curl -sS -H "X-Forwarded-For: 203.0.113.9, 198.51.100.7" http://localhost:3001/api/debug/ip
+{"ip":"198.51.100.7","ips":["198.51.100.7"],"xffHops":2}
+(locally nothing proxies, so TRUST_PROXY=1 believes the caller's own header: the
+exact hazard step 5 exists to rule out on Render.)
+verify-hosted.sh with the flag still on (negative control for check 7):
+FAIL  7 GET /api/debug/ip -> 200 (expected 401; 200 means DEBUG_PROXY_HOPS=1 is still set)
+[verify-hosted] 6/7 passed
+
+## Shutdown
+docker stop -> stop took 99 ms, exit code 0 (SIGTERM: server.close, purge stop, pool.end)

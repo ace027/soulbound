@@ -1,0 +1,127 @@
+# Render Blueprint for Soulbound hosted mode (Phase 6, spec R25a).
+#
+# Apply it from the Render dashboard (New -> Blueprint -> this repo), following
+# docs/runbooks/phase-6-hosted-setup.md step by step. Self-host doesn't use
+# this file: it runs compose.selfhost.yml and is unaffected by anything here.
+#
+# Every key below was checked against Render's Blueprint reference
+# (https://render.com/docs/blueprint-spec) and its JSON Schema
+# (https://render.com/schema/render.yaml.json) on 2026-09-24, and this file
+# validates against that schema. Nothing here has been applied to a real
+# Render account yet: the runbook marks each live step UNTESTED until the
+# developer runs it and the agent's check passes.
+#
+# Not declared here, on purpose:
+#   - repo: the Blueprint defaults to the repo that contains it. After the
+#     planned repo move, re-link the Git connection (runbook step 13).
+#   - PORT: Render's default for web services is 10000, and the backend
+#     already listens on PORT (backend/src/config.ts).
+#   - DEBUG_PROXY_HOPS: set by hand for runbook step 5 only, then removed.
+#   - generateValue for BETTER_AUTH_SECRET: Render fills it only when absent,
+#     but a recreated service would get a new one, and a changed secret signs
+#     every player out and voids every invite cookie. The runbook generates it
+#     once with `openssl rand -base64 48` so the developer holds a copy.
+#
+# Render passes every service env var to the Docker build as a build argument.
+# backend/Dockerfile declares no ARG, so no secret can end up in an image layer.
+
+services:
+  - type: web
+    name: soulbound
+    runtime: docker
+    # There is no Dockerfile target field, so Render builds the LAST stage.
+    # That is `runtime` (backend/Dockerfile): the api stage plus the built
+    # frontend, the same image CI smoke-tests.
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    # Only reviewed code deploys: pinned to main, and only after CI passes on it.
+    branch: main
+    autoDeployTrigger: checksPass
+    # 0.5 CPU / 512 MB, Render's smallest paid web plan (shown as "Starter" in
+    # the dashboard; confirm the ID there, runbook step 2). The free plan can't
+    # run a preDeployCommand and spins down when idle.
+    plan: 0.5c-512mb
+    region: oregon
+    # One instance: the per-email magic-link cap is held in memory, so it is a
+    # per-instance limit (design log, "Hosted mode — Phase 6 build"). The purge
+    # is lock-safe across instances, but scaling out loosens that cap.
+    numInstances: 1
+    # Unauthenticated, never rate-limited (hosted order step 5). Render sends
+    # the onrender.com hostname as Host, so ALLOWED_HOSTS below must include it.
+    healthCheckPath: /api/health
+    # Runs on a separate instance after the build and before the new version
+    # goes live. A failed migration fails the deploy, and the previous deploy
+    # keeps serving. migrate.js reads only DATABASE_URL (spec Key Decisions).
+    preDeployCommand: node backend/dist/migrate.js
+    envVars:
+      - key: SOULBOUND_MODE
+        value: hosted
+      # The image already sets this. It's pinned here as well because
+      # NODE_ENV=test would turn off Better Auth's own origin and callbackURL
+      # checks (06-03), and production must never run that way.
+      - key: NODE_ENV
+        value: production
+      # The internal (private network) URL. Its password must be at least 16
+      # characters, or the hosted config refuses to boot.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: soulbound-db
+          property: connectionString
+      # The service's own onrender.com hostname (a documented self-reference to
+      # Render's RENDER_EXTERNAL_HOSTNAME). A hostname-only entry matches any
+      # port. After adding a custom domain, Render's health check sends THAT
+      # host instead: replace this with a plain value listing both.
+      - key: ALLOWED_HOSTS
+        fromService:
+          name: soulbound
+          type: web
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+      # One proxy hop to start. Runbook step 5 observes the real count with
+      # /api/debug/ip and corrects it.
+      - key: TRUST_PROXY
+        value: "1"
+      # Set both to the service's https://<name>.onrender.com origin, exactly
+      # the same value, with no trailing path (runbook step 3).
+      - key: BETTER_AUTH_URL
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false
+      # Secrets and per-deployer values: Render asks for each of these once,
+      # when the Blueprint is first created. It ignores sync: false entries on
+      # later Blueprint syncs, so a value added later goes in by hand.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: BETTER_AUTH_SECRET
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_CLIENT_SECRET
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+
+databases:
+  - name: soulbound-db
+    databaseName: soulbound
+    user: soulbound
+    # Postgres 16 or later is required: the purge uses `IS JSON OBJECT` (06-05).
+    # 16 is what CI and the local test cluster run. It can't be changed after
+    # creation.
+    postgresMajorVersion: "16"
+    # 0.1 CPU / 256 MB, the smallest PAID Postgres plan (Basic-256mb in the
+    # dashboard). Free Postgres expires 30 days after creation.
+    plan: 0.1c-256mb
+    # Must match the web service's region for the private network URL.
+    region: oregon
+    # No connections from the public internet: only services in this
+    # workspace, over the private network. Admin queries run from the web
+    # service's shell (runbook step 9).
+    ipAllowList: []
