@@ -289,7 +289,7 @@ describe('SignIn: sending a link', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send me a sign-in link' }));
     expect(await screen.findByText(/open the link in this browser/)).toBeInTheDocument();
     expect(authClient.signInWithEmail).toHaveBeenCalledWith('friend@example.com');
-    expect(screen.getByRole('heading', { name: 'Check your email' })).toHaveFocus();
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Check your email' })).toHaveFocus());
   });
 
   it('"I\'ve signed in — continue" re-checks access', async () => {

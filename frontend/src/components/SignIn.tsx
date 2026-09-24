@@ -150,12 +150,12 @@ export default function SignIn({ invite, inviteMalformed, error, overlay, onSign
   }, []);
 
   // Move focus with the step, so a keyboard or screen-reader user lands on what changed.
-  const firstStep = useRef(true);
+  // Keyed on the previous step rather than a first-run flag, so StrictMode's
+  // doubled effect doesn't focus the field on mount (and pop a phone keyboard).
+  const shownStep = useRef(step);
   useEffect(() => {
-    if (firstStep.current) {
-      firstStep.current = false;
-      return;
-    }
+    if (shownStep.current === step) return;
+    shownStep.current = step;
     if (step === 'email') emailRef.current?.focus();
     else headingRef.current?.focus();
   }, [step]);

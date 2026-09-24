@@ -10,11 +10,14 @@
  * session is already revoked (06-05), so it goes straight back to sign-in
  * without retrying anything.
  *
- * Placement: the bottom-left corner, above the page. Both game layouts keep
- * their controls elsewhere at that height (the mobile tab bar is at the top,
- * the desktop Codex column's save/menu controls and the action bar's send
- * button sit above or to the right of it); checked at 390 px and 1280 px in
- * e2e/hosted.spec.ts screenshots. The panel is small and has no scroll region.
+ * Placement: fixed, top right, 56 px down. On a phone the game has no free
+ * corner (a full-width tab bar on top, a full-width action bar at the bottom),
+ * so the button sits just below the tab bar, over the top-right corner of the
+ * scrolling narration, where it covers text but no control. On desktop the
+ * same spot is the top of the narration column, right of the Codex sidebar.
+ * e2e/hosted.spec.ts asserts at 390 px and 1280 px that it overlaps no
+ * button, input or textarea. The panel opens downward, is small, and has no
+ * scroll region.
  */
 
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
@@ -103,11 +106,31 @@ export default function AccountPanel({ onSignedOut }: AccountPanelProps) {
 
   return (
     <div
-      style={{ position: 'fixed', left: 12, bottom: 12, zIndex: 900, fontFamily: "'EB Garamond', serif" }}
+      style={{ position: 'fixed', top: 56, right: 16, zIndex: 900, fontFamily: "'EB Garamond', serif" }}
       onKeyDown={(e) => {
         if (e.key === 'Escape' && open) close();
       }}
     >
+      <button
+        ref={toggleRef}
+        type="button"
+        aria-expanded={open}
+        aria-controls={open ? panelId : undefined}
+        onClick={() => (open ? close() : setOpen(true))}
+        style={{
+          background: '#0a0805',
+          border: '1px solid #2a2218',
+          color: '#8a7a60',
+          fontFamily: "'Cinzel', serif",
+          fontSize: 10,
+          letterSpacing: '0.12em',
+          padding: '9px 12px',
+          cursor: 'pointer',
+          textTransform: 'uppercase',
+        }}
+      >
+        Account
+      </button>
       {open && (
         <div
           id={panelId}
@@ -115,8 +138,8 @@ export default function AccountPanel({ onSignedOut }: AccountPanelProps) {
           aria-label="Account"
           style={{
             position: 'absolute',
-            left: 0,
-            bottom: 44,
+            right: 0,
+            top: 40,
             width: 260,
             maxWidth: 'calc(100vw - 24px)',
             boxSizing: 'border-box',
@@ -189,27 +212,6 @@ export default function AccountPanel({ onSignedOut }: AccountPanelProps) {
           )}
         </div>
       )}
-      <button
-        ref={toggleRef}
-        type="button"
-        aria-expanded={open}
-        aria-controls={open ? panelId : undefined}
-        onClick={() => (open ? close() : setOpen(true))}
-        style={{
-          background: '#0a0805',
-          border: '1px solid #2a2218',
-          color: '#8a7a60',
-          fontFamily: "'Cinzel', serif",
-          fontSize: 10,
-          letterSpacing: '0.12em',
-          padding: '9px 12px',
-          cursor: 'pointer',
-          textTransform: 'uppercase',
-          opacity: 0.85,
-        }}
-      >
-        Account
-      </button>
     </div>
   );
 }

@@ -17,6 +17,14 @@ if (!rootElement) {
 // the code never stays in the URL or the history entry.
 const signInParams = takeSignInParams();
 
+// An invite link opened in a tab already showing the app (e.g. pasted into the
+// sign-in screen) changes only the fragment, which does not reload the page,
+// so the line above would never see it and the code would stay in the bar.
+// Reloading runs it again: the code is stripped and redeemed as usual.
+window.addEventListener('hashchange', () => {
+  if (/[#&]invite=/.test(window.location.hash)) window.location.reload();
+});
+
 // AccessGate (Phase 5, R19) checks the deployer's passphrase before the title
 // screen, without touching App.tsx. StrictMode runs the mount effect twice in
 // dev, so a dev page load makes two GET /api/access calls — harmless
