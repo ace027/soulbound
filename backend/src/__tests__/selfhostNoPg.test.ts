@@ -105,6 +105,49 @@ describe('self-host loads no hosted dependency', () => {
     }
   });
 
+  it('server.ts with its hosted branch present: the selfhost gate and routes still answer, loading nothing hosted', async () => {
+    const config = await import('../config.js');
+    const { buildApp, buildHostedDeps } = await import('../server.js');
+    // The hosted builder is there (06-04), but self-host never calls it.
+    expect(typeof buildHostedDeps).toBe('function');
+    const app = buildApp(config);
+    const server = app.listen(0);
+    await new Promise<void>((resolve) => server.once('listening', () => resolve()));
+    const send = (method: string, urlPath: string, headers: Record<string, string> = {}) =>
+      new Promise<{ status: number; body: string }>((resolve, reject) => {
+        const req = http.request({ host: '127.0.0.1', port: (server.address() as AddressInfo).port, method, path: urlPath, headers }, (res) => {
+          let body = '';
+          res.setEncoding('utf8');
+          res.on('data', (chunk: string) => (body += chunk));
+          res.on('end', () => resolve({ status: res.statusCode ?? 0, body }));
+        });
+        req.on('error', reject);
+        req.end();
+      });
+    try {
+      // The passphrase gate, not the session gate.
+      const noPass = await send('GET', '/api/access');
+      expect(noPass.status).toBe(401);
+      expect(noPass.body).toContain('PASSPHRASE_REQUIRED');
+      expect((await send('GET', '/api/access', { authorization: `Bearer ${FAKE_PASSPHRASE}` })).status).toBe(204);
+      // Hosted-only paths are ordinary gated /api paths here: no webhook slot,
+      // no redeem, no auth mount, and no Origin check (a POST without Origin
+      // gets the passphrase 401, not 403).
+      for (const urlPath of ['/api/billing/webhook', '/api/invites/redeem', '/api/auth/sign-in/magic-link']) {
+        const res = await send('POST', urlPath);
+        expect(res.status, urlPath).toBe(401);
+        expect(res.body, urlPath).toContain('PASSPHRASE_REQUIRED');
+      }
+      const authed = { authorization: `Bearer ${FAKE_PASSPHRASE}` };
+      for (const urlPath of ['/api/billing/webhook', '/api/invites/redeem', '/api/auth/sign-in/magic-link']) {
+        expect((await send('POST', urlPath, authed)).status, urlPath).toBe(404);
+      }
+      expect((await send('DELETE', '/api/account', authed)).status).toBe(404);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
   it('the error tracker stays off in selfhost without loading its SDK', async () => {
     const { initErrorTracker } = await import('../errorTracker.js');
     await expect(initErrorTracker({ dsn: undefined, mode: 'selfhost' })).resolves.toBeUndefined();

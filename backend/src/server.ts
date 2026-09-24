@@ -19,6 +19,7 @@
  */
 
 import type { Server } from 'node:http';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import express, {
@@ -26,10 +27,27 @@ import express, {
   type Express,
   type NextFunction,
   type Request,
+  type RequestHandler,
   type Response,
 } from 'express';
+import type { Pool } from 'pg';
 import { ACCESS_CHECK_PATH, assertWorldVoiceContract } from '@soulbound/shared';
+import { ACCOUNT_PATH, INVITE_INVALID, INVITE_REDEEM_PATH } from '@soulbound/shared';
 import { createAccessGate, createRateLimiter } from './accessGate.js';
+import type { SendEmail } from './auth.js';
+import {
+  BILLING_WEBHOOK_PATH,
+  exactWebhookPath,
+  frameHeaders,
+  ipKey,
+  modeHeader,
+  originCheck,
+  sessionGate,
+  userLimiter,
+  type FromNodeHeaders,
+  type GetSession,
+  type SessionUser,
+} from './hostedGate.js';
 import { initErrorTracker, type ErrorContext, type ErrorReporter } from './errorTracker.js';
 import { WORLD_SYSTEM_PROMPT } from './data/worldSystemPrompt.js';
 // These three route modules never import config.ts at their own top level
@@ -49,11 +67,34 @@ interface ApiError extends Error {
 }
 
 /**
- * Hosted-mode dependencies. A stub for now: 06-01 adds only the error
- * tracker's hook, and 06-04 widens this into the full hosted branch
- * (`auth`, `pool`, ...). Absent in self-host, where nothing below changes.
+ * Hosted-mode dependencies: everything the hosted branch of `buildApp` mounts.
+ * Built by `buildHostedDeps()` (from `main()`, hosted mode only, through
+ * dynamic imports) or by a test. Absent in self-host, where nothing below
+ * changes. Better Auth's pieces arrive as plain functions, so neither this
+ * file nor hostedGate.ts imports `better-auth`.
  */
 export interface HostedDeps {
+  /** BETTER_AUTH_URL's origin: the only `Origin` a state-changing request may carry. */
+  publicOrigin: string;
+  /** The one shared `pg` pool (db.ts's `createPool`). */
+  pool: Pool;
+  /** Better Auth's `auth.api.getSession` (step 11). */
+  getSession: GetSession;
+  /** `better-auth/node`'s `fromNodeHeaders` (step 11). */
+  fromNodeHeaders: FromNodeHeaders;
+  /** auth.ts's invite-context wrapper; runs first on the auth mount (step 10). */
+  withInviteContext: RequestHandler;
+  /** auth.ts's allow-listed Better Auth handler; ends every `/api/auth/*` request (step 10). */
+  handler: (req: IncomingMessage & { originalUrl?: string }, res: ServerResponse) => Promise<void> | void;
+  /** invites.ts's `redeemInvite`, bound to the pool and cookie key: the Set-Cookie, or null (step 9). */
+  redeemInvite: (code: unknown) => Promise<{ setCookie: string } | null>;
+  /**
+   * 06-05: records the deletion request and revokes every session of the
+   * user. While absent, `DELETE /api/account` is not mounted (step 14).
+   */
+  requestAccountDeletion?: (userId: string) => Promise<void>;
+  /** Requests per minute per signed-in player (config's USER_RATE_LIMIT_PER_MINUTE; step 12). */
+  userRateLimitPerMinute: number;
   /** Sends an error to the tracker (errorTracker.ts), when one is enabled. */
   reportError?: (err: unknown, context: ErrorContext) => void;
 }
@@ -120,6 +161,20 @@ export interface AppConfig {
  *    with slices in the render function if you need a bigger body.
  */
 const JSON_BODY_LIMIT = '512kb';
+
+/** Hosted: redeem's own body limit and per-IP limiter (spec R24c). */
+const REDEEM_BODY_LIMIT = '1kb';
+const REDEEM_PER_MINUTE = 5;
+
+/** Hosted: the reserved webhook's raw-body limit (Phase 11 verifies the signature over it). */
+const WEBHOOK_BODY_LIMIT = '64kb';
+
+/**
+ * Hosted: the `Set-Cookie` that clears Better Auth's session cookie
+ * (06-03-SUMMARY: its name and attributes), sent by `DELETE /api/account`.
+ */
+const CLEAR_SESSION_COOKIE =
+  '__Secure-better-auth.session_token=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax';
 
 /**
  * Splits the hostname out of a `Host` header value, leaving an IPv6 literal's
@@ -206,6 +261,15 @@ function mapBodyParserError(err: ApiError): { statusCode: number; code: string }
  * `app.use('/api', …)`, never a hand-written `req.path.startsWith` check:
  * Express 5's router matches `/API/x`, `/api/x/` and `/api/../api/x` as
  * `/api`, and a string-prefix check would not (verified by probe).
+ *
+ * With `config.hosted` set, the spec's 15-step hosted order is mounted
+ * instead ("Hosted middleware order"; each position is pinned by
+ * hosted/hostedOrder.test.ts and scripts/mutate-order.sh): trust proxy, Host
+ * allow-list, anti-framing headers, CORS, health, the per-IP limiter (IPv6 by
+ * /64), the reserved webhook slot, the Origin check, invite redeem, the Better
+ * Auth mount, the session gate, the per-user limiter, then the same
+ * `express.json` and everything after it. Only the steps that differ sit in
+ * `if (hosted …)` blocks; the self-host lines are the ones above, unchanged.
  */
 export function buildApp(config: AppConfig): Express {
   const {
@@ -236,6 +300,13 @@ export function buildApp(config: AppConfig): Express {
     next();
   });
 
+  // Hosted step 3: anti-framing on every response (R24e), and the mode header
+  // on every /api/access answer, ahead of any limiter or gate.
+  if (hosted !== undefined) {
+    app.use(frameHeaders());
+    app.use(ACCESS_CHECK_PATH, modeHeader());
+  }
+
   // CORS: allow only the configured frontend origin (defaults to Vite's dev
   // port). No `cors` package — this is the entire policy the plan asks for.
   app.use((req: Request, res: Response, next: NextFunction) => {
@@ -259,8 +330,57 @@ export function buildApp(config: AppConfig): Express {
   // Rate limiter, then access gate, both scoped to /api and both BEFORE
   // express.json — see this function's header comment for why the order
   // matters. Wrong-passphrase attempts still count against the limiter.
-  app.use('/api', createRateLimiter({ perMinute: RATE_LIMIT_PER_MINUTE, now }));
-  app.use('/api', createAccessGate(checkPassphrase));
+  if (hosted !== undefined) {
+    // Step 6: per-IP limiter, IPv6 keyed by /64 (R24f).
+    app.use('/api', createRateLimiter({ perMinute: RATE_LIMIT_PER_MINUTE, now, keyFor: ipKey }));
+
+    // Step 7: Reserved for Phase 11 (Stripe). Must verify the signature before
+    // any side effect. Sits before the Origin check because Stripe sends no
+    // Origin. `exactWebhookPath` lets only the exact path and POST in (Express
+    // routes are case-insensitive and non-strict); anything else leaves this
+    // route before its body is read, and meets the Origin check.
+    app.post(
+      BILLING_WEBHOOK_PATH,
+      exactWebhookPath(),
+      express.raw({ type: 'application/json', limit: WEBHOOK_BODY_LIMIT }),
+      (_req: Request, res: Response) => {
+        res.status(404).json({ error: { message: 'Not found', code: 'NOT_FOUND' } });
+      },
+    );
+
+    // Step 8: the Origin check (R24b), on every state-changing /api request.
+    app.use('/api', originCheck(hosted.publicOrigin));
+
+    // Step 9: invite redeem, before the session gate (the player has no
+    // account yet). Its own limiter runs before its own 1 KB body parser.
+    app.post(
+      INVITE_REDEEM_PATH,
+      createRateLimiter({ perMinute: REDEEM_PER_MINUTE, now, keyFor: ipKey }),
+      express.json({ limit: REDEEM_BODY_LIMIT }),
+      async (req: Request, res: Response) => {
+        const body: unknown = req.body;
+        const code = typeof body === 'object' && body !== null ? (body as { code?: unknown }).code : undefined;
+        const result = await hosted.redeemInvite(code);
+        if (result === null) {
+          res.status(400).json({ error: { message: 'This invite code is not valid', code: INVITE_INVALID } });
+          return;
+        }
+        res.setHeader('Set-Cookie', result.setCookie);
+        res.sendStatus(204);
+      },
+    );
+
+    // Step 10: Better Auth, BEFORE express.json (better-auth issue #3295: it
+    // hangs otherwise). The handler ends every /api/auth/* request itself.
+    app.all('/api/auth/*splat', hosted.withInviteContext, hosted.handler);
+
+    // Step 11: the session gate replaces the passphrase gate. Step 12: per player.
+    app.use('/api', sessionGate(hosted));
+    app.use('/api', userLimiter(hosted.userRateLimitPerMinute, now));
+  } else {
+    app.use('/api', createRateLimiter({ perMinute: RATE_LIMIT_PER_MINUTE, now }));
+    app.use('/api', createAccessGate(checkPassphrase));
+  }
 
   // Scoped to /api, like the limiter and gate above — NOT a global
   // app.use(express.json(...)). A non-/api path (e.g. an eventual static
@@ -279,6 +399,17 @@ export function buildApp(config: AppConfig): Express {
   app.get(ACCESS_CHECK_PATH, (_req: Request, res: Response) => {
     res.sendStatus(204);
   });
+
+  // Hosted step 14: account deletion (06-05 supplies requestAccountDeletion).
+  const requestAccountDeletion = hosted?.requestAccountDeletion;
+  if (requestAccountDeletion !== undefined) {
+    app.delete(ACCOUNT_PATH, async (_req: Request, res: Response) => {
+      const user = res.locals.user as SessionUser;
+      await requestAccountDeletion(user.id);
+      res.setHeader('Set-Cookie', CLEAR_SESSION_COOKIE);
+      res.sendStatus(204);
+    });
+  }
 
   // The three World Voice routes (plan 02-03). Each goes through the single
   // `callWorldVoice` helper in anthropic.ts — none builds its own request.
@@ -402,6 +533,96 @@ function reportThenExit(reporter: ErrorReporter, err: unknown, route: string): v
   reporter.flush(FATAL_FLUSH_TIMEOUT_MS).then(exit, exit);
 }
 
+/** What `buildHostedDeps` needs: config.ts's hosted values, passed in (never read from the environment here). */
+export interface HostedBootOptions {
+  databaseUrl: string;
+  betterAuthSecret: string;
+  resendApiKey: string;
+  publicOrigin: string;
+  emailFrom: string;
+  google?: { clientId: string; clientSecret: string };
+  discord?: { clientId: string; clientSecret: string };
+  userRateLimitPerMinute: number;
+  /** config.ts's `redact()`: every thrown or logged message passes through it. */
+  redact: (input: string) => string;
+  reportError?: HostedDeps['reportError'];
+  /** Test seam: replaces the Resend sender. */
+  sendEmail?: SendEmail;
+  /** Test seam: the schema holding the tables (pool `search_path` and the migration check). Default `public`. */
+  schema?: string;
+}
+
+/** A schema name safe to put in libpq's `options` unquoted. */
+const SCHEMA_NAME_PATTERN = /^[a-z_][a-z0-9_]*$/;
+
+/**
+ * Hosted boot, in order: open the pool, refuse to start if any migration is
+ * pending (`PENDING_MIGRATIONS_MESSAGE`: "run `npm run migrate`"), then build
+ * the account system. `db.js`, `auth.js`, `invites.js` and `better-auth/node`
+ * are imported here, dynamically, and only here: self-host never calls this.
+ * On any failure the pool is closed and the (already redacted) error rethrown.
+ */
+export async function buildHostedDeps(options: HostedBootOptions): Promise<HostedDeps> {
+  const { schema, redact } = options;
+  if (schema !== undefined && !SCHEMA_NAME_PATTERN.test(schema)) {
+    throw new Error('buildHostedDeps: invalid schema name');
+  }
+  const { createPool, assertNoPendingMigrations } = await import('./db.js');
+  const pool = await createPool(options.databaseUrl, {
+    redact,
+    ...(schema === undefined ? {} : { pool: { options: `-c search_path=${schema}` } }),
+  });
+  try {
+    await assertNoPendingMigrations(pool, { redact, ...(schema === undefined ? {} : { schema }) });
+    const [{ createAuth, createResendSender }, { inviteCookieKey, redeemInvite }, { fromNodeHeaders }] =
+      await Promise.all([import('./auth.js'), import('./invites.js'), import('better-auth/node')]);
+    const hostedAuth = await createAuth({
+      pool,
+      publicUrl: options.publicOrigin,
+      secret: options.betterAuthSecret,
+      emailFrom: options.emailFrom,
+      sendEmail: options.sendEmail ?? createResendSender(options.resendApiKey),
+      ...(options.google === undefined ? {} : { google: options.google }),
+      ...(options.discord === undefined ? {} : { discord: options.discord }),
+      redact,
+    });
+    const key = inviteCookieKey(options.betterAuthSecret);
+    return {
+      publicOrigin: options.publicOrigin,
+      pool,
+      getSession: async (request) => {
+        const session = await hostedAuth.auth.api.getSession(request);
+        return session === null ? null : { user: { id: session.user.id, email: session.user.email } };
+      },
+      fromNodeHeaders,
+      withInviteContext: hostedAuth.withInviteContext,
+      handler: hostedAuth.handler,
+      redeemInvite: (code) => redeemInvite(pool, code, { key }),
+      userRateLimitPerMinute: options.userRateLimitPerMinute,
+      ...(options.reportError === undefined ? {} : { reportError: options.reportError }),
+    };
+  } catch (err) {
+    await pool.end().catch(() => undefined);
+    throw err;
+  }
+}
+
+/** How long SIGTERM waits for open requests before exiting anyway (hosted only). */
+const SHUTDOWN_TIMEOUT_MS = 10_000;
+
+/** Hosted: on SIGTERM, stop accepting, let open requests finish, then close the pool. */
+function closePoolOnSigterm(server: Server, pool: Pool): void {
+  process.once('SIGTERM', () => {
+    setTimeout(() => process.exit(1), SHUTDOWN_TIMEOUT_MS).unref();
+    server.close(() => {
+      pool.end().then(
+        () => process.exit(0),
+        () => process.exit(1),
+      );
+    });
+  });
+}
+
 export async function main(): Promise<Server> {
   // config.ts reads ANTHROPIC_API_KEY once, at import time, and throws a
   // clear, actionable error if it's missing. Importing it dynamically here
@@ -441,10 +662,45 @@ export async function main(): Promise<Server> {
     process.exit(1);
   }
 
+  // Hosted mode: the pool, the pending-migration check and the account
+  // system (buildHostedDeps). Any failure exits 1 with a redacted message.
+  let hostedDeps: HostedDeps | undefined;
+  if (config.MODE === 'hosted') {
+    try {
+      const secrets = config.getHostedSecrets();
+      const { HOSTED_PUBLIC_URL, EMAIL_FROM, USER_RATE_LIMIT_PER_MINUTE } = config;
+      if (HOSTED_PUBLIC_URL === undefined || EMAIL_FROM === undefined || USER_RATE_LIMIT_PER_MINUTE === undefined) {
+        throw new Error('Hosted configuration is incomplete');
+      }
+      const hostedReporter = reporter;
+      hostedDeps = await buildHostedDeps({
+        databaseUrl: secrets.databaseUrl,
+        betterAuthSecret: secrets.betterAuthSecret,
+        resendApiKey: secrets.resendApiKey,
+        publicOrigin: HOSTED_PUBLIC_URL,
+        emailFrom: EMAIL_FROM,
+        ...(config.GOOGLE_CLIENT_ID !== undefined && secrets.googleClientSecret !== undefined
+          ? { google: { clientId: config.GOOGLE_CLIENT_ID, clientSecret: secrets.googleClientSecret } }
+          : {}),
+        ...(config.DISCORD_CLIENT_ID !== undefined && secrets.discordClientSecret !== undefined
+          ? { discord: { clientId: config.DISCORD_CLIENT_ID, clientSecret: secrets.discordClientSecret } }
+          : {}),
+        userRateLimitPerMinute: USER_RATE_LIMIT_PER_MINUTE,
+        redact,
+        ...(hostedReporter === undefined
+          ? {}
+          : { reportError: (err: unknown, context: ErrorContext) => void hostedReporter.report(err, context) }),
+      });
+    } catch (err) {
+      console.error(redact(err instanceof Error ? err.message : String(err)));
+      process.exit(1);
+    }
+  }
+
   const app = buildApp(
-    reporter === undefined
+    hostedDeps === undefined
       ? config
-      : { ...config, hosted: { reportError: (err, context) => void reporter.report(err, context) } },
+      : { ...config, hosted: hostedDeps },
   );
 
   // Express 5 forwards rejected promises from route handlers to the error
@@ -469,6 +725,14 @@ export async function main(): Promise<Server> {
     }
     reportThenExit(reporter, err, 'uncaughtException');
   });
+
+  if (hostedDeps !== undefined) {
+    const server = app.listen(PORT, () => {
+      console.log(`[soulbound-backend] listening on port ${PORT}`);
+    });
+    closePoolOnSigterm(server, hostedDeps.pool);
+    return server;
+  }
 
   return app.listen(PORT, () => {
     console.log(`[soulbound-backend] listening on port ${PORT}`);
