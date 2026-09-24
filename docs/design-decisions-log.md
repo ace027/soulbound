@@ -265,6 +265,68 @@ Playtest feedback: it was hard to tell what the Unique Skill actually did, so a 
 
 Each contract change updates the prompt, schema and parser together (CLAUDE.md #4). Each MUST NOT addition re-runs the adversarial turn tests.
 
+## Hosted mode — Phase 6 build (2026-09-24)
+**Phase 6 of the plan above is built: accounts, invites, deletion, the tracker and a Render Blueprint. The live deploy is not done yet.** Every live step in `docs/runbooks/phase-6-hosted-setup.md` is still marked as awaiting the developer. The full contracts are in `.planning/specs/06-hosted-mode-accounts-spec.md`; this entry records the choices a later session is most likely to "fix" by mistake.
+
+**Self-host is frozen.**
+- Its tests are unedited: the 187 backend and 190 frontend tests from before the phase, inside today's 284 + 244.
+- `App.tsx` is byte-identical.
+- `pg`, `better-auth`, `node-pg-migrate` and `@sentry/node` load only through dynamic imports behind the mode check. `selfhostNoPg.test.ts` mocks each one to throw and still boots self-host.
+
+**The hosted order is the security model** (`buildApp`, pinned by `hostedOrder.test.ts` and `scripts/mutate-order.sh`). The steps whose position matters:
+- **Host allow-list (2), then anti-framing and the mode header (3).** They come before anything that can answer, so every hosted response, including a 403 or a 429, carries `X-Frame-Options: DENY`, `frame-ancestors 'none'` and `Referrer-Policy: no-referrer`.
+- **Per-IP limiter (6), IPv6 keyed by /64.** It comes before any body is read. It is only as good as `TRUST_PROXY`, which is why the runbook observes Render's hop count through `/api/debug/ip`. That probe exists only with `DEBUG_PROXY_HOPS=1`, which replaces a temporary logging patch on the deployed branch.
+- **Reserved webhook (7), before the Origin check.** Stripe sends no Origin. It matches only the exact path and POST, checked before its body is read.
+- **Origin check (8).** It covers every state-changing `/api/*` request, including `/api/auth/*`. Better Auth's own origin check stays on as a second layer.
+- **Redeem (9), before the session gate.** The player has no account yet. It has its own 5/min limiter, which runs before its 1 KB parser.
+- **Better Auth (10), before `express.json`.** **Correction to the spec:** its "it hangs otherwise" (better-auth #3295) no longer reproduces on `better-call` 1.4.0, which re-serialises an already-parsed body. The position is now pinned by **who answers a malformed auth body**: Better Auth's 400 `BAD_REQUEST`, not the app's `INVALID_REQUEST`. The 2 s request timeout remains only as a backstop. A raw 16 KB cap (`authBodyCap`) runs just before this step. It wraps the request's `push` rather than adding a `data` listener, because a listener would start the stream flowing before Better Auth attaches, and chunks would be lost. Past the cap, a chunked body gets a connection reset.
+- **Session gate (11), then the per-user limiter (12), then the unchanged self-host tail.**
+
+**`SIGN_IN_REQUIRED` is a new code, not a reuse of `PASSPHRASE_REQUIRED`.** The frontend decides by code. A hosted 401 must never clear a stored passphrase or show the passphrase form. And `AccessGate`'s `checkAccess()` couldn't gain a fourth value without breaking a frozen type (`AccessGate.tsx:51,70`). So, per the planning addendum (spec Revision History row 20):
+- every hosted `/api/access` answer carries `Soulbound-Mode: hosted` (`MODE_HEADER`);
+- a new `getAccessState()` reads it, and only the new `ModeGate` calls it;
+- `checkAccess()` is byte-identical, and self-host responses never carry the header (tested).
+
+**Invites are reserved, then consumed, then reconciled, because Better Auth's hook transactionality is undocumented.** A raw `pg` query can't join Better Auth's transaction. So:
+- `user.create.before` reserves the invite under a per-holder nonce for 10 minutes. It's single-winner, and its holder can retry.
+- `user.create.after` consumes it, and on failure deletes the new user (compensation).
+- The hourly purge reconciles expired reservations. It runs on the DB clock with a 2-minute slack, because Better Auth stamps `createdAt` on the app's clock before the reservation. Without the slack, real orphans were missed.
+- The invite rides in an HMAC-signed `__Host-sb_invite` cookie that never holds the code, and it reaches the hooks through `AsyncLocalStorage` (propagation verified in the installed source and pinned by a test).
+- A refused sign-up still uses up that magic link, because Better Auth consumes the token before `createUser`. The UI offers "Send me a new link".
+
+**Magic links:** Better Auth writes no `account` row for a magic-link sign-up, only the `user` (`better-auth/dist/plugins/magic-link/index.mjs:164`). So three sign-in methods on one address give two `account` rows (Google and Discord), and the runbook's check counts users and used invites as well.
+
+**Deletion.** `DELETE /api/account` inserts `account_deletions` first, then revokes every session through Better Auth's `internalAdapter.deleteUserSessions`. The order means that if revocation throws, the session gate already refuses the user. `cookieCache` is off, so an old cookie gets 401 at once. Signing in within 7 days cancels the deletion. After that, the purge hard-deletes the user under `pg_try_advisory_xact_lock`. The purge matches verification rows with `IS JSON OBJECT`, so **Postgres 16 or later is required**; `render.yaml` pins 16. A purge failure only logs `[purge] failed (<SQLSTATE>)` and isn't sent to the tracker.
+
+**The error tracker rebuilds each event from an allow-list:**
+- what's kept: type, frames (function, file, line), a fixed code, the route template and the mode;
+- what's never kept: message, request, user or extras;
+- breadcrumbs return `null`.
+
+A value-matching redactor can't catch per-request values (cookies, invite codes, player text), so dropping free text is the only safe design. Sentry 11 has no `sendDefaultPii`. `dataCollection` is used instead, with every field off. `tracker:test`'s `flush()` returning true means only that the queue drained, so delivery is confirmed on the dashboard (runbook step 10). Every error that reaches the handler is reported, 4xx included; whether to filter 4xx waits for real volume.
+
+**Better Auth hardening that looks redundant but isn't:**
+- Under `NODE_ENV=test`, Better Auth turns its own origin and callbackURL checks off. We force them on, and `render.yaml` pins `NODE_ENV=production`.
+- Its own rate limiter is off, because it trusts the client's first `X-Forwarded-For` value; ours key on `req.ip`.
+- Only Google is a trusted provider for linking. Discord links to an existing account only when it reports the email as verified.
+
+**Accepted, and documented rather than fixed:**
+- **Login CSRF on magic-link verify.** It's a GET, so an attacker can sign a victim into the *attacker's* existing account. Creating a new account still needs the victim's own invite cookie.
+- **The per-email magic-link cap (3 per 15 min) is in memory**, so it holds per instance. `render.yaml` runs one instance (`numInstances: 1`). The purge is lock-safe across instances; this cap isn't.
+- **Rolling sessions are client-driven.** The session gate drops Better Auth's refreshed cookie, so `ModeGate` calls `GET /api/auth/get-session` on load and every 12 hours.
+- **At 390 px the Account button covers the end of the first narration line.** There's no free corner while `App.tsx` is frozen (a full-width tab bar on top, the action bar at the bottom). An e2e test asserts it never covers a button or input.
+- **Self-host now makes two `GET /api/access` calls per load**, one from `ModeGate` and one from `AccessGate`. That's well under the 30/min limit.
+- **Frontend rules:** the Better Auth client is a lazy chunk that self-host never downloads. A pasted invite link triggers a reload on `hashchange`, so the code never stays in the address bar. Unknown error codes show one generic line and never the raw code.
+
+**Deploy shape (`render.yaml`, every key checked against Render's reference and JSON Schema):**
+- **Build:** a Docker web service built from the last stage (`runtime`); Render has no target field.
+- **Branch:** pinned to `main`, deploying only after CI passes (`autoDeployTrigger: checksPass`).
+- **Migrations:** `preDeployCommand` runs `node backend/dist/migrate.js`, so a failed migration fails the deploy while the old version keeps serving.
+- **Host allow-list:** `ALLOWED_HOSTS` is the service's own `RENDER_EXTERNAL_HOSTNAME`, because Render's health check sends that host.
+- **Database:** a paid Postgres (the free one expires after 30 days), with `ipAllowList: []`. Admin queries run from the service's shell.
+- **Secrets** are all `sync: false`. `BETTER_AUTH_SECRET` deliberately doesn't use `generateValue`: a new value would sign everyone out.
+- **Retention:** the managed Postgres server's own log can hold an email (a unique violation logs `Failing row contains …`). That log, Resend and Sentry keep data on their own schedules, listed in runbook step 14.
+
 ## Questionnaire Design
 Originally multiple-choice (5 options per question). Changed to fully open-ended free-text per the explicit reasoning that richer, longer answers produce a better-defined Unique Skill before the player ever enters the world. Each question has a `hint` line for guidance but no character limit. The Continue button is disabled until something is written, with a Back button to revise prior answers.
 
