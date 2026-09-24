@@ -87,6 +87,11 @@ describe('redeemInvite', () => {
     expect(a?.inviteId).toBe(id);
     expect(a?.nonce).not.toBe(b?.nonce);
     expect(first!.setCookie).not.toContain(code);
+    // Decoded, the payload is exactly {inviteId, nonce, exp}: the code is not in it.
+    const signed = readInviteCookie(first!.setCookie.split(';')[0])!;
+    const decoded = Buffer.from(signed.split('.')[0]!, 'base64url').toString('utf8');
+    expect(Object.keys(JSON.parse(decoded)).sort()).toEqual(['exp', 'inviteId', 'nonce']);
+    expect(decoded).not.toContain(code);
   });
 
   it('unknown, used, expired, reserved and malformed codes all return the same null', async () => {
