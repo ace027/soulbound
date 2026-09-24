@@ -471,6 +471,11 @@ describe('hosted boot refuses an unmigrated schema', () => {
 
   describe('main() on a fresh database', () => {
     const dbName = `sb_boot_${randomBytes(6).toString('hex')}`;
+    // Its own role, with a password config.ts accepts in hosted mode (>= 16
+    // characters). TEST_DATABASE_URL's own credentials can't be reused: CI's
+    // throwaway password is 8 characters, which hosted config rightly refuses.
+    const roleName = `${dbName}_role`;
+    const rolePassword = randomBytes(24).toString('hex');
     const HOSTED_ENV = [
       'SOULBOUND_MODE',
       'ANTHROPIC_API_KEY',
@@ -485,12 +490,16 @@ describe('hosted boot refuses an unmigrated schema', () => {
       vi.restoreAllMocks();
       for (const name of HOSTED_ENV) delete process.env[name];
       await db.pool.query(`DROP DATABASE IF EXISTS ${dbName}`);
+      await db.pool.query(`DROP ROLE IF EXISTS ${roleName}`);
     });
 
     it('exits 1 with "run `npm run migrate`", and prints no database URL', async () => {
-      await db.pool.query(`CREATE DATABASE ${dbName}`);
+      await db.pool.query(`CREATE ROLE ${roleName} LOGIN PASSWORD '${rolePassword}'`);
+      await db.pool.query(`CREATE DATABASE ${dbName} OWNER ${roleName}`);
       const url = new URL(testDatabaseUrl());
       url.pathname = `/${dbName}`;
+      url.username = roleName;
+      url.password = rolePassword;
       Object.assign(process.env, {
         SOULBOUND_MODE: 'hosted',
         ANTHROPIC_API_KEY: 'sk-ant-test-fake-key-hosted-boot-not-real',
@@ -512,6 +521,7 @@ describe('hosted boot refuses an unmigrated schema', () => {
       await expect(main()).rejects.toThrow('process.exit(1)');
       expect(printed.join('\n')).toContain(PENDING_MIGRATIONS_MESSAGE);
       expect(printed.join('\n')).not.toContain(url.href);
+      expect(printed.join('\n')).not.toContain(rolePassword);
       expect(process.env.DATABASE_URL).toBeUndefined();
     });
   });
