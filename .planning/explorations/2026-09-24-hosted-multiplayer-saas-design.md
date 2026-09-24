@@ -104,7 +104,7 @@ Everything is built into the existing Express + TypeScript stack, using an in-pr
 Why this approach over the alternatives:
 - It reuses what Phase 5 built rather than replacing it.
 - It keeps the settled key architecture intact in both modes.
-- It ships in phases, each independently useful. After Phase 7 you could invite friends on your own key, before billing exists, if you want feedback sooner.
+- It ships in phases, each independently useful. It deploys in Phase 6 and invites friends free after Phase 8, so real usage data sets the price in Phase 9.
 
 ## Alternatives Considered
 | Approach | Strengths | Tradeoffs | Decision |
@@ -116,38 +116,40 @@ Why this approach over the alternatives:
 | Hosted-only (drop self-host) | One path to test | Throws away Phase 5's shipped image and deployer audience | Rejected by developer |
 
 ## Feature Scope
-### MVP: Phases 6-10
-- [ ] **Phase 6, Hosted mode and accounts:**
+### MVP: Phases 6-10 (order decided 2026-09-24: deploy early, friends free first)
+Every phase ships to the real hosted environment, so deployment risk isn't saved for last. Friends play free on the full 250-turn allowance before billing exists, so Phase 9 can price from their real usage rather than from 6 measured turns.
+
+- [ ] **Phase 6, Hosted mode, accounts and a live skeleton:**
   - [ ] `SOULBOUND_MODE` flag and Postgres (migrations, `DATABASE_URL`).
   - [ ] Sign-in by email magic link, Google and Discord.
   - [ ] Sessions in httpOnly cookies, with CSRF protection.
-  - [ ] Invite codes, since the MVP is invite-only.
-  - [ ] Account deletion.
+  - [ ] Invite codes; account deletion.
+  - [ ] Anti-framing header (now that there are logged-in sessions).
+  - [ ] **Deployed** to the managed platform (Fly.io, Render or Railway) with managed Postgres, TLS, `TRUST_PROXY` set, and platform secrets. Only the developer is invited.
   - [ ] Self-host mode unchanged, proven by the existing suite plus the smoke test.
 - [ ] **Phase 7, Server saves:**
   - [ ] `/api/saves` CRUD per account, stored as JSONB `SaveSlot` with `schemaVersion`.
   - [ ] A save adapter so `App.tsx` stays byte-identical.
-  - [ ] A one-time "import your browser saves" offer on first sign-in.
-  - [ ] Ownership checks on every save route: one player can never read another's save.
-- [ ] **Phase 8, Usage metering and allowance:**
-  - [ ] A per-call usage ledger (tokens → cost), written from the usage data `anthropic.ts` already logs.
-  - [ ] A monthly turn allowance (default 250, configurable), checked *before* each paid call and debited *after*.
-  - [ ] A character-creation counter: 3 free per month, then 2 turns each, counted at `/api/unique-skill`.
-  - [ ] The save-slot cap (default 20), enforced on slot creation only.
-  - [ ] Remaining turns shown in the UI.
-  - [ ] A per-user rate limit in hosted mode, alongside the per-IP one.
-  - [ ] An operator view of cost per user.
-- [ ] **Phase 9, Subscription billing:**
-  - [ ] Stripe Checkout for sign-up, and the Customer Portal to cancel or update a card.
-  - [ ] Signature-verified webhooks drive the subscription state.
-  - [ ] No card data ever touches the server.
+  - [ ] A one-time "import your browser saves" offer.
+  - [ ] Ownership checks on every save route.
+  - [ ] The 20-slot cap.
+  - [ ] **Daily Postgres backups plus a tested restore**, landing in the same phase, before anyone else's saves exist.
+- [ ] **Phase 8, Metering and allowance, then invite friends free:**
+  - [ ] A per-call usage ledger; the monthly turn allowance (250); the creation counter (3 free, then 2 turns).
+  - [ ] Remaining turns shown in the UI; a per-user rate limit.
+  - [ ] An operator cost view and a **daily-spend alert**.
+  - [ ] **Then invite friends, free**: the developer funds it, and all caps are enforced. Worst case is ~$7 per friend per month.
+- [ ] **Phase 9, Subscription billing, priced from friends' usage:**
+  - [ ] Re-derive cost per turn from the Phase 8 ledger, and confirm or adjust $10 / 250.
+  - [ ] Stripe Checkout, the Customer Portal and signature-verified webhooks.
   - [ ] What happens when a payment fails or a subscription lapses.
-- [ ] **Phase 10, Hosted deployment and launch:**
-  - [ ] Deploy to a managed platform (Fly.io, Render or Railway) with managed Postgres, `TRUST_PROXY` set for the platform proxy, and TLS.
-  - [ ] Backups and a tested restore.
-  - [ ] Error and cost monitoring, with an alert on daily spend.
+  - [ ] No card data ever touches the server.
+- [ ] **Phase 10, Launch hardening and conversion:**
   - [ ] Terms of Service and a privacy policy (player text goes to Anthropic).
-  - [ ] Invite the first friends.
+  - [ ] Error monitoring; a restore drill re-run; CSP.
+  - [ ] Research Anthropic's usage-policy requirements for consumer apps.
+  - [ ] Move friends to paid, with notice.
+  - [ ] Open a waitlist for the public beta.
 
 ### Later
 - [ ] Top-up turn packs; annual plans; a free trial allowance.
@@ -203,7 +205,7 @@ Why this approach over the alternatives:
 ## Open Questions
 - ~~**Price point and allowance size**~~ Settled 2026-09-24: **$10 / 250 turns**, configurable (see Pricing). Still to do: re-check against the Phase 8 usage table before the public beta.
 - ~~**Does character creation count against the allowance?**~~ Settled 2026-09-24: 3 free per month, then 2 turns each; save slots capped at 20 (see Pricing).
-- **Pay from day one for friends?** Friends could get a free allowance until Phase 9 lands. Decide at the Phase 7→8 boundary.
+- ~~**Pay from day one for friends?**~~ Settled 2026-09-24: friends play free after Phase 8, on the same 250-turn allowance, and move to paid in Phase 10 with notice.
 - **Which auth library, and which email provider?** Verify Better Auth's Express + Postgres support and its magic-link and Discord support when planning Phase 6.
 - **Anthropic usage-policy requirements for a consumer app** (age minimum, AI disclosure, content handling), and the ToS/privacy wording. Research before Phase 10 and record it in the design log.
 - **How long to keep data after cancellation**, for saves and usage rows. Default proposal: saves kept 90 days read-only, then deleted; usage kept for accounting.
@@ -215,11 +217,11 @@ Existing project, not a new one: add **Phases 6-10** to `.planning/ROADMAP.md` r
 
 - **Goal:** a hosted, invite-only, subscription-funded Soulbound where players sign in (email link, Google or Discord), keep saves on the server, and play within a monthly turn allowance ($10/month for 250 turns, configurable; ~$0.022 per turn measured). The unchanged self-host mode stays alongside it.
 - **Reversals to record:** CLAUDE.md's auth section (hosted mode added; key architecture unchanged; BYOK still rejected), constraint #2 (server saves in hosted mode), and PROJECT.md's out-of-scope list.
-- **Phases:**
-  - **6:** hosted mode and accounts.
-  - **7:** server saves and import.
-  - **8:** usage metering and allowance.
-  - **9:** Stripe subscription.
-  - **10:** hosted deployment and launch.
+- **Phases** (deploy early, friends free first):
+  - **6:** hosted mode, accounts and a live skeleton.
+  - **7:** server saves, import and backups.
+  - **8:** metering and allowance, then invite friends free.
+  - **9:** Stripe billing, priced from friends' usage.
+  - **10:** launch hardening and conversion to paid.
 - **Stays out of scope:** shared world, local inference, native apps, credits.
 - **First command:** `/legion:plan 6`, after this design is accepted and PROJECT.md/ROADMAP.md are updated.
