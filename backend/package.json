@@ -11,6 +11,7 @@
     "test": "vitest run",
     "tracker:test": "node dist/scripts/trackerTest.js",
     "migrate": "node dist/migrate.js",
+    "invite:create": "node dist/scripts/createInvite.js",
     "test:hosted": "vitest run -c vitest.hosted.config.ts --reporter=default --reporter=json --outputFile=.vitest-hosted.json && node scripts/assert-no-skips.mjs .vitest-hosted.json"
   },
   "dependencies": {
