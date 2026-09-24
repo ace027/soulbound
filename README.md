@@ -163,6 +163,22 @@ docker compose -f compose.selfhost.yml pull
 docker compose -f compose.selfhost.yml up -d
 ```
 
+## Hosted mode
+
+The same image has a second mode, `SOULBOUND_MODE=hosted`, for running one public instance with player
+accounts in place of the passphrase:
+- invite-only sign-up, with sign-in by email magic link (Resend), Google or Discord;
+- account deletion with a 7-day grace period;
+- Postgres for accounts.
+
+The backend still holds the operator's Anthropic key, and players never see it. Self-host (the default)
+is unchanged, and none of the above applies to it.
+
+Hosted mode is deployed to Render from [`render.yaml`](render.yaml). Follow
+[`docs/runbooks/phase-6-hosted-setup.md`](docs/runbooks/phase-6-hosted-setup.md) step by step. Each step
+ends with a check, including `scripts/verify-hosted.sh <url>`. The variables are listed, commented, at
+the end of [`.env.example`](.env.example).
+
 ## Expose the frontend on your LAN
 
 This section is about the development stack (`docker compose up`). For the published image, see
