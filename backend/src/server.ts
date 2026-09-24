@@ -99,6 +99,32 @@ export interface HostedDeps {
   userRateLimitPerMinute: number;
   /** Sends an error to the tracker (errorTracker.ts), when one is enabled. */
   reportError?: (err: unknown, context: ErrorContext) => void;
+  /**
+   * Mounts `GET /api/debug/ip` (runbook step 5, the proxy-hop observation).
+   * `main()` sets it only when `DEBUG_PROXY_HOPS=1`; `buildHostedDeps` never does.
+   */
+  debugProxyHops?: boolean;
+}
+
+/** Hosted, `DEBUG_PROXY_HOPS=1` only: echoes the caller's own address as Express sees it. */
+export const DEBUG_IP_PATH = '/api/debug/ip';
+
+/**
+ * The proxy-hop probe (spec Failure Modes, "Wrong trust proxy hop count"). It
+ * answers the caller's own `req.ip`, `req.ips` and the number of
+ * `X-Forwarded-For` entries that reached the app, and logs nothing. With no
+ * `X-Forwarded-For` sent by the caller, `xffHops` is the number of entries the
+ * platform's proxies appended, which is the `TRUST_PROXY` hop count.
+ */
+function debugIpHandler(req: Request, res: Response): void {
+  const header = req.headers['x-forwarded-for'];
+  const joined = Array.isArray(header) ? header.join(',') : (header ?? '');
+  const xffHops = joined
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0).length;
+  res.setHeader('Cache-Control', 'no-store');
+  res.status(200).json({ ip: req.ip ?? null, ips: req.ips, xffHops });
 }
 
 /** The slice of `config.ts` the app itself needs. */
@@ -326,7 +352,9 @@ function mapBodyParserError(err: ApiError): { statusCode: number; code: string }
  * allow-list, anti-framing headers, CORS, health, the per-IP limiter (IPv6 by
  * /64), the reserved webhook slot, the Origin check, invite redeem, the Better
  * Auth mount, the session gate, the per-user limiter, then the same
- * `express.json` and everything after it. Only the steps that differ sit in
+ * `express.json` and everything after it. (With `hosted.debugProxyHops`, the
+ * `/api/debug/ip` probe is also mounted right after the per-IP limiter.)
+ * Only the steps that differ sit in
  * `if (hosted …)` blocks; the self-host lines are the ones above, unchanged.
  */
 export function buildApp(config: AppConfig): Express {
@@ -391,6 +419,11 @@ export function buildApp(config: AppConfig): Express {
   if (hosted !== undefined) {
     // Step 6: per-IP limiter, IPv6 keyed by /64 (R24f).
     app.use('/api', createRateLimiter({ perMinute: RATE_LIMIT_PER_MINUTE, now, keyFor: ipKey }));
+
+    // Runbook step 5 only: absent unless DEBUG_PROXY_HOPS=1 (see debugIpHandler).
+    if (hosted.debugProxyHops === true) {
+      app.get(DEBUG_IP_PATH, debugIpHandler);
+    }
 
     // Step 7: Reserved for Phase 11 (Stripe). Must verify the signature before
     // any side effect. Sits before the Origin check because Stripe sends no
@@ -769,6 +802,12 @@ export async function main(): Promise<Server> {
           ? {}
           : { reportError: (err: unknown, context: ErrorContext) => void hostedReporter.report(err, context) }),
       });
+      // Runbook step 5: a deliberate, temporary operator flag. Not a secret, so
+      // it is read here rather than taken by config.ts; it only adds a probe.
+      if (process.env.DEBUG_PROXY_HOPS === '1') {
+        hostedDeps = { ...hostedDeps, debugProxyHops: true };
+        console.log(`[soulbound-backend] ${DEBUG_IP_PATH} is enabled (DEBUG_PROXY_HOPS=1); unset it once TRUST_PROXY is set`);
+      }
     } catch (err) {
       console.error(redact(err instanceof Error ? err.message : String(err)));
       process.exit(1);
