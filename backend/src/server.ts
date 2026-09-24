@@ -30,6 +30,7 @@ import express, {
 } from 'express';
 import { ACCESS_CHECK_PATH, assertWorldVoiceContract } from '@soulbound/shared';
 import { createAccessGate, createRateLimiter } from './accessGate.js';
+import { initErrorTracker, type ErrorContext, type ErrorReporter } from './errorTracker.js';
 import { WORLD_SYSTEM_PROMPT } from './data/worldSystemPrompt.js';
 // These three route modules never import config.ts at their own top level
 // (see each file's "Lazy import" comment) — they only reach for it inside
@@ -45,6 +46,16 @@ interface ApiError extends Error {
   code?: string;
   /** body-parser tags its own failures with a `type` (see `mapBodyParserError`). */
   type?: string;
+}
+
+/**
+ * Hosted-mode dependencies. A stub for now: 06-01 adds only the error
+ * tracker's hook, and 06-04 widens this into the full hosted branch
+ * (`auth`, `pool`, ...). Absent in self-host, where nothing below changes.
+ */
+export interface HostedDeps {
+  /** Sends an error to the tracker (errorTracker.ts), when one is enabled. */
+  reportError?: (err: unknown, context: ErrorContext) => void;
 }
 
 /** The slice of `config.ts` the app itself needs. */
@@ -73,6 +84,8 @@ export interface AppConfig {
    * `performance.now()` cannot be adjusted this way.
    */
   now?: () => number;
+  /** Hosted mode only; see `HostedDeps`. Existing self-host configs never set it. */
+  hosted?: HostedDeps;
 }
 
 /**
@@ -204,7 +217,9 @@ export function buildApp(config: AppConfig): Express {
     TRUST_PROXY,
     STATIC_DIR,
     now = () => performance.now(),
+    hosted,
   } = config;
+  const reportError = hosted?.reportError;
   const app = express();
   app.set('trust proxy', TRUST_PROXY);
 
@@ -333,6 +348,17 @@ export function buildApp(config: AppConfig): Express {
 
     console.error(`[error] ${req.method} ${req.path}:`, redact(rawStack ?? rawMessage));
 
+    // The tracker (hosted mode with a DSN only) gets the route TEMPLATE, never
+    // the concrete path. It must never turn a handled error into a crash.
+    if (reportError !== undefined) {
+      const routePath: unknown = req.route?.path;
+      try {
+        reportError(err, { code, route: typeof routePath === 'string' ? routePath : 'unmatched' });
+      } catch {
+        console.error('[error-tracker] report failed');
+      }
+    }
+
     const clientMessage = statusCode === 500 ? 'Internal server error' : redact(rawMessage);
 
     res.status(statusCode).json({
@@ -356,6 +382,24 @@ export function buildApp(config: AppConfig): Express {
  */
 function scrubKeyShapedStrings(input: string): string {
   return input.replace(/sk-ant-[A-Za-z0-9_-]+/g, '[REDACTED]');
+}
+
+/** How long a fatal handler waits for the tracker to send before exiting. */
+const FATAL_FLUSH_TIMEOUT_MS = 2000;
+
+/**
+ * Fatal path with the tracker on: report, give it up to 2 s to send, exit 1.
+ * A backstop timer exits even if the flush itself never settles.
+ */
+function reportThenExit(reporter: ErrorReporter, err: unknown, route: string): void {
+  const exit = (): never => process.exit(1);
+  try {
+    reporter.report(err, { code: 'INTERNAL_ERROR', route });
+  } catch {
+    // Never let reporting block the exit.
+  }
+  setTimeout(exit, FATAL_FLUSH_TIMEOUT_MS + 500);
+  reporter.flush(FATAL_FLUSH_TIMEOUT_MS).then(exit, exit);
 }
 
 export async function main(): Promise<Server> {
@@ -386,7 +430,22 @@ export async function main(): Promise<Server> {
     process.exit(1);
   }
 
-  const app = buildApp(config);
+  // The error tracker: hosted mode with SENTRY_DSN only. Otherwise this
+  // resolves to undefined without loading the SDK, and everything below runs
+  // exactly as it did before the tracker existed.
+  let reporter: ErrorReporter | undefined;
+  try {
+    reporter = await initErrorTracker({ dsn: config.SENTRY_DSN, mode: config.MODE, redact });
+  } catch (err) {
+    console.error(redact(err instanceof Error ? err.message : String(err)));
+    process.exit(1);
+  }
+
+  const app = buildApp(
+    reporter === undefined
+      ? config
+      : { ...config, hosted: { reportError: (err, context) => void reporter.report(err, context) } },
+  );
 
   // Express 5 forwards rejected promises from route handlers to the error
   // handler above, but nothing catches a crash outside the request pipeline.
@@ -397,12 +456,18 @@ export async function main(): Promise<Server> {
   process.on('unhandledRejection', (reason: unknown) => {
     const detail = reason instanceof Error ? (reason.stack ?? reason.message) : String(reason);
     console.error('[fatal] unhandled rejection:', redact(detail));
-    process.exit(1);
+    if (reporter === undefined) {
+      process.exit(1);
+    }
+    reportThenExit(reporter, reason, 'unhandledRejection');
   });
 
   process.on('uncaughtException', (err: Error) => {
     console.error('[fatal] uncaught exception:', redact(err.stack ?? err.message));
-    process.exit(1);
+    if (reporter === undefined) {
+      process.exit(1);
+    }
+    reportThenExit(reporter, err, 'uncaughtException');
   });
 
   return app.listen(PORT, () => {
