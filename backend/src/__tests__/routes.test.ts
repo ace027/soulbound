@@ -212,7 +212,11 @@ const introSceneRequestBody = {
   character: {
     name: 'Test Character',
     race: { name: 'Human' },
-    uniqueSkill: { skill_name: 'Testing Resolve', soul_resonance: 'because it must be proven' },
+    uniqueSkill: {
+      skill_name: 'Testing Resolve',
+      soul_resonance: 'because it must be proven',
+      description: 'You can tell whether a claim was tested. Each check costs a breath.',
+    },
   },
 };
 

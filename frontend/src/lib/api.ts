@@ -302,7 +302,7 @@ export interface IntroSceneRequest {
   character: {
     name: string;
     race: { name: string };
-    uniqueSkill: { skill_name: string; soul_resonance: string };
+    uniqueSkill: { skill_name: string; soul_resonance: string; description: string };
   };
 }
 
@@ -366,6 +366,7 @@ export async function generateIntroScene(
       uniqueSkill: {
         skill_name: character.uniqueSkill.skill_name,
         soul_resonance: character.uniqueSkill.soul_resonance,
+        description: character.uniqueSkill.description,
       },
     },
   };

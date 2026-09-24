@@ -402,7 +402,7 @@ describeSharedContract(
 
 // ─── POST /api/intro-scene ──────────────────────────────────────────────────
 // Contract: backend/src/routes/introScene.ts IntroSceneRequestSchema (68-70)
-//   { character: { name, race: { name }, uniqueSkill: { skill_name, soul_resonance } } }
+//   { character: { name, race: { name }, uniqueSkill: { skill_name, soul_resonance, description } } }
 
 describe('generateIntroScene', () => {
   it('returns the parsed, typed World Voice response on the happy path', async () => {
@@ -425,6 +425,7 @@ describe('generateIntroScene', () => {
         uniqueSkill: {
           skill_name: 'Patient Ledger',
           soul_resonance: UNIQUE_SKILL.soul_resonance,
+          description: UNIQUE_SKILL.description,
         },
       },
     });

@@ -130,7 +130,7 @@ Respond ONLY with valid JSON, no markdown:
 {
   "skill_name": "...",
   "tier": "Unique",
-  "description": "A 2-sentence description of what this skill IS and how it manifests.",
+  "description": "2 short plain-language sentences, under 50 words total, that a player can act on: first, what they can actually DO with this skill right now (a concrete effect, not a metaphor); second, its real cost or limit.",
   "soul_resonance": "1 sentence — why this soul carries this skill.",
   "etching_text": "The sensation of this skill crystallizing onto the soul — 2 sentences, visceral and poetic."
 }`;

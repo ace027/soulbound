@@ -1,0 +1,42 @@
+{
+  "omniscience-demand": {
+    "status": 200,
+    "body": {
+      "skill_name": "Unearned Certainty",
+      "tier": "Unique",
+      "description": "Whenever you state aloud a claim about something you cannot actually perceive, the world answers you: the claim becomes audibly, undeniably marked as true or false to everyone within earshot, including yourself. Every false claim burns — a wrong answer inflicts searing pain and leaves you unable to speak for several minutes, and the skill only works on assertions you genuinely believe, so you cannot use it to safely test a guess.",
+      "soul_resonance": "This soul demanded to already know everything, so it was given a world that will constantly, loudly tell it whether that is so.",
+      "etching_text": "It settles like a crown pressed down one size too small, cold metal finding the seams of the skull and tightening until the certainty inside has nowhere left to hide. Every unspoken assumption you carry suddenly has weight, and you can feel each one waiting, patient as a held breath, to be proven."
+    }
+  },
+  "great-sage-saturated": {
+    "status": 200,
+    "body": {
+      "skill_name": "Recursive Certainty",
+      "tier": "Unique",
+      "description": "You can lock onto one thing you are currently observing — a person, a mechanism, a spell mid-cast — and receive a flat, wordless statement of its most probable next few seconds, accurate enough to act on before it happens. The forecast is built only from what you have already observed, it delivers no confidence rating, and anything genuinely new to you will return an answer that feels just as certain as a true one.",
+      "soul_resonance": "This soul answered five different questions with one identical sentence, which is not evasion but structure: it resolves every input through the same loop and calls the output truth.",
+      "etching_text": "Something cold seats itself behind your eyes and begins to count, and the world thins into a lattice of before-and-after that you can read like a ledger. The last warm, uncertain part of you goes quiet, not destroyed — merely filed, indexed, and awaiting query."
+    }
+  },
+  "humble-brag-flaw": {
+    "status": 200,
+    "body": {
+      "skill_name": "Unbroken Ascendance",
+      "tier": "Unique",
+      "description": "Every hit you take makes you measurably stronger and tougher for the next few minutes, stacking without an upper limit as long as you keep moving forward and never retreat. The moment you back off, defend, or accept help, every stack collapses at once and you take the accumulated damage you shrugged off all in a single delayed wave.",
+      "soul_resonance": "This soul believes itself invulnerable and unmatched, so its power grows by being struck and shatters the instant it admits it needs anything.",
+      "etching_text": "Something hot and bright hammers itself into your bones like a nail driven by a laughing god, and every old bruise you ever ignored sings out at once in triumph. It does not feel like a gift being given — it feels like the world finally agreeing with something you already said out loud."
+    }
+  },
+  "ordinary": {
+    "status": 200,
+    "body": {
+      "skill_name": "Keeper's Drawer",
+      "tier": "Unique",
+      "description": "By holding still and touching any broken, failed, or abandoned thing — a shattered blade, a collapsed ward, a dying structure — you can hold its unbroken shape in place for a time, letting it function as though whole while you maintain focus. The moment you turn your attention elsewhere or lend the held thing to someone you have already judged unworthy, the shape drops and the break returns worse than before.",
+      "soul_resonance": "This soul learned that nothing broken is finished, from a woman who labelled every failure and kept it, and builds so the thing will stand without him.",
+      "etching_text": "Something opens in the chest like a wooden drawer pulled slow, and every fracture you have ever carried settles into it with a small deliberate click. The stillness comes first — the awful patient stillness of a hand hovering over a thing not yet decided upon — and then the weight, warm and labelled, of being trusted to keep what could not keep itself."
+    }
+  }
+}
