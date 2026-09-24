@@ -224,6 +224,8 @@ A Soul Etching or sub-ability paragraph (duty 4) may still be added on top of th
 
 If this proves too terse in play, raise the word range; don't restore "rich prose".
 
+**Follow-up, same day: no contrast framing.** In the live check, turn 2 opened with "You don't move to the shadows — you speak." The player had never mentioned shadows, so the line invented an alternative they didn't choose, which made it confusing to read. Duty 1 now says to narrate only what the player actually did, never set against something they didn't do.
+
 ## Questionnaire Design
 Originally multiple-choice (5 options per question). Changed to fully open-ended free-text per the explicit reasoning that richer, longer answers produce a better-defined Unique Skill before the player ever enters the world. Each question has a `hint` line for guidance but no character limit. The Continue button is disabled until something is written, with a Back button to revise prior answers.
 
