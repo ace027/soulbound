@@ -15,9 +15,10 @@
  *    fell straight through to `JSON.parse` on an error body, so the player saw
  *    a JSON syntax error instead of "rate limited" or "bad API key".
  *
- * 2. The 200-with-HTML trap. docker-compose.yml records that the production
- *    `runtime` frontend image serves /api/* with `serve -s`, whose SPA fallback
- *    answers ANY unmatched path with 200 + index.html. A 200 sails past
+ * 2. The 200-with-HTML trap. Any SPA fallback in front of the API (the old
+ *    `serve -s` frontend image did exactly this, before Phase 5 moved static
+ *    serving into the backend) answers an unmatched /api path with 200 +
+ *    index.html. A 200 sails past
  *    `response.ok`; the Zod parse then throws and the player sees a schema dump
  *    while the operator sees a healthy container — Phase 2's "green healthcheck
  *    masked a total outage", repeated. So the helper also asserts the

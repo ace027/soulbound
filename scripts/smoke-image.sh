@@ -126,8 +126,7 @@ rm -f /tmp/smoke-root-body.$$
 # ─── Check 3: /api/access without a header -> 401 PASSPHRASE_REQUIRED ──
 # This is request #1 against the rate limiter (the limiter runs before the
 # gate, and before express.json, per the spec's middleware order).
-body="$(curl -s --max-time 5 -o /tmp/smoke-c3-body.$$ -w '%{http_code}' "${BASE}/api/access")"
-code="$body"
+code="$(curl -s --max-time 5 -o /tmp/smoke-c3-body.$$ -w '%{http_code}' "${BASE}/api/access")"
 c3_body="$(cat /tmp/smoke-c3-body.$$)"
 ok=1
 if [ "$code" = "401" ] && printf '%s' "$c3_body" | grep -q '"code":"PASSPHRASE_REQUIRED"'; then
