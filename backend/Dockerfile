@@ -98,6 +98,8 @@ RUN --mount=type=secret,id=npm_ca,required=false \
 
 COPY --from=builder /app/shared/dist ./shared/dist
 COPY --from=builder /app/backend/dist ./backend/dist
+# SQL migrations for hosted mode: Render's preDeployCommand runs `node backend/dist/migrate.js` from this image.
+COPY backend/migrations ./backend/migrations
 
 # node:22-slim already has a non-root `node` user; use it instead of root.
 USER node

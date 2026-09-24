@@ -32,6 +32,22 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Real Postgres for the hosted suite (`test:hosted`, below). The password
+    # is a throwaway value for this job-local container, NOT a secret: the
+    # database holds only test schemas and dies with the job.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: soulbound_test
+        options: >-
+          --health-cmd "pg_isready -U postgres -d soulbound_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - '5432:5432'
     steps:
       # workflow_dispatch can run off any branch. publish (below, which also
       # builds and smoke-tests the image) refuses to run off anything but
@@ -61,6 +77,13 @@ jobs:
 
       - name: Test
         run: npm test
+
+      # The DB-backed hosted suite. Fails (never skips) without the database,
+      # and fails on any skipped test. Throwaway credentials, as above.
+      - name: Test (hosted, real Postgres)
+        run: npm run test:hosted -w @soulbound/backend
+        env:
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/soulbound_test
 
   publish:
     runs-on: ubuntu-latest
