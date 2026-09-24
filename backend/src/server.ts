@@ -89,8 +89,10 @@ export interface HostedDeps {
   /** invites.ts's `redeemInvite`, bound to the pool and cookie key: the Set-Cookie, or null (step 9). */
   redeemInvite: (code: unknown) => Promise<{ setCookie: string } | null>;
   /**
-   * 06-05: records the deletion request and revokes every session of the
-   * user. While absent, `DELETE /api/account` is not mounted (step 14).
+   * account.ts's `requestAccountDeletion`, bound to the pool and Better Auth:
+   * records the deletion request and revokes every session of the user.
+   * `buildHostedDeps` always sets it; while absent (a test's deps), `DELETE
+   * /api/account` is not mounted (step 14).
    */
   requestAccountDeletion?: (userId: string) => Promise<void>;
   /** Requests per minute per signed-in player (config's USER_RATE_LIMIT_PER_MINUTE; step 12). */
@@ -175,6 +177,62 @@ const WEBHOOK_BODY_LIMIT = '64kb';
  */
 const CLEAR_SESSION_COOKIE =
   '__Secure-better-auth.session_token=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax';
+
+/**
+ * Hosted: the largest body `/api/auth/*` accepts. Better Auth itself sets no
+ * limit (06-04-SUMMARY, Warning 2: it took a 150 KB body). Its real bodies
+ * are an email address or a provider name, far under this.
+ */
+export const AUTH_BODY_LIMIT_BYTES = 16 * 1024;
+
+/**
+ * Hosted: a raw byte cap in front of the Better Auth mount. It never reads or
+ * parses the body, so step 10 still receives the untouched stream:
+ *  - a `Content-Length` over the limit is refused before a byte is read, with
+ *    the same 413 `PAYLOAD_TOO_LARGE` the JSON parser gives (through
+ *    `mapBodyParserError`), and `Connection: close` so the rest isn't drained;
+ *  - a body without one (chunked) is counted as the HTTP parser hands it to
+ *    the request (`push`, which is what feeds every reader, in either stream
+ *    mode, without switching modes), and the request is destroyed once it
+ *    passes the limit. Adding a 'data' listener instead would start the
+ *    stream flowing before Better Auth attaches its own, and lose chunks.
+ */
+function authBodyCap(limitBytes: number): RequestHandler {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const declared = req.headers['content-length'];
+    if (declared !== undefined) {
+      if (Number(declared) > limitBytes) {
+        res.setHeader('Connection', 'close');
+        const err: ApiError = new Error('request entity too large');
+        err.type = 'entity.too.large';
+        next(err);
+        return;
+      }
+      next();
+      return;
+    }
+    let seen = req.readableLength;
+    let exceeded = seen > limitBytes;
+    const push = req.push.bind(req);
+    req.push = (chunk: unknown, encoding?: BufferEncoding): boolean => {
+      if (exceeded) return false;
+      if (chunk !== null && chunk !== undefined) {
+        seen += typeof chunk === 'string' ? Buffer.byteLength(chunk) : (chunk as Uint8Array).length;
+        if (seen > limitBytes) {
+          exceeded = true;
+          process.nextTick(() => req.destroy());
+          return false;
+        }
+      }
+      return push(chunk, encoding);
+    };
+    if (exceeded) {
+      req.destroy();
+      return;
+    }
+    next();
+  };
+}
 
 /**
  * Splits the hostname out of a `Host` header value, leaving an IPv6 literal's
@@ -369,6 +427,9 @@ export function buildApp(config: AppConfig): Express {
         res.sendStatus(204);
       },
     );
+
+    // Step 10's raw byte cap: counts, never reads (see authBodyCap).
+    app.use('/api/auth', authBodyCap(AUTH_BODY_LIMIT_BYTES));
 
     // Step 10: Better Auth, BEFORE express.json (better-auth issue #3295: it
     // hangs otherwise). The handler ends every /api/auth/* request itself.
@@ -574,8 +635,17 @@ export async function buildHostedDeps(options: HostedBootOptions): Promise<Hoste
   });
   try {
     await assertNoPendingMigrations(pool, { redact, ...(schema === undefined ? {} : { schema }) });
-    const [{ createAuth, createResendSender }, { inviteCookieKey, redeemInvite }, { fromNodeHeaders }] =
-      await Promise.all([import('./auth.js'), import('./invites.js'), import('better-auth/node')]);
+    const [
+      { createAuth, createResendSender },
+      { inviteCookieKey, redeemInvite },
+      { fromNodeHeaders },
+      { requestAccountDeletion },
+    ] = await Promise.all([
+      import('./auth.js'),
+      import('./invites.js'),
+      import('better-auth/node'),
+      import('./account.js'),
+    ]);
     const hostedAuth = await createAuth({
       pool,
       publicUrl: options.publicOrigin,
@@ -598,6 +668,7 @@ export async function buildHostedDeps(options: HostedBootOptions): Promise<Hoste
       withInviteContext: hostedAuth.withInviteContext,
       handler: hostedAuth.handler,
       redeemInvite: (code) => redeemInvite(pool, code, { key }),
+      requestAccountDeletion: (userId) => requestAccountDeletion(pool, hostedAuth, userId, new Date()),
       userRateLimitPerMinute: options.userRateLimitPerMinute,
       ...(options.reportError === undefined ? {} : { reportError: options.reportError }),
     };
@@ -610,15 +681,22 @@ export async function buildHostedDeps(options: HostedBootOptions): Promise<Hoste
 /** How long SIGTERM waits for open requests before exiting anyway (hosted only). */
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
-/** Hosted: on SIGTERM, stop accepting, let open requests finish, then close the pool. */
-function closePoolOnSigterm(server: Server, pool: Pool): void {
+/**
+ * Hosted: on SIGTERM, stop accepting, let open requests finish, stop the
+ * purge schedule (waiting for a run in progress), then close the pool.
+ */
+function closePoolOnSigterm(server: Server, pool: Pool, stopPurge: () => Promise<void>): void {
   process.once('SIGTERM', () => {
     setTimeout(() => process.exit(1), SHUTDOWN_TIMEOUT_MS).unref();
+    // Timers are cleared at once, so no purge starts while requests drain.
+    const purgeStopped = stopPurge().catch(() => undefined);
     server.close(() => {
-      pool.end().then(
-        () => process.exit(0),
-        () => process.exit(1),
-      );
+      purgeStopped
+        .then(() => pool.end())
+        .then(
+          () => process.exit(0),
+          () => process.exit(1),
+        );
     });
   });
 }
@@ -730,7 +808,10 @@ export async function main(): Promise<Server> {
     const server = app.listen(PORT, () => {
       console.log(`[soulbound-backend] listening on port ${PORT}`);
     });
-    closePoolOnSigterm(server, hostedDeps.pool);
+    // The hourly account purge (R24d). Hosted only: self-host never reaches here.
+    const { startPurgeSchedule } = await import('./account.js');
+    const stopPurge = startPurgeSchedule(hostedDeps.pool);
+    closePoolOnSigterm(server, hostedDeps.pool, stopPurge);
     return server;
   }
 

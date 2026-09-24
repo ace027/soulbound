@@ -31,7 +31,13 @@ export interface HostedAppOptions {
   staticDir?: string;
   /** The limiters' clock. */
   now?: () => number;
-  requestAccountDeletion?: HostedDeps['requestAccountDeletion'];
+  /**
+   * `DELETE /api/account` (step 14). Omitted: the route is NOT mounted (the
+   * production deps' function is stripped, so 06-04's "absent → 404" pin keeps
+   * testing `buildApp`'s condition). A function: a spy replaces it. `'real'`:
+   * the production `requestAccountDeletion` that `buildHostedDeps` built.
+   */
+  requestAccountDeletion?: HostedDeps['requestAccountDeletion'] | 'real';
 }
 
 export interface Result {
@@ -129,10 +135,13 @@ export async function startHostedApp(db: TestDb, options: HostedAppOptions = {})
       sent.push(message);
     },
   });
+  const { requestAccountDeletion: realDeletion, ...withoutDeletion } = deps;
   const hosted: HostedDeps =
     options.requestAccountDeletion === undefined
-      ? deps
-      : { ...deps, requestAccountDeletion: options.requestAccountDeletion };
+      ? withoutDeletion
+      : options.requestAccountDeletion === 'real'
+        ? { ...withoutDeletion, ...(realDeletion === undefined ? {} : { requestAccountDeletion: realDeletion }) }
+        : { ...withoutDeletion, requestAccountDeletion: options.requestAccountDeletion };
   const app = buildApp({
     FRONTEND_ORIGIN: PUBLIC_URL,
     ALLOWED_HOSTS: ['127.0.0.1'],

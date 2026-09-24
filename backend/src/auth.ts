@@ -30,6 +30,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { NextFunction, Request, Response } from 'express';
 import type { Pool } from 'pg';
 import { INVITE_INVALID, INVITE_REQUIRED } from '@soulbound/shared';
+import { cancelAccountDeletion } from './account.js';
 import {
   COOKIE_NAME,
   consumeInvite as consumeInviteSql,
@@ -77,7 +78,7 @@ export interface AuthDeps {
   discord?: OAuthCredentials;
   /** Clock (epoch ms) for the invite cookie's expiry and the send limiters. */
   now?: () => number;
-  /** Called after every session is created (06-05: cancels a pending deletion). */
+  /** Called after every session is created, after the hook has cancelled any pending deletion. */
   onSessionCreated?: (userId: string) => Promise<void> | void;
   /** Test seam: replaces the consume step, to inject an `after` failure. */
   consumeInvite?: typeof consumeInviteSql;
@@ -354,6 +355,8 @@ export async function createAuth(deps: AuthDeps) {
       session: {
         create: {
           after: async (session) => {
+            // A sign-in within the grace period cancels a pending deletion (R24d).
+            await cancelAccountDeletion(db, session.userId);
             await deps.onSessionCreated?.(session.userId);
           },
         },
