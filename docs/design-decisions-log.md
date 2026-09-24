@@ -208,6 +208,22 @@ The first real GHCR publish is **untested** until someone dispatches it after me
 
 **`determineUniqueSkill()` stays on Sonnet 5, and that is also deliberate.** It is the adversarially stress-tested surface (see "Tier 0 stress tests" below), and that testing note already warns that the resilience observed there is partly a property of the model's training rather than purely the prompt's wording — so moving this call to another model is a decision to re-run those tests, not a free swap. It also has nothing to gain from the Opus routes' warm cache: it sends no `system` parameter at all, so it has no cached prefix to share with anything (see the correction above).
 
+## Narration length (2026-09-24)
+**Per turn: 1-2 short paragraphs, roughly 60-120 words. Intro: 2 short paragraphs, under 150 words.**
+
+This is the second trim in the same direction. The 2026-09-18 edit took the per-turn narration from 2-5 paragraphs down to 2-3 and added an anti-padding clause. A playtest on 2026-09-24 still found both the intro scene and the turn responses hard to follow: it was too much prose to parse before the player could act.
+
+The root cause was the wording, not the rendering (`WorldLog` already keeps paragraph breaks with `pre-wrap`). "Rich prose" in the `narration` spec, plus "vividly" in duty 1, pulled every response toward ornament. The changes:
+- **`narration` spec:** now says to lead with the concrete result of the action in plain language, keep imagery to one or two telling details, and end on what the player faces.
+- **Duty 1:** "vividly" became "clearly", with a line saying clarity beats ornament.
+- **Intro prompt:** "3 paragraphs" became 2 short ones (where they are, then the situation). This is the third sanctioned deviation from the verbatim legacy port, noted in the `introScene.ts` header.
+
+A Soul Etching or sub-ability paragraph (duty 4) may still be added on top of the word budget, because those moments are the game's payoff. The World Voice persona ("gravitas") is unchanged: this is about length and legibility, not tone. The JSON contract is untouched; only the description string inside the `narration` example changed.
+
+**Cache figure:** the edit sits inside `WORLD_SYSTEM_PROMPT`, so the cached prefix (last quoted as 15,523) has moved again. Re-derive it with `count_tokens` before quoting it. The shared-namespace property is unchanged.
+
+If this proves too terse in play, raise the word range; don't restore "rich prose".
+
 ## Questionnaire Design
 Originally multiple-choice (5 options per question). Changed to fully open-ended free-text per the explicit reasoning that richer, longer answers produce a better-defined Unique Skill before the player ever enters the world. Each question has a `hint` line for guidance but no character limit. The Continue button is disabled until something is written, with a Back button to revise prior answers.
 
