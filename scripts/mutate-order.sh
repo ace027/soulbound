@@ -8,8 +8,11 @@
 # EXPECTS IT TO FAIL. A mutation the suite survives is a gap in the tests.
 #
 #   a  `app.use('/api', express.json())` inserted immediately above the Better
-#      Auth mount (step 10), so the auth handler meets an already-read body
-#      (better-auth #3295: it hangs; the tests' 2 s request timeout catches it)
+#      Auth mount (step 10), so the auth handler meets an already-read body.
+#      better-auth #3295 made that hang; the installed better-call 1.4.0 no
+#      longer hangs (it re-serialises `req.body`), so the 2 s request timeout
+#      is a backstop only. hostedOrder.test.ts catches it by WHO answers a
+#      malformed auth body: Better Auth's 400, not the app's INVALID_REQUEST.
 #   b  the Origin check (step 8) moved below the Better Auth mount
 #   c  the session gate (step 11) deleted
 #

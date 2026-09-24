@@ -209,6 +209,25 @@ describe('hosted middleware order (06-04)', () => {
       expect(res.status).toBe(200);
     });
 
+    // better-auth #3295's hang no longer reproduces: better-call 1.4.0
+    // re-serialises an already-parsed `req.body` (adapters/node/request.mjs
+    // :108-113). What still shows that nothing read the body before step 10
+    // is WHO answers a malformed one: Better Auth's own 400, never the app's
+    // body-parser envelope (`INVALID_REQUEST`), which is what express.json
+    // placed above the mount produces (mutate-order.sh, mutation a).
+    it('a malformed JSON body on /api/auth/* reaches Better Auth unparsed (its 400, not the app body parser)', async () => {
+      for (const raw of ['{"email":', 'not json at all']) {
+        const res = await h.request({
+          method: 'POST',
+          path: '/api/auth/sign-in/magic-link',
+          raw,
+          headers: { origin: PUBLIC_URL },
+        });
+        expect(res.status, raw).toBe(400);
+        expect(res.json, raw).toEqual({ message: 'Invalid JSON in request body', code: 'BAD_REQUEST' });
+      }
+    });
+
     it('an unknown /api/auth path gets the JSON 404 without a session', async () => {
       const res = await h.request({ method: 'GET', path: '/api/auth/list-sessions' });
       expect(res.status).toBe(404);
