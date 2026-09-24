@@ -14,7 +14,7 @@ exploration, with each reversal named. It is not drift.
 |---|---|---|
 | "Auth architecture — RESOLVED, do not re-litigate": single-tenant self-hosting, one deployer, one key | `CLAUDE.md`, `docs/MIGRATION-PLAN.md` | **Stays true for self-host mode.** A second, **hosted** mode adds player accounts. The key architecture is unchanged in both modes: the backend holds the operator's Anthropic key and players never see it. Players pay a subscription; they do **not** bring their own key (BYOK stays rejected). |
 | Hard constraint #2: saves use `localStorage` | `CLAUDE.md` #2, design log "Save System" | Still true in self-host mode. In hosted mode saves live in Postgres, per account. CLAUDE.md already calls this "a deliberate architecture change to plan for", and this is that plan. |
-| Out of scope: "server-side saves, user accounts", "Monetization" | `.planning/PROJECT.md` | Move into scope for Phases 6-10. Multiplayer, Postgres world state and local inference stay out of scope. |
+| Out of scope: "server-side saves, user accounts", "Monetization" | `.planning/PROJECT.md` | Move into scope for Phases 6-13. Multiplayer, Postgres world state and local inference stay out of scope. |
 
 When implemented, each reversal gets a design-log entry and a CLAUDE.md edit **in the same change**,
 matching how the model-split reversals were handled.
@@ -52,6 +52,11 @@ matching how the model-split reversals were handled.
   - credits or top-ups (possible later);
   - organizations or teams;
   - moderation tooling beyond the World Voice's existing MUST NOT rules.
+- **Game features in scope** (added 2026-09-24):
+  - suggested actions;
+  - the story-so-far recap;
+  - quests and objectives;
+  - condition and inventory (with its own design pass).
 
 ## Pricing (refined 2026-09-24)
 **Chosen: $10/month for 250 world-engine turns.** Both numbers are configurable, not fixed in code, and get re-checked against real usage in Phase 8.
@@ -109,20 +114,24 @@ Everything is built into the existing Express + TypeScript stack, using an in-pr
 Why this approach over the alternatives:
 - It reuses what Phase 5 built rather than replacing it.
 - It keeps the settled key architecture intact in both modes.
-- It ships in phases, each independently useful. It deploys in Phase 6 and invites friends free after Phase 8, so real usage data sets the price in Phase 9.
+- It ships in phases, each independently useful. It deploys in Phase 6 and invites friends free after Phase 9, so real usage data sets the price in Phase 11.
 
 ## Alternatives Considered
 | Approach | Strengths | Tradeoffs | Decision |
 |---|---|---|---|
 | **Balanced, phased, two modes** | Reuses Phase 5; no lock-in; self-host survives; each phase ships | The most phases; two modes to test | **Chosen** |
-| Minimal first (accounts + caps, no billing) | Fastest to "friends can play"; defers Stripe | You pay all inference until billing lands; billing becomes a separate project | Not chosen, but Phases 6-8 *are* this, so stopping early is always available |
+| Minimal first (accounts + caps, no billing) | Fastest to "friends can play"; defers Stripe | You pay all inference until billing lands; billing becomes a separate project | Not chosen, but Phases 6-9 *are* this, so stopping early is always available |
 | Buy the platform (Clerk/Supabase + Stripe) | Fastest build; hosted auth UI | Vendor lock-in and monthly cost; self-host would need a second auth path; less control over save semantics | Rejected |
 | BYOK per player | Zero inference cost to you | High friction; already rejected in `MIGRATION-PLAN.md`; exposes players' keys to the browser | Rejected (unchanged) |
 | Hosted-only (drop self-host) | One path to test | Throws away Phase 5's shipped image and deployer audience | Rejected by developer |
 
 ## Feature Scope
-### MVP: Phases 6-10 (order decided 2026-09-24: deploy early, friends free first)
-Every phase ships to the real hosted environment, so deployment risk isn't saved for last. Friends play free on the full 250-turn allowance before billing exists, so Phase 9 can price from their real usage rather than from 6 measured turns.
+### MVP: Phases 6-13 (order decided 2026-09-24)
+Two tracks, interleaved.
+- **Hosting track:** deploy early; friends play free before billing exists.
+- **Game track:** the playtest follow-ability fixes land before friends arrive; quests are built while they play; condition and inventory come later with real players to judge the balance.
+
+Every hosting phase ships to the real hosted environment. Every game phase works in self-host mode too.
 
 - [ ] **Phase 6, Hosted mode, accounts and a live skeleton:**
   - [ ] `SOULBOUND_MODE` flag and Postgres (migrations, `DATABASE_URL`).
@@ -139,18 +148,47 @@ Every phase ships to the real hosted environment, so deployment risk isn't saved
   - [ ] Ownership checks on every save route.
   - [ ] The 20-slot cap.
   - [ ] **Daily Postgres backups plus a tested restore**, landing in the same phase, before anyone else's saves exist.
-- [ ] **Phase 8, Metering and allowance, then invite friends free:**
+- [ ] **Phase 8, Metering and allowance:**
   - [ ] A per-call usage ledger; the monthly turn allowance (250); the creation counter (3 free, then 2 turns).
   - [ ] Remaining turns shown in the UI; a per-user rate limit.
   - [ ] An operator cost view and a **daily-spend alert**.
   - [ ] Before inviting anyone: check Anthropic's usage-policy requirements for consumer apps, and show a short privacy notice at sign-up ("your in-game text is processed by Anthropic's API").
+- [ ] **Phase 9, Game: follow-ability (suggested actions + recap). Then invite friends free:**
+  - [ ] **Suggested actions: a JSON contract change (CLAUDE.md #4).**
+    - A new top-level `suggested_actions` field: 2–3 strings, each ≤ 60 characters. The prompt, the shared Zod schema, `CONTRACT_FIELD_NAMES` and the frontend parser all change in one commit.
+    - Shown as tappable chips that **fill** the action box. The player can still edit or ignore them; nothing auto-submits. The chosen text is still wrapped as untrusted player input.
+    - Old saves are unaffected, because the field is transient per turn.
+    - **Add a MUST NOT rule** (additions are cheap, per CLAUDE.md #6): suggestions never propose an action the rules forbid (requesting a skill, Plundering without the Unique Skill, forcing a Sovereign reveal), and never leak hidden information. Re-run the adversarial turn tests.
+    - Cost: ~30 output tokens a turn, under $0.001.
+  - [ ] **Story-so-far recap: no API cost.**
+    - On load, a "Previously…" panel is assembled from what the save already holds: `currentScene`, the last few narrative-memory notes, and the most relevant entities. No model call.
+    - Works in self-host mode too. It's an in-UI panel; `App.tsx` changes go through the established review rather than a rewrite.
   - [ ] **Then invite friends, free**: the developer funds it, and all caps are enforced. Worst case is ~$7 per friend per month.
-- [ ] **Phase 9, Subscription billing, priced from friends' usage:**
-  - [ ] Re-derive cost per turn from the Phase 8 ledger, and confirm or adjust $10 / 250.
+- [ ] **Phase 10, Game: quests and objectives (while friends play):**
+  - [ ] A new `state_updates.quest_updates` field: `[{id, title, status: opened|progressed|completed|failed, note}]`. This is a contract change, so the prompt, schema and parser change in one commit.
+  - [ ] Quests live in `gameState.quests`: capped count, with completed quests archived to a short list.
+  - [ ] A Quests section in the Soul Codex.
+  - [ ] Active quests rendered back into the world-engine prompt as `ACTIVE QUESTS`, bounded like the entity ledger so prompt size stays capped.
+  - [ ] MUST NOT additions:
+    - Quests never mechanically grant skills. Rewards stay narrative, and skill progression keeps its existing rules.
+    - Quest text never resolves the protected Sovereign ambiguities.
+  - [ ] Old saves load with an empty quest list.
+  - [ ] This is groundwork for the shared world, where quest flags are one of the things the authoritative server would own.
+- [ ] **Phase 11, Subscription billing, priced from friends' usage:**
+  - [ ] Re-derive cost per turn from the Phase 8 ledger, which by now holds friends' play, and confirm or adjust $10 / 250.
   - [ ] Stripe Checkout, the Customer Portal and signature-verified webhooks.
   - [ ] What happens when a payment fails or a subscription lapses.
   - [ ] No card data ever touches the server.
-- [ ] **Phase 10, Launch hardening and conversion:**
+- [ ] **Phase 12, Game: condition and inventory (its own design pass first):**
+  - [ ] Starts with a design pass (`/legion:explore`). This is the largest balance change in the plan:
+    - What health or status means in a narration-first game.
+    - Whether defeat means death, capture or setback.
+    - How items interact with the skill tiers.
+    - What the World Voice may and may not change.
+  - [ ] Expected contract additions: `state_updates.condition_changes` and `inventory_changes`.
+  - [ ] Expected MUST NOT additions: items never grant or evolve skills or bypass tier rules, and there are no item-based Ultimate paths.
+  - [ ] Judged with real friends playing, which is why it comes after billing rather than before invites.
+- [ ] **Phase 13, Launch hardening and conversion:**
   - [ ] Full Terms of Service and a privacy policy, replacing Phase 8's short notice.
   - [ ] Error monitoring; a restore drill re-run; CSP.
   - [ ] Move friends to paid, with notice.
@@ -174,7 +212,7 @@ Every phase ships to the real hosted environment, so deployment risk isn't saved
 **Self-host deployers:** nothing changes. `SOULBOUND_MODE` defaults to `selfhost`.
 
 ## Technical Direction
-- **Mode switch:** read once in `config.ts`, alongside the other env readers, and fail fast when an input is invalid. For example, `hosted` without `DATABASE_URL`, or with no Stripe secrets once Phase 9 lands. `buildApp()` picks which middleware to mount by mode. The middleware order stays load-bearing and tested (CODEBASE.md risk: "Middleware order is the security model").
+- **Mode switch:** read once in `config.ts`, alongside the other env readers, and fail fast when an input is invalid. For example, `hosted` without `DATABASE_URL`, or with no Stripe secrets once Phase 11 lands. `buildApp()` picks which middleware to mount by mode. The middleware order stays load-bearing and tested (CODEBASE.md risk: "Middleware order is the security model").
 - **Auth (decided 2026-09-24):**
   - **Library: Better Auth**, running in-process on our Postgres. It provides magic link, Google and Discord out of the box.
     - An email provider supplies the `sendMagicLink` function; which provider is still open.
@@ -221,23 +259,26 @@ Every phase ships to the real hosted environment, so deployment risk isn't saved
 ## Open Questions
 - ~~**Price point and allowance size**~~ Settled 2026-09-24: **$10 / 250 turns**, configurable (see Pricing). Still to do: re-check against the Phase 8 usage table before the public beta.
 - ~~**Does character creation count against the allowance?**~~ Settled 2026-09-24: 3 free per month, then 2 turns each; save slots capped at 20 (see Pricing).
-- ~~**Pay from day one for friends?**~~ Settled 2026-09-24: friends play free after Phase 8, on the same 250-turn allowance, and move to paid in Phase 10 with notice.
+- ~~**Pay from day one for friends?**~~ Settled 2026-09-24: friends play free after Phase 9, on the same 250-turn allowance, and move to paid in Phase 13 with notice.
 - ~~**Which auth library?**~~ Settled 2026-09-24: Better Auth. **Still open:** which email provider (Resend, Postmark or SES) — decide in Phase 6 planning. Also confirm Better Auth's Discord provider and its Postgres adapter against the current docs at that point.
-- **Anthropic usage-policy requirements for a consumer app** (age minimum, AI disclosure, content handling), and the ToS/privacy wording. Research at the end of Phase 8, **before inviting friends**, and record it in the design log. The full ToS comes in Phase 10.
+- **Anthropic usage-policy requirements for a consumer app** (age minimum, AI disclosure, content handling), and the ToS/privacy wording. Research in Phase 8, **before inviting friends** (after Phase 9), and record it in the design log. The full ToS comes in Phase 13.
 - **How long to keep data after cancellation**, for saves and usage rows. Default proposal: saves kept 90 days read-only, then deleted; usage kept for accounting.
 - **Anti-framing header / CSP:** make the call in Phase 6, since logged-in sessions raise the stakes of clickjacking.
 
 ## Start Input
-Existing project, not a new one: add **Phases 6-10** to `.planning/ROADMAP.md` rather than running
+Existing project, not a new one: add **Phases 6-13** to `.planning/ROADMAP.md` rather than running
 `/legion:start`.
 
 - **Goal:** a hosted, invite-only, subscription-funded Soulbound where players sign in (email link, Google or Discord), keep saves on the server, and play within a monthly turn allowance ($10/month for 250 turns, configurable; ~$0.022 per turn measured). The unchanged self-host mode stays alongside it.
 - **Reversals to record:** CLAUDE.md's auth section (hosted mode added; key architecture unchanged; BYOK still rejected), constraint #2 (server saves in hosted mode), and PROJECT.md's out-of-scope list.
-- **Phases** (deploy early, friends free first):
+- **Phases:**
   - **6:** hosted mode, accounts and a live skeleton.
   - **7:** server saves, import and backups.
-  - **8:** metering and allowance, then invite friends free.
-  - **9:** Stripe billing, priced from friends' usage.
-  - **10:** launch hardening and conversion to paid.
+  - **8:** metering and allowance.
+  - **9 (game):** suggested actions and the free recap, then invite friends free.
+  - **10 (game):** quests and objectives.
+  - **11:** Stripe billing, priced from friends' usage.
+  - **12 (game):** condition and inventory, after its own design pass.
+  - **13:** launch hardening and conversion to paid.
 - **Stays out of scope:** shared world, local inference, native apps, credits.
 - **First command:** `/legion:plan 6`, after this design is accepted and PROJECT.md/ROADMAP.md are updated.
