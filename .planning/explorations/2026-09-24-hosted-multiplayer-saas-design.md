@@ -30,7 +30,12 @@ matching how the model-split reversals were handled.
 - **Inferences** (verify when planning):
   - **Prompt cache sharing:** caches are scoped to the Anthropic organization, not the end user. So all players would share one warm `WORLD_LORE` + `WORLD_SYSTEM_PROMPT` prefix (~15.6k tokens), and only the first call per TTL window pays the cache write. That makes cost per player *drop* as more people play, which helps the subscription math.
   - **Subscription math:** see "Pricing" below. At the real cost of ~$0.022/turn, $10 covers ~430 average turns, so a 250-turn allowance leaves a margin even for the heaviest players.
-  - **Auth library:** an in-process library (candidate: Better Auth, which is open-source and TypeScript) keeps self-host mode free of third-party services. A hosted auth vendor would force a second auth path.
+  - **Auth library (researched 2026-09-24, now a fact):**
+    - Lucia was deprecated in March 2025 and is now a guide to building sessions yourself.
+    - Auth.js has been in security-only maintenance since its team joined Better Auth in September 2025.
+    - Better Auth supports Express 4 and 5 and has a magic-link plugin (the app supplies the email sender; links expire after 5 minutes by default).
+    - Its docs require **mounting its handler before `express.json()`**, the same ordering rule Phase 5's gate already follows.
+    - Sources: better-auth.com/docs/integrations/express, better-auth.com/docs/plugins/magic-link, github.com/lucia-auth/lucia/discussions/1707.
 - **Assumptions:**
   - Friends-scale traffic at launch (tens of players), so a single small instance plus managed Postgres is enough.
   - Players accept a monthly turn allowance if the UI shows the remaining count.
@@ -170,11 +175,22 @@ Every phase ships to the real hosted environment, so deployment risk isn't saved
 
 ## Technical Direction
 - **Mode switch:** read once in `config.ts`, alongside the other env readers, and fail fast when an input is invalid. For example, `hosted` without `DATABASE_URL`, or with no Stripe secrets once Phase 9 lands. `buildApp()` picks which middleware to mount by mode. The middleware order stays load-bearing and tested (CODEBASE.md risk: "Middleware order is the security model").
-- **Auth:**
-  - An in-process library on Postgres; the candidate is Better Auth, to be verified at planning.
-  - An email provider for magic links (e.g. Resend or Postmark), plus Google and Discord OAuth apps.
-  - Cookies are `HttpOnly; Secure; SameSite=Lax`. This brings a **CSRF surface the Bearer-header design never had**: every state-changing route needs an origin check or a CSRF token.
-  - The existing Host allow-list and CORS stay.
+- **Auth (decided 2026-09-24):**
+  - **Library: Better Auth**, running in-process on our Postgres. It provides magic link, Google and Discord out of the box.
+    - An email provider supplies the `sendMagicLink` function; which provider is still open.
+    - Its tables live beside ours.
+  - **Sessions:** a 30-day rolling session in a cookie marked `HttpOnly; Secure; SameSite=Lax`.
+  - **CSRF:** cookie auth brings a **CSRF surface the Bearer-header design never had**. Defence has three layers:
+    - Better Auth's origin checks, with trusted origins set to `FRONTEND_ORIGIN`.
+    - The existing Host allow-list.
+    - `SameSite=Lax`.
+
+    Planning must verify which of these Better Auth enforces on its own routes versus ours. Every state-changing route of ours (saves, account, billing) needs an explicit Origin check, pinned by a test.
+  - **Invites:** single-use personal codes that the operator generates (one per friend). Each code is stored hashed and consumed atomically at sign-up.
+  - **Account deletion:** inline confirm (CLAUDE.md #1). The subscription is cancelled immediately and the account hidden. Saves, usage and sessions are hard-deleted after a **7-day grace period** unless the player signs back in. A scheduled job does the deletion, and its effect is tested.
+  - **Mount order in hosted mode:** Host allow-list → CORS → `/api/health` → per-IP limiter → **Better Auth handler and the Stripe webhook (both need the raw body)** → session check (replaces the passphrase gate) → per-user limiter → `express.json` → routes. As in Phase 5, each ordering claim gets a test that fails when the order is broken.
+  - The existing CORS setup stays. The Phase 5 passphrase gate stays for **self-host mode only**.
+
 - **Data model (Postgres):**
   - `users`, `sessions` and `oauth_accounts` (owned by the auth library), plus `invites`.
   - `saves (id, user_id, slot jsonb, schema_version, updated_at)`.
@@ -206,7 +222,7 @@ Every phase ships to the real hosted environment, so deployment risk isn't saved
 - ~~**Price point and allowance size**~~ Settled 2026-09-24: **$10 / 250 turns**, configurable (see Pricing). Still to do: re-check against the Phase 8 usage table before the public beta.
 - ~~**Does character creation count against the allowance?**~~ Settled 2026-09-24: 3 free per month, then 2 turns each; save slots capped at 20 (see Pricing).
 - ~~**Pay from day one for friends?**~~ Settled 2026-09-24: friends play free after Phase 8, on the same 250-turn allowance, and move to paid in Phase 10 with notice.
-- **Which auth library, and which email provider?** Verify Better Auth's Express + Postgres support and its magic-link and Discord support when planning Phase 6.
+- ~~**Which auth library?**~~ Settled 2026-09-24: Better Auth. **Still open:** which email provider (Resend, Postmark or SES) — decide in Phase 6 planning. Also confirm Better Auth's Discord provider and its Postgres adapter against the current docs at that point.
 - **Anthropic usage-policy requirements for a consumer app** (age minimum, AI disclosure, content handling), and the ToS/privacy wording. Research at the end of Phase 8, **before inviting friends**, and record it in the design log. The full ToS comes in Phase 10.
 - **How long to keep data after cancellation**, for saves and usage rows. Default proposal: saves kept 90 days read-only, then deleted; usage kept for accounting.
 - **Anti-framing header / CSP:** make the call in Phase 6, since logged-in sessions raise the stakes of clickjacking.
