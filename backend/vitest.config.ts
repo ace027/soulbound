@@ -16,5 +16,10 @@ export default defineConfig({
     // ever being picked up and run alongside its own source test, which
     // silently doubled every test run before both fixes were in place.
     exclude: ['**/node_modules/**', '**/dist/**'],
+    // Clears every hosted-mode variable (SOULBOUND_MODE, DATABASE_URL, ...)
+    // before each test file. Without it, a developer shell exporting hosted
+    // variables would flip config.ts into hosted mode and turn the frozen
+    // self-host tests red. See the file's own comment.
+    setupFiles: ['./src/__tests__/setup/clearHostedEnv.ts'],
   },
 });

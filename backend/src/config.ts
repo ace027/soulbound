@@ -13,13 +13,23 @@
  *
  * Phase 2 wires the Anthropic SDK client using `getAnthropicApiKey()` and the
  * model IDs below. This module does not call the Anthropic API itself.
+ *
+ * ── Two modes (Phase 6, R23) ────────────────────────────────────────────────
+ * Load order is fixed: (1) take EVERY secret either mode could use out of
+ * `process.env` (`takeEnv`), (2) read and validate `SOULBOUND_MODE`, (3)
+ * validate only what that mode needs. Step 1 comes first so an invalid mode —
+ * or any other boot failure — never leaves a secret sitting in the
+ * environment. `selfhost` (the default) runs exactly the Phase 5 validation
+ * with byte-identical messages. `hosted` swaps the passphrase for accounts:
+ * its secrets are reachable only through `getHostedSecrets()`, and `redact()`
+ * covers all of them.
  */
 
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { inspect } from 'node:util';
-import { MIN_PASSPHRASE_LENGTH } from '@soulbound/shared';
+import { MIN_PASSPHRASE_LENGTH, type SoulboundMode } from '@soulbound/shared';
 
 const MISSING_KEY_MESSAGE = `
 Missing required environment variable: ANTHROPIC_API_KEY
@@ -38,7 +48,8 @@ See .env.example for the expected format.
  * Wraps a secret string so accidental logging can't leak it. `console.log`
  * and `util.inspect` both honor `[inspect.custom]`; `JSON.stringify` honors
  * `toJSON`. Only `.reveal()` returns the real value, and only this module
- * calls it — from `getAnthropicApiKey()`, `checkPassphrase()` and `redact()`.
+ * calls it — from `getAnthropicApiKey()`, `checkPassphrase()`,
+ * `getHostedSecrets()` and `redact()`.
  */
 class Secret {
   readonly #value: string;
@@ -84,8 +95,48 @@ function takeEnv(name: string): string | undefined {
   return raw;
 }
 
+// Step 1: every secret either mode could use, taken before ANYTHING is
+// validated — including the mode itself. In self-host mode the five hosted
+// secrets are taken and then ignored: a deployer may share one `.env` between
+// modes, so their presence is not an error, but they must still never linger
+// in the environment.
 const rawApiKey = takeEnv('ANTHROPIC_API_KEY');
 const rawPassphrase = takeEnv('SOULBOUND_PASSPHRASE');
+const rawDatabaseUrl = takeEnv('DATABASE_URL');
+const rawBetterAuthSecret = takeEnv('BETTER_AUTH_SECRET');
+const rawResendApiKey = takeEnv('RESEND_API_KEY');
+const rawGoogleClientSecret = takeEnv('GOOGLE_CLIENT_SECRET');
+const rawDiscordClientSecret = takeEnv('DISCORD_CLIENT_SECRET');
+
+// Not secrets, but taken the same way: Better Auth would otherwise read
+// BETTER_AUTH_URL from the environment on its own (R24a passes it explicitly),
+// and one read-and-delete rule for every hosted variable is easier to audit
+// than two.
+const rawBetterAuthUrl = takeEnv('BETTER_AUTH_URL');
+const rawEmailFrom = takeEnv('EMAIL_FROM');
+const rawGoogleClientId = takeEnv('GOOGLE_CLIENT_ID');
+const rawDiscordClientId = takeEnv('DISCORD_CLIENT_ID');
+const rawSentryDsn = takeEnv('SENTRY_DSN');
+
+// Step 2: the mode.
+function readMode(): SoulboundMode {
+  const raw = process.env.SOULBOUND_MODE;
+  if (raw === undefined || raw.trim().length === 0) {
+    return 'selfhost';
+  }
+  const trimmed = raw.trim();
+  if (trimmed === 'selfhost' || trimmed === 'hosted') {
+    return trimmed;
+  }
+  throw new Error(
+    `Invalid SOULBOUND_MODE: ${JSON.stringify(raw)}.\n\n` +
+      "Expected 'selfhost' (the default: one deployer, a shared passphrase) or\n" +
+      "'hosted' (player accounts), e.g.\n" +
+      '  SOULBOUND_MODE=selfhost',
+  );
+}
+
+export const MODE: SoulboundMode = readMode();
 
 function validateApiKey(raw: string | undefined): Secret {
   if (!raw || raw.trim().length === 0) {
@@ -162,7 +213,384 @@ function validatePassphrase(raw: string | undefined): Secret {
   return new Secret(trimmed);
 }
 
-const soulboundPassphrase = validatePassphrase(rawPassphrase);
+const PASSPHRASE_IN_HOSTED_MESSAGE = `
+Invalid SOULBOUND_PASSPHRASE: it is set, but it is not used in hosted mode.
+
+Hosted mode (SOULBOUND_MODE=hosted) signs players in with accounts instead of
+a shared passphrase, so a passphrase left in the environment would be a live
+secret guarding nothing. Remove SOULBOUND_PASSPHRASE from the hosted
+environment, or set SOULBOUND_MODE=selfhost to keep the passphrase gate.
+`.trim();
+
+/**
+ * Self-host validates the passphrase exactly as Phase 5 did. Hosted mode
+ * refuses to boot if one is set at all (R23) — it was already taken out of
+ * `process.env` above, so the refusal itself leaves nothing behind.
+ */
+function readPassphraseForMode(raw: string | undefined): Secret | undefined {
+  if (MODE === 'selfhost') {
+    return validatePassphrase(raw);
+  }
+  if (raw !== undefined && raw.trim().length > 0) {
+    throw new Error(PASSPHRASE_IN_HOSTED_MESSAGE);
+  }
+  return undefined;
+}
+
+const soulboundPassphrase: Secret | undefined = readPassphraseForMode(rawPassphrase);
+
+// ─── Hosted-mode configuration (Phase 6, R23 / R25d) ─────────────────────────
+
+/** Minimum length for BETTER_AUTH_SECRET: it keys session signing and the invite-cookie HMAC. */
+const MIN_AUTH_SECRET_LENGTH = 32;
+
+/**
+ * Minimum length for every other hosted secret (the Resend key, the OAuth
+ * client secrets, a DATABASE_URL password). Not a strength rule — these are
+ * issued by their providers — but a `redact()` guard: every configured secret
+ * is stripped from every log line and error body, so a tiny one (a DB password
+ * of `postgres`) would rewrite ordinary text wherever it happened to occur.
+ */
+const MIN_HOSTED_SECRET_LENGTH = 16;
+
+function missingHostedVariableMessage(name: string, purpose: string, example: string): string {
+  return (
+    `Missing required environment variable: ${name}\n\n` +
+    `Hosted mode (SOULBOUND_MODE=hosted) cannot start without ${purpose}.\n` +
+    'Set it in the hosted environment, e.g.\n' +
+    `  ${name}=${example}`
+  );
+}
+
+function shortHostedSecretMessage(name: string, length: number, minimum: number): string {
+  return (
+    `Invalid ${name}: ${length} character(s) long.\n\n` +
+    `Hosted secrets must be at least ${minimum} characters. Every configured secret\n` +
+    'is stripped from every log line and error response, so a short one would also\n' +
+    'rewrite ordinary text that happens to contain it. Use the full value your\n' +
+    'provider issued, or generate one, e.g.\n' +
+    '  openssl rand -base64 32'
+  );
+}
+
+/** A required hosted secret: present, trimmed, and at least `minimum` characters. */
+function readRequiredHostedSecret(
+  name: string,
+  raw: string | undefined,
+  minimum: number,
+  purpose: string,
+  example: string,
+): Secret {
+  if (!raw || raw.trim().length === 0) {
+    throw new Error(missingHostedVariableMessage(name, purpose, example));
+  }
+  const trimmed = raw.trim();
+  if (trimmed.length < minimum) {
+    throw new Error(shortHostedSecretMessage(name, trimmed.length, minimum));
+  }
+  return new Secret(trimmed);
+}
+
+/**
+ * An optional OAuth provider: both its client ID and secret, or neither. One
+ * without the other is a half-configured provider that would fail only when a
+ * player first clicks its button.
+ */
+function readOptionalOAuthProvider(
+  provider: string,
+  idName: string,
+  rawId: string | undefined,
+  secretName: string,
+  rawSecret: string | undefined,
+): { clientId: string; clientSecret: Secret } | undefined {
+  const id = rawId?.trim() ?? '';
+  const secret = rawSecret?.trim() ?? '';
+  if (id.length === 0 && secret.length === 0) {
+    return undefined;
+  }
+  if (id.length === 0 || secret.length === 0) {
+    const missing = id.length === 0 ? idName : secretName;
+    throw new Error(
+      `Missing environment variable: ${missing}\n\n` +
+        `${provider} sign-in needs both ${idName} and ${secretName}. Set both to\n` +
+        `enable ${provider}, or unset both to leave it off.`,
+    );
+  }
+  if (secret.length < MIN_HOSTED_SECRET_LENGTH) {
+    throw new Error(shortHostedSecretMessage(secretName, secret.length, MIN_HOSTED_SECRET_LENGTH));
+  }
+  return { clientId: id, clientSecret: new Secret(secret) };
+}
+
+/**
+ * DATABASE_URL, plus the password forms `redact()` has to strip. A driver
+ * error can quote the URL whole, or just the password — raw (still
+ * percent-encoded, as written in the URL) or decoded — so all three are kept.
+ * Error messages here never echo the value: it carries the password.
+ */
+function readDatabaseUrl(raw: string | undefined): {
+  url: Secret;
+  password: Secret | undefined;
+  decodedPassword: Secret | undefined;
+} {
+  if (!raw || raw.trim().length === 0) {
+    throw new Error(
+      missingHostedVariableMessage(
+        'DATABASE_URL',
+        'a Postgres connection string',
+        'postgres://soulbound:<password>@db.example.internal:5432/soulbound',
+      ),
+    );
+  }
+  const trimmed = raw.trim();
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    parsed = new URL('invalid:');
+  }
+  if (parsed.protocol !== 'postgres:' && parsed.protocol !== 'postgresql:') {
+    throw new Error(
+      'Invalid DATABASE_URL: not a postgres:// or postgresql:// connection string.\n\n' +
+        '(The value is not shown here because it may contain a password.) Expected, e.g.\n' +
+        '  DATABASE_URL=postgres://soulbound:<password>@db.example.internal:5432/soulbound',
+    );
+  }
+  if (parsed.password.length === 0) {
+    // A password-less URL (a local test cluster using trust auth) has
+    // nothing in it to redact beyond the URL itself.
+    return { url: new Secret(trimmed), password: undefined, decodedPassword: undefined };
+  }
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(parsed.password);
+  } catch {
+    throw new Error(
+      'Invalid DATABASE_URL: its password is not valid percent-encoding.\n\n' +
+        'Percent-encode reserved characters in the password (for example "@" as %40\n' +
+        'and "/" as %2F), or use the connection string exactly as your provider shows it.',
+    );
+  }
+  if (decoded.length < MIN_HOSTED_SECRET_LENGTH) {
+    throw new Error(
+      shortHostedSecretMessage('DATABASE_URL password', decoded.length, MIN_HOSTED_SECRET_LENGTH),
+    );
+  }
+  return {
+    url: new Secret(trimmed),
+    password: new Secret(parsed.password),
+    decodedPassword: new Secret(decoded),
+  };
+}
+
+/**
+ * BETTER_AUTH_URL: the public origin every magic link and OAuth callback is
+ * built from (R24a) — passed to Better Auth explicitly, so a spoofed
+ * `X-Forwarded-Host` can never redirect a link. Must be a bare `https:`
+ * origin; `http://localhost` is allowed only outside production, for local
+ * development.
+ */
+function readBetterAuthUrl(raw: string | undefined): string {
+  const example = 'https://soulbound.example.com';
+  if (!raw || raw.trim().length === 0) {
+    throw new Error(
+      missingHostedVariableMessage(
+        'BETTER_AUTH_URL',
+        'the public origin players reach it at (magic links and OAuth callbacks are built from it)',
+        example,
+      ),
+    );
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(raw.trim());
+  } catch {
+    throw new Error(
+      'Invalid BETTER_AUTH_URL: not a parseable URL.\n\n' +
+        'Expected the full public origin including the scheme, e.g.\n' +
+        `  BETTER_AUTH_URL=${example}`,
+    );
+  }
+  if (
+    parsed.username !== '' ||
+    parsed.password !== '' ||
+    parsed.pathname !== '/' ||
+    parsed.search !== '' ||
+    parsed.hash !== ''
+  ) {
+    throw new Error(
+      'Invalid BETTER_AUTH_URL: must be a bare origin (scheme, host and optional port),\n' +
+        'with no credentials, path, query or fragment, e.g.\n' +
+        `  BETTER_AUTH_URL=${example}`,
+    );
+  }
+  const isLocalhost = parsed.hostname === 'localhost';
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (parsed.protocol === 'https:') {
+    return parsed.origin;
+  }
+  if (parsed.protocol === 'http:' && isLocalhost && !isProduction) {
+    return parsed.origin;
+  }
+  throw new Error(
+    `Invalid BETTER_AUTH_URL: ${JSON.stringify(parsed.origin)} is not an https origin.\n\n` +
+      'Session cookies are Secure, so hosted mode must be served over https.\n' +
+      'http://localhost is accepted only when NODE_ENV is not "production". e.g.\n' +
+      `  BETTER_AUTH_URL=${example}`,
+  );
+}
+
+/** EMAIL_FROM: the sender Resend puts on magic-link emails. */
+function readEmailFrom(raw: string | undefined): string {
+  const example = 'Soulbound <noreply@soulbound.example.com>';
+  if (!raw || raw.trim().length === 0) {
+    throw new Error(
+      missingHostedVariableMessage('EMAIL_FROM', 'a sender address for magic-link emails', example),
+    );
+  }
+  const trimmed = raw.trim();
+  // A CR or LF here would let the value inject extra mail headers.
+  if (!trimmed.includes('@') || /[\r\n]/.test(trimmed)) {
+    throw new Error(
+      'Invalid EMAIL_FROM: expected one email address, optionally with a display name,\n' +
+        'on a single line, e.g.\n' +
+        `  EMAIL_FROM=${example}`,
+    );
+  }
+  return trimmed;
+}
+
+/**
+ * USER_RATE_LIMIT_PER_MINUTE: hosted mode's per-user limiter, keyed on the
+ * signed-in user after the session gate (R24f). Same bounds and voice as
+ * RATE_LIMIT_PER_MINUTE below; read only in hosted mode.
+ */
+function readUserRateLimitPerMinute(): number {
+  const raw = process.env.USER_RATE_LIMIT_PER_MINUTE;
+  if (raw === undefined || raw.trim().length === 0) {
+    return 60;
+  }
+  const parsed = Number(raw.trim());
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 600) {
+    throw new Error(
+      `Invalid USER_RATE_LIMIT_PER_MINUTE: ${JSON.stringify(raw)}.\n\n` +
+        'Expected an integer from 1 to 600 (requests per minute, per signed-in player), e.g.\n' +
+        '  USER_RATE_LIMIT_PER_MINUTE=60',
+    );
+  }
+  return parsed;
+}
+
+interface HostedConfig {
+  databaseUrl: Secret;
+  databasePassword: Secret | undefined;
+  databaseDecodedPassword: Secret | undefined;
+  betterAuthSecret: Secret;
+  resendApiKey: Secret;
+  publicOrigin: string;
+  emailFrom: string;
+  google: { clientId: string; clientSecret: Secret } | undefined;
+  discord: { clientId: string; clientSecret: Secret } | undefined;
+  sentryDsn: string | undefined;
+  userRateLimitPerMinute: number;
+}
+
+function readHostedConfig(): HostedConfig {
+  const database = readDatabaseUrl(rawDatabaseUrl);
+  const betterAuthSecret = readRequiredHostedSecret(
+    'BETTER_AUTH_SECRET',
+    rawBetterAuthSecret,
+    MIN_AUTH_SECRET_LENGTH,
+    'a session-signing secret',
+    '<output of: openssl rand -base64 32>',
+  );
+  const publicOrigin = readBetterAuthUrl(rawBetterAuthUrl);
+  const resendApiKey = readRequiredHostedSecret(
+    'RESEND_API_KEY',
+    rawResendApiKey,
+    MIN_HOSTED_SECRET_LENGTH,
+    'a Resend API key (magic-link emails are sent through Resend)',
+    're_<your Resend API key>',
+  );
+  const emailFrom = readEmailFrom(rawEmailFrom);
+  const google = readOptionalOAuthProvider(
+    'Google',
+    'GOOGLE_CLIENT_ID',
+    rawGoogleClientId,
+    'GOOGLE_CLIENT_SECRET',
+    rawGoogleClientSecret,
+  );
+  const discord = readOptionalOAuthProvider(
+    'Discord',
+    'DISCORD_CLIENT_ID',
+    rawDiscordClientId,
+    'DISCORD_CLIENT_SECRET',
+    rawDiscordClientSecret,
+  );
+  const sentryDsn = rawSentryDsn?.trim() || undefined;
+  return {
+    databaseUrl: database.url,
+    databasePassword: database.password,
+    databaseDecodedPassword: database.decodedPassword,
+    betterAuthSecret,
+    resendApiKey,
+    publicOrigin,
+    emailFrom,
+    google,
+    discord,
+    sentryDsn,
+    userRateLimitPerMinute: readUserRateLimitPerMinute(),
+  };
+}
+
+// Step 3 (hosted): validated here, after the API key and the passphrase
+// rejection, and before FRONTEND_ORIGIN below, which defaults to this origin.
+// Self-host never runs it: the hosted variables it would read were taken
+// above and are simply dropped.
+const hosted: HostedConfig | undefined = MODE === 'hosted' ? readHostedConfig() : undefined;
+
+/** Hosted mode's public origin (from BETTER_AUTH_URL); undefined in self-host. */
+export const HOSTED_PUBLIC_URL: string | undefined = hosted?.publicOrigin;
+/** Sender for magic-link emails; undefined in self-host. */
+export const EMAIL_FROM: string | undefined = hosted?.emailFrom;
+/** Google OAuth client ID when Google sign-in is configured; hosted only. */
+export const GOOGLE_CLIENT_ID: string | undefined = hosted?.google?.clientId;
+/** Discord OAuth client ID when Discord sign-in is configured; hosted only. */
+export const DISCORD_CLIENT_ID: string | undefined = hosted?.discord?.clientId;
+/**
+ * The error tracker's DSN. Not a secret (it only permits sending events), but
+ * taken from the environment like one. Undefined in self-host, which never
+ * loads the tracker even when SENTRY_DSN is set (R25b).
+ */
+export const SENTRY_DSN: string | undefined = hosted?.sentryDsn;
+/** Per-signed-in-player requests per minute (R24f); undefined in self-host. */
+export const USER_RATE_LIMIT_PER_MINUTE: number | undefined = hosted?.userRateLimitPerMinute;
+
+/**
+ * The hosted secrets, for the modules that must hand them to a library (the
+ * `pg` pool, Better Auth, Resend, the OAuth providers). A function rather than
+ * an exported value for the same reason as `getAnthropicApiKey()`: it can't be
+ * swept up by `console.log(config)` or `JSON.stringify(config)`. Throws in
+ * self-host, where none of them is configured.
+ */
+export function getHostedSecrets(): {
+  databaseUrl: string;
+  betterAuthSecret: string;
+  resendApiKey: string;
+  googleClientSecret?: string;
+  discordClientSecret?: string;
+} {
+  if (hosted === undefined) {
+    throw new Error('getHostedSecrets is not available in self-host mode');
+  }
+  return {
+    databaseUrl: hosted.databaseUrl.reveal(),
+    betterAuthSecret: hosted.betterAuthSecret.reveal(),
+    resendApiKey: hosted.resendApiKey.reveal(),
+    ...(hosted.google ? { googleClientSecret: hosted.google.clientSecret.reveal() } : {}),
+    ...(hosted.discord ? { discordClientSecret: hosted.discord.clientSecret.reveal() } : {}),
+  };
+}
 
 /** SHA-256 digest of a string, as a Buffer, for constant-time comparison. */
 function sha256(value: string): Buffer {
@@ -178,36 +606,66 @@ function sha256(value: string): Buffer {
  * passphrase, which is itself a timing signal about the real length.
  */
 export function checkPassphrase(candidate: string): boolean {
+  // Hosted mode has no passphrase; a caller reaching this there is wired to
+  // the wrong gate, and failing loudly beats comparing against nothing.
+  if (MODE === 'hosted' || soulboundPassphrase === undefined) {
+    throw new Error('checkPassphrase is not available in hosted mode');
+  }
   const candidateDigest = sha256(candidate);
   const realDigest = sha256(soulboundPassphrase.reveal());
   return timingSafeEqual(candidateDigest, realDigest);
 }
 
 /**
- * Strips every occurrence of the live API key and the live passphrase out of
- * a string. Use this on anything derived from a caught error (message,
- * stack, a provider error body) before it is logged server-side or sent to a
- * client — a misbehaving provider response can otherwise echo the key back
- * inside its own message, and a route that echoes request context back in an
- * error could do the same for the passphrase.
+ * Every configured secret `redact()` strips, sorted once, at load, LONGEST
+ * FIRST. If one secret is a substring of another, redacting the shorter one
+ * first would consume only part of an occurrence of the longer one, leaving a
+ * fragment of it in the output instead of a clean `[REDACTED]`. Doing the
+ * longer one first can never have that problem: once every occurrence of the
+ * longer string is gone, nothing a shorter pass finds can be a leftover piece
+ * of it. Empty strings are dropped (splitting on `''` would redact between
+ * every character), and so are duplicates.
+ *
+ * Self-host: the API key and the passphrase, exactly as in Phase 5. Hosted:
+ * the API key, DATABASE_URL (whole, its password as written, and that
+ * password URL-decoded), BETTER_AUTH_SECRET, RESEND_API_KEY and any
+ * configured OAuth client secret.
+ */
+const redactionTargets: readonly string[] = (() => {
+  const secrets: (Secret | undefined)[] = [anthropicApiKey, soulboundPassphrase];
+  if (hosted !== undefined) {
+    secrets.push(
+      hosted.databaseUrl,
+      hosted.databasePassword,
+      hosted.databaseDecodedPassword,
+      hosted.betterAuthSecret,
+      hosted.resendApiKey,
+      hosted.google?.clientSecret,
+      hosted.discord?.clientSecret,
+    );
+  }
+  const values = secrets
+    .map((secret) => secret?.reveal() ?? '')
+    .filter((value) => value.length > 0);
+  // Stable sort: equal lengths keep the order above (the key first), as
+  // Phase 5's two-secret version did.
+  return Object.freeze([...new Set(values)].sort((a, b) => b.length - a.length));
+})();
+
+/**
+ * Strips every occurrence of every configured secret (see
+ * `redactionTargets`) out of a string. Use this on anything derived from a
+ * caught error (message, stack, a provider error body) before it is logged
+ * server-side or sent to a client — a misbehaving provider response can
+ * otherwise echo the key back inside its own message, a route that echoes
+ * request context back in an error could do the same for the passphrase, and
+ * a database driver error can quote its connection string.
  */
 export function redact(input: string): string {
   if (!input) return input;
-  const key = anthropicApiKey.reveal();
-  const passphrase = soulboundPassphrase.reveal();
-  // Replace the LONGER secret first. If one secret happened to be a
-  // substring of the other (never true today — the key is `sk-ant-...` and
-  // the passphrase is validated printable ASCII with no fixed prefix — but
-  // this function must not depend on that staying true), redacting the
-  // shorter one first would consume only part of an occurrence of the longer
-  // one, leaving a fragment of it in the output instead of a clean
-  // `[REDACTED]`. Doing the longer one first can never have that problem:
-  // once every occurrence of the longer string is gone, nothing the shorter
-  // pass finds can be a leftover piece of it.
-  const [first, second] = key.length >= passphrase.length ? [key, passphrase] : [passphrase, key];
-  let result = first.length > 0 ? input.split(first).join('[REDACTED]') : input;
-  if (second.length > 0) {
-    result = result.split(second).join('[REDACTED]');
+  let result = input;
+  for (const secret of redactionTargets) {
+    result = result.split(secret).join('[REDACTED]');
   }
   return result;
 }
@@ -236,8 +694,8 @@ export const PORT: number = Number.parseInt(process.env.PORT ?? '3001', 10);
  * `Origin` header never carries either, so an un-normalized value with one
  * would never match.
  */
-function readFrontendOrigin(): string {
-  const raw = (process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173').trim();
+function readFrontendOrigin(defaultOrigin = 'http://localhost:5173'): string {
+  const raw = (process.env.FRONTEND_ORIGIN ?? defaultOrigin).trim();
 
   if (raw === '*') {
     throw new Error(
@@ -271,7 +729,27 @@ function readFrontendOrigin(): string {
   return parsed.origin;
 }
 
-export const FRONTEND_ORIGIN: string = readFrontendOrigin();
+/**
+ * Hosted mode is same-origin: the backend serves the frontend at the public
+ * origin, so FRONTEND_ORIGIN defaults to BETTER_AUTH_URL's origin and must
+ * equal it. A different value would advertise a CORS origin that no hosted
+ * page is ever served from.
+ */
+function readHostedFrontendOrigin(publicOrigin: string): string {
+  const origin = readFrontendOrigin(publicOrigin);
+  if (origin !== publicOrigin) {
+    throw new Error(
+      `Invalid FRONTEND_ORIGIN: ${JSON.stringify(origin)} does not match BETTER_AUTH_URL's origin ${JSON.stringify(publicOrigin)}.\n\n` +
+        'In hosted mode the frontend is served from the public origin itself. Unset\n' +
+        'FRONTEND_ORIGIN (it defaults to BETTER_AUTH_URL), or set it to the same origin, e.g.\n' +
+        `  FRONTEND_ORIGIN=${publicOrigin}`,
+    );
+  }
+  return origin;
+}
+
+export const FRONTEND_ORIGIN: string =
+  hosted === undefined ? readFrontendOrigin() : readHostedFrontendOrigin(hosted.publicOrigin);
 
 /**
  * The `Host` header values this server will answer at all.

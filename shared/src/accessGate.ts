@@ -31,3 +31,35 @@ export const ACCESS_CHECK_PATH = '/api/access';
 
 /** The shortest passphrase the backend will accept at boot. */
 export const MIN_PASSPHRASE_LENGTH = 12;
+
+// ─── Hosted mode (Phase 6) ──────────────────────────────────────────────────
+// Appended for the second deployment mode: player accounts instead of the
+// deployer passphrase. Everything above this line is the self-host contract
+// and is unchanged.
+
+/** The two deployment modes `SOULBOUND_MODE` selects between. */
+export type SoulboundMode = 'selfhost' | 'hosted';
+
+/** Error code for a hosted request with no valid session (401). */
+export const SIGN_IN_REQUIRED = 'SIGN_IN_REQUIRED';
+
+/** Error code for a hosted state-changing request from a foreign or missing Origin (403). */
+export const ORIGIN_REJECTED = 'ORIGIN_REJECTED';
+
+/** Error code for a hosted sign-up attempted without a redeemed invite. */
+export const INVITE_REQUIRED = 'INVITE_REQUIRED';
+
+/** Error code for an unknown, used or expired invite code (400; one response for all three). */
+export const INVITE_INVALID = 'INVITE_INVALID';
+
+/** The path a player posts their invite code to before signing up. */
+export const INVITE_REDEEM_PATH = '/api/invites/redeem';
+
+/** The path for the signed-in player's own account (`DELETE` requests deletion). */
+export const ACCOUNT_PATH = '/api/account';
+
+/** The only shape an invite code may take: 128 bits as base64url, 22 characters. */
+export const INVITE_CODE_PATTERN = /^[A-Za-z0-9_-]{22}$/;
+
+/** Response header on hosted `GET /api/access` (value `hosted`); self-host never sends it. */
+export const MODE_HEADER = 'Soulbound-Mode';
