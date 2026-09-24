@@ -8,6 +8,7 @@ import * as authClient from '../../lib/authClient';
 import ModeGate, { SESSION_REFRESH_MS } from '../ModeGate';
 import { CROSS_DEVICE_TEXT, GENERIC_ERROR_TEXT, INVITE_INVALID_TEXT, LINK_USED_TEXT } from '../SignIn';
 import { DELETE_WARNING_TEXT } from '../AccountPanel';
+import { HostedAccountSlot } from '../hostedAccount';
 
 /**
  * `<ModeGate>`, `<SignIn>` and `<AccountPanel>` (Phase 6, 06-06). `fetch` is
@@ -102,7 +103,7 @@ describe('ModeGate: self-host', () => {
     );
     expect(await screen.findByTestId('game')).toBeInTheDocument();
     expect(container.innerHTML).toBe('<div data-testid="game">the game</div>');
-    expect(screen.queryByRole('button', { name: 'Account' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
     expect(calls('GET', '/api/access')).toBe(1);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
@@ -127,7 +128,7 @@ describe('ModeGate: self-host', () => {
       </ModeGate>,
     );
     expect(await screen.findByTestId('game')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Account' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
   });
 
   it('fails open on a network error, like AccessGate', async () => {
@@ -169,7 +170,21 @@ describe('ModeGate: hosted', () => {
     expect(authClient.refreshSession).not.toHaveBeenCalled();
   });
 
-  it('hosted + ok renders the child and the AccountPanel', async () => {
+  it('hosted + ok renders the child and gives the Codex slot its Account section', async () => {
+    routes['GET /api/access'] = () => res(204, undefined, HOSTED);
+    render(
+      <ModeGate>
+        <div data-testid="game">
+          <HostedAccountSlot />
+        </div>
+      </ModeGate>,
+    );
+    expect(await screen.findByTestId('game')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Account' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
+  });
+
+  it('hosted + ok adds no account controls outside the slot', async () => {
     routes['GET /api/access'] = () => res(204, undefined, HOSTED);
     render(
       <ModeGate>
@@ -177,7 +192,12 @@ describe('ModeGate: hosted', () => {
       </ModeGate>,
     );
     expect(await screen.findByTestId('game')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Account' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
+  });
+
+  it('the slot renders nothing without ModeGate (self-host, and every pre-Phase-6 Codex test)', () => {
+    const { container } = render(<HostedAccountSlot />);
+    expect(container.innerHTML).toBe('');
   });
 
   it('refreshes the session once when signed in, then every 12 hours', async () => {
@@ -370,10 +390,12 @@ describe('AccountPanel', () => {
     routes['GET /api/access'] = () => res(204, undefined, HOSTED);
     render(
       <ModeGate>
-        <div data-testid="game" />
+        <div data-testid="game">
+          <HostedAccountSlot />
+        </div>
       </ModeGate>,
     );
-    fireEvent.click(await screen.findByRole('button', { name: 'Account' }));
+    await screen.findByRole('button', { name: 'Sign out' });
   }
 
   it('delete needs two clicks, calls DELETE exactly once, then shows sign-in', async () => {
@@ -416,10 +438,11 @@ describe('AccountPanel', () => {
     expect(screen.queryByTestId('game')).not.toBeInTheDocument();
   });
 
-  it('Escape closes the panel and returns focus to the button', async () => {
+  it('arming focuses Confirm, and Cancel returns focus to Delete account', async () => {
     await renderSignedIn();
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Sign out' }), { key: 'Escape' });
-    expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Account' })).toHaveFocus();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete account' }));
+    expect(screen.getByRole('button', { name: 'Confirm' })).toHaveFocus();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByRole('button', { name: 'Delete account' })).toHaveFocus();
   });
 });

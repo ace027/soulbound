@@ -1,5 +1,6 @@
 import type { GameState, Skill } from '@soulbound/shared';
 import SkillCard from './SkillCard';
+import { HostedAccountSlot } from './hostedAccount';
 import type { Phase } from '../App';
 
 /**
@@ -17,6 +18,11 @@ import type { Phase } from '../App';
  * (legacy 447, 1347) — a `Skill`, not the `UniqueSkillDetermination` that
  * `WorldLog`'s `etchingSkill` carries. The two are different shapes on
  * purpose; see the LogEntry.etchingSkill comment in shared/src/gameState.ts.
+ *
+ * One addition to the verbatim port (Phase 6): `<HostedAccountSlot/>` after
+ * All Skills. It renders the hosted Account section only inside
+ * `HostedAccountContext`, which `ModeGate` provides in hosted mode; in
+ * self-host it renders nothing, so this component's DOM is unchanged.
  */
 export interface SoulCodexContentsProps {
   gameState: GameState;
@@ -119,6 +125,8 @@ export default function SoulCodexContents({
           <SkillCard key={skill.name} skill={skill} isNew={newSkillIds.has(skill.name)} />
         ))}
       </div>
+
+      <HostedAccountSlot />
     </div>
   );
 }

@@ -13,8 +13,9 @@
  * On mount it calls `getAccessState()` once:
  *   - pending: the same empty background `AccessGate` shows, so nothing flashes;
  *   - `'signin'`: `<SignIn/>` and not the children;
- *   - anything else: the children, plus `<AccountPanel/>` only when the
- *     response carried `Soulbound-Mode: hosted`.
+ *   - anything else: the children. When the response carried
+ *     `Soulbound-Mode: hosted`, they're wrapped in `HostedAccountContext`, so
+ *     the Soul Codex shows its Account section (`hostedAccount.tsx`).
  * In self-host that last case returns `children` as they are: no wrapper, no
  * extra DOM, and `AccessGate` then runs exactly as it did in Phase 5.
  *
@@ -29,12 +30,12 @@
  * survives if the player signs in again in another tab and continues here.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { getAccessState, onSignInRequired } from '../lib/api';
 import { refreshSession, type SignInParams } from '../lib/authClient';
 import { sharedBg } from '../screens/sharedBg';
-import AccountPanel from './AccountPanel';
+import { HostedAccountContext } from './hostedAccount';
 import SignIn from './SignIn';
 
 /** How often a long-open tab renews its session cookie. */
@@ -95,6 +96,8 @@ export default function ModeGate({ children, signInParams }: ModeGateProps) {
     setState({ kind: 'signin', overlay: false });
   }, []);
 
+  const account = useMemo(() => ({ onSignedOut: signedOut }), [signedOut]);
+
   if (state.kind === 'pending') {
     // Keyed so React never reuses this node for the first element of `children`
     // (same type, same position), which would leave a stray `style=""` behind.
@@ -112,9 +115,11 @@ export default function ModeGate({ children, signInParams }: ModeGateProps) {
       />
     );
     if (!state.overlay) return signIn;
+    // Same shape as the hosted branch below (provider first), so the game
+    // underneath keeps its state while the overlay is up.
     return (
       <>
-        {children}
+        <HostedAccountContext.Provider value={account}>{children}</HostedAccountContext.Provider>
         {signIn}
       </>
     );
@@ -124,8 +129,7 @@ export default function ModeGate({ children, signInParams }: ModeGateProps) {
 
   return (
     <>
-      {children}
-      <AccountPanel onSignedOut={signedOut} />
+      <HostedAccountContext.Provider value={account}>{children}</HostedAccountContext.Provider>
     </>
   );
 }

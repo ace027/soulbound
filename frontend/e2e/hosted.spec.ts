@@ -137,22 +137,31 @@ test('email submit shows the check-your-email text', async ({ page }) => {
   expect(body.callbackURL).toBe('/');
 });
 
-test('once signed in: the game title and the account button; the session is refreshed', async ({ page }) => {
+test('once signed in: the game title, no floating account controls; the session is refreshed', async ({ page }) => {
   const stubs = stubsFor.get(page)!;
   await page.goto('/');
   await expect(page.getByLabel('Email address')).toBeVisible();
   stubs.access = 'ok';
   await page.reload();
   await expect(page.getByRole('heading', { name: 'The Soulbound Chronicles' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Account' })).toBeVisible();
+  // The Account section lives in the Soul Codex, not over the title screen.
+  await expect(page.getByRole('button', { name: 'Sign out' })).toHaveCount(0);
   await expect.poll(() => stubs.counts['GET /api/auth/get-session'] ?? 0).toBeGreaterThanOrEqual(1);
 });
+
+/** Continue the seeded save into the simulation screen (desktop: the Codex is the sidebar). */
+async function enterGame(page: import('@playwright/test').Page): Promise<void> {
+  await page.addInitScript(seedSave);
+  await page.goto('/');
+  await page.locator('.save-card', { hasText: 'Verrin Ashgrave' }).getByRole('button', { name: 'Continue' }).click();
+  await expect(page.locator('textarea[placeholder="What do you do?"]')).toBeVisible();
+}
 
 test('delete: inline confirm, DELETE exactly once, then back to sign-in', async ({ page }) => {
   const stubs = stubsFor.get(page)!;
   stubs.access = 'ok';
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Account' }).click();
+  await enterGame(page);
+  await page.getByRole('region', { name: 'Account' }).scrollIntoViewIfNeeded();
   page.on('dialog', (d) => {
     throw new Error(`native dialog opened: ${d.type()}`);
   });
@@ -205,34 +214,42 @@ for (const [label, viewport] of [
     await expect(page.getByText("That invite link isn't valid", { exact: false })).toBeVisible();
     await shot(page, `invite-error-${label}`);
 
-    // 4. AccountPanel armed, over the game's simulation screen (the busiest layout).
+    // 4. The game screen: no account controls over the narration.
     stubs.access = 'ok';
-    await page.addInitScript(seedSave);
-    await page.goto('/');
-    await page.locator('.save-card', { hasText: 'Verrin Ashgrave' }).getByRole('button', { name: 'Continue' }).click();
-    const textarea = page.locator('textarea[placeholder="What do you do?"]');
-    await expect(textarea).toBeVisible();
-    const account = page.getByRole('button', { name: 'Account' });
-    await expect(account).toBeVisible();
+    await enterGame(page);
     await shot(page, `game-${label}`);
+    if (label === '390') {
+      // World tab: the Account section is not rendered at all.
+      await expect(page.getByRole('region', { name: 'Account' })).toHaveCount(0);
+      await page.getByRole('button', { name: '☽ Codex' }).click();
+    }
 
-    // Placement: the button must not sit on top of any of the game's own controls.
+    // 5. The Account section at the end of the Soul Codex.
+    const section = page.getByRole('region', { name: 'Account' });
+    await section.scrollIntoViewIfNeeded();
+    await expect(section.getByRole('button', { name: 'Sign out' })).toBeVisible();
+    await shot(page, `codex-account-${label}`);
+
+    // Placement: nothing in the section sits on top of another control.
     const overlaps = await page.evaluate(() => {
-      const btn = [...document.querySelectorAll('button')].find((b) => b.textContent === 'Account')!;
-      const a = btn.getBoundingClientRect();
-      return [...document.querySelectorAll('button, textarea, input, a, [role="tab"]')]
-        .filter((el) => el !== btn)
-        .filter((el) => {
-          const r = el.getBoundingClientRect();
-          if (r.width === 0 || r.height === 0) return false;
-          return r.left < a.right && r.right > a.left && r.top < a.bottom && r.bottom > a.top;
-        })
-        .map((el) => `${el.tagName} ${(el.textContent ?? '').trim().slice(0, 30)}`);
+      const mine = [...document.querySelectorAll('section[aria-label="Account"] button')];
+      const others = [...document.querySelectorAll('button, textarea, input, a, [role="tab"]')].filter(
+        (el) => !mine.includes(el),
+      );
+      return mine.flatMap((btn) => {
+        const a = btn.getBoundingClientRect();
+        return others
+          .filter((el) => {
+            const r = el.getBoundingClientRect();
+            if (r.width === 0 || r.height === 0) return false;
+            return r.left < a.right && r.right > a.left && r.top < a.bottom && r.bottom > a.top;
+          })
+          .map((el) => `${btn.textContent} over ${el.tagName} ${(el.textContent ?? '').trim().slice(0, 30)}`);
+      });
     });
-    expect(overlaps, 'Account button overlaps a game control').toEqual([]);
+    expect(overlaps, 'Account section overlaps a game control').toEqual([]);
 
-    await account.click();
-    await page.getByRole('button', { name: 'Delete account' }).click();
+    await section.getByRole('button', { name: 'Delete account' }).click();
     await expect(page.getByRole('button', { name: 'Confirm' })).toBeVisible();
     await shot(page, `account-armed-${label}`);
     expect(stubs.counts['DELETE /api/account']).toBeUndefined();

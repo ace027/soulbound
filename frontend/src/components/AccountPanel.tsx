@@ -1,26 +1,23 @@
 /**
- * Hosted mode's account menu (Phase 6, R24a sign-out, R24d deletion). Rendered
- * by `ModeGate` only when `/api/access` said `Soulbound-Mode: hosted`, so a
- * self-host page never contains it.
+ * Hosted mode's account controls (Phase 6, R24a sign-out, R24d deletion).
  *
- * A small fixed button opens a panel with "Sign out" and "Delete account".
- * Deletion uses the project's inline arm -> Confirm/Cancel pattern (CLAUDE.md
- * #1), never a native dialog: the first tap only arms it and shows what will
- * happen; `DELETE /api/account` runs only from Confirm. After a 204 every
- * session is already revoked (06-05), so it goes straight back to sign-in
- * without retrying anything.
+ * Placement: an "Account" section at the end of the Soul Codex, after All
+ * Skills, reached through `HostedAccountSlot` (see `hostedAccount.tsx`). That
+ * puts it in the Codex tab on a phone and at the bottom of the sidebar on
+ * desktop. It used to be a fixed button over the narration, which on a phone
+ * covered the first line of story text (06-06 evidence, `game-390.png`). It
+ * is inline, with no floating panel, so nothing can be clipped by the Codex's
+ * own scroll region.
  *
- * Placement: fixed, top right, 56 px down. On a phone the game has no free
- * corner (a full-width tab bar on top, a full-width action bar at the bottom),
- * so the button sits just below the tab bar, over the top-right corner of the
- * scrolling narration, where it covers text but no control. On desktop the
- * same spot is the top of the narration column, right of the Codex sidebar.
- * e2e/hosted.spec.ts asserts at 390 px and 1280 px that it overlaps no
- * button, input or textarea. The panel opens downward, is small, and has no
- * scroll region.
+ * "Sign out" and "Delete account" are always visible. Deletion uses the
+ * project's inline arm -> Confirm/Cancel pattern (CLAUDE.md #1), never a
+ * native dialog: the first tap only arms it and shows what will happen;
+ * `DELETE /api/account` runs only from Confirm. After a 204 every session is
+ * already revoked (06-05), so it goes straight back to sign-in without
+ * retrying anything.
  */
 
-import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 import { deleteAccount } from '../lib/api';
 import { signOut } from '../lib/authClient';
@@ -37,28 +34,26 @@ const button = {
   width: '100%',
   background: '#14110d',
   border: '1px solid #2a2218',
-  color: '#c9b48a',
+  color: '#8a7a60',
   fontFamily: "'Cinzel', serif",
-  fontSize: 11,
-  letterSpacing: '0.08em',
-  padding: '11px 14px',
+  fontSize: 10,
+  letterSpacing: '0.1em',
+  padding: '9px 12px',
   cursor: 'pointer',
   textTransform: 'uppercase',
-  textAlign: 'left',
+  textAlign: 'center',
 } satisfies CSSProperties;
 
 const danger = { ...button, border: '1px solid #7a1f1f', color: '#e07a6a' } satisfies CSSProperties;
 
 export default function AccountPanel({ onSignedOut }: AccountPanelProps) {
-  const [open, setOpen] = useState(false);
   const [armed, setArmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState<null | 'signout' | 'delete'>(null);
-  const toggleRef = useRef<HTMLButtonElement>(null);
-  const firstItemRef = useRef<HTMLButtonElement>(null);
+  const deleteRef = useRef<HTMLButtonElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const wasArmed = useRef(false);
   const mounted = useRef(true);
-  const panelId = useId();
 
   useEffect(() => {
     mounted.current = true;
@@ -68,19 +63,10 @@ export default function AccountPanel({ onSignedOut }: AccountPanelProps) {
   }, []);
 
   useEffect(() => {
-    if (open && !armed) firstItemRef.current?.focus();
-  }, [open, armed]);
-
-  useEffect(() => {
     if (armed) confirmRef.current?.focus();
+    else if (wasArmed.current) deleteRef.current?.focus();
+    wasArmed.current = armed;
   }, [armed]);
-
-  function close() {
-    setOpen(false);
-    setArmed(false);
-    setFailed(null);
-    toggleRef.current?.focus();
-  }
 
   async function handleSignOut() {
     if (busy) return;
@@ -105,113 +91,67 @@ export default function AccountPanel({ onSignedOut }: AccountPanelProps) {
   }
 
   return (
-    <div
-      style={{ position: 'fixed', top: 56, right: 16, zIndex: 900, fontFamily: "'EB Garamond', serif" }}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape' && open) close();
-      }}
+    <section
+      aria-label="Account"
+      style={{ padding: '0 14px 16px', flexShrink: 0, borderTop: '1px solid #1a1610', fontFamily: "'EB Garamond', serif" }}
     >
-      <button
-        ref={toggleRef}
-        type="button"
-        aria-expanded={open}
-        aria-controls={open ? panelId : undefined}
-        onClick={() => (open ? close() : setOpen(true))}
-        style={{
-          background: '#0a0805',
-          border: '1px solid #2a2218',
-          color: '#8a7a60',
-          fontFamily: "'Cinzel', serif",
-          fontSize: 10,
-          letterSpacing: '0.12em',
-          padding: '9px 12px',
-          cursor: 'pointer',
-          textTransform: 'uppercase',
-        }}
-      >
+      <p style={{ fontFamily: "'Cinzel', serif", fontSize: 9, color: '#6a5a40', letterSpacing: '0.15em', textTransform: 'uppercase', margin: '10px 0 8px' }}>
         Account
-      </button>
-      {open && (
-        <div
-          id={panelId}
-          role="region"
-          aria-label="Account"
-          style={{
-            position: 'absolute',
-            right: 0,
-            top: 40,
-            width: 260,
-            maxWidth: 'calc(100vw - 24px)',
-            boxSizing: 'border-box',
-            background: '#0a0805',
-            border: '1px solid #2a2218',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-            padding: 12,
-            display: 'grid',
-            gap: 8,
-          }}
-        >
-          {!armed ? (
-            <>
-              <button
-                ref={firstItemRef}
-                type="button"
-                disabled={busy}
-                onClick={() => void handleSignOut()}
-                style={button}
-              >
-                Sign out
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => {
-                  setFailed(null);
-                  setArmed(true);
-                }}
-                style={danger}
-              >
-                Delete account
-              </button>
-            </>
-          ) : (
-            <>
-              <p role="alert" style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: '#c9b48a' }}>
-                {DELETE_WARNING_TEXT}
-              </p>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  ref={confirmRef}
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void handleConfirmDelete()}
-                  style={{ ...danger, flex: 1, textAlign: 'center' }}
-                >
-                  Confirm
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => {
-                    setArmed(false);
-                    setFailed(null);
-                  }}
-                  style={{ ...button, flex: 1, textAlign: 'center' }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </>
-          )}
-          {failed && (
-            <p role="alert" style={{ margin: 0, fontSize: 13, color: '#c0392b' }}>
-              {failed === 'signout'
-                ? 'Couldn’t sign out — try again.'
-                : 'Couldn’t delete your account — try again.'}
-            </p>
-          )}
+      </p>
+      {!armed ? (
+        <div style={{ display: 'grid', gap: 8 }}>
+          <button type="button" disabled={busy} onClick={() => void handleSignOut()} style={button}>
+            Sign out
+          </button>
+          <button
+            ref={deleteRef}
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              setFailed(null);
+              setArmed(true);
+            }}
+            style={danger}
+          >
+            Delete account
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: 8 }}>
+          <p role="alert" style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: '#c9b48a' }}>
+            {DELETE_WARNING_TEXT}
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              ref={confirmRef}
+              type="button"
+              disabled={busy}
+              onClick={() => void handleConfirmDelete()}
+              style={{ ...danger, flex: 1 }}
+            >
+              Confirm
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setArmed(false);
+                setFailed(null);
+              }}
+              style={{ ...button, flex: 1 }}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
-    </div>
+      {failed && (
+        <p role="alert" style={{ margin: '8px 0 0', fontSize: 12, color: '#c0392b' }}>
+          {failed === 'signout'
+            ? 'Couldn’t sign out — try again.'
+            : 'Couldn’t delete your account — try again.'}
+        </p>
+      )}
+    </section>
   );
 }
