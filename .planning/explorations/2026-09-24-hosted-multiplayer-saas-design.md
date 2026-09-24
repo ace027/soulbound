@@ -74,6 +74,16 @@ Players who use less leave more. 250 turns is roughly 5–8 play sessions a mont
 
 **Fixed costs.** Hosting at ~$20–30/month is covered once there are about 5 subscribers.
 
+**Character creation (decided 2026-09-24).**
+- **3 free new characters per account per month** (configurable). After that, each costs **2 turns**.
+- Counting happens at the `/api/unique-skill` call, not when the intro completes. That call is where skill-fishing happens, and it is the Opus call.
+- **Why:** free and unlimited rerolls would let players fish for a stronger Unique Skill, which works against "etched by nature" (design log → Skill Tier System) and the deliberate rarity of Soul Rewrite.
+- **Worst-case cost:** 3 free cold-cache creations ≈ $0.24/month, well inside the margin.
+
+**Save slots (decided 2026-09-24).** Up to **20 saved slots per account** (configurable). Branches made with "+ Slot" count toward the cap. A save is tens of KB, so the cap only bounds abuse.
+- Hitting the cap shows an in-UI message, never a native dialog (CLAUDE.md #1).
+- Autosave to an **existing** slot never fails because of the cap.
+
 **Caveats.**
 - The sample is small: n=6 turns, from one character.
 - Turn cost grows with the size of the entity ledger and notes. Both are capped, but long playthroughs cost more per turn than a fresh one.
@@ -122,6 +132,8 @@ Why this approach over the alternatives:
 - [ ] **Phase 8, Usage metering and allowance:**
   - [ ] A per-call usage ledger (tokens → cost), written from the usage data `anthropic.ts` already logs.
   - [ ] A monthly turn allowance (default 250, configurable), checked *before* each paid call and debited *after*.
+  - [ ] A character-creation counter: 3 free per month, then 2 turns each, counted at `/api/unique-skill`.
+  - [ ] The save-slot cap (default 20), enforced on slot creation only.
   - [ ] Remaining turns shown in the UI.
   - [ ] A per-user rate limit in hosted mode, alongside the per-IP one.
   - [ ] An operator view of cost per user.
@@ -174,7 +186,7 @@ Why this approach over the alternatives:
 - **Metering:**
   - Wrap `callWorldVoice`: before each call, check the allowance; after it, insert a usage row built from the response's `usage` fields.
   - Cost comes from a per-model price table kept in `config.ts`, like `MODELS`.
-  - "Turns" counts world-engine calls only. Whether character creation (unique-skill + intro) counts is an open question below.
+  - "Turns" counts world-engine calls. Character creation is metered separately (see Pricing → Character creation), and intro-scene calls are never charged on their own.
 - **Billing:** Stripe Checkout + Customer Portal + webhooks (`checkout.session.completed`, `customer.subscription.updated/deleted`, `invoice.payment_failed`). The webhook route needs the **raw** body for signature checks, so it mounts before `express.json`, the same care Phase 5 took.
 - **Unchanged guarantees:**
   - The World Voice JSON contract (#4), `max_tokens` (#5), the MUST NOT list (#6), and the lore/behaviour split (#7).
@@ -190,7 +202,7 @@ Why this approach over the alternatives:
 
 ## Open Questions
 - ~~**Price point and allowance size**~~ Settled 2026-09-24: **$10 / 250 turns**, configurable (see Pricing). Still to do: re-check against the Phase 8 usage table before the public beta.
-- **Does character creation count against the allowance?** It costs ≈2 turns. Decide in Phase 8 planning.
+- ~~**Does character creation count against the allowance?**~~ Settled 2026-09-24: 3 free per month, then 2 turns each; save slots capped at 20 (see Pricing).
 - **Pay from day one for friends?** Friends could get a free allowance until Phase 9 lands. Decide at the Phase 7→8 boundary.
 - **Which auth library, and which email provider?** Verify Better Auth's Express + Postgres support and its magic-link and Discord support when planning Phase 6.
 - **Anthropic usage-policy requirements for a consumer app** (age minimum, AI disclosure, content handling), and the ToS/privacy wording. Research before Phase 10 and record it in the design log.
