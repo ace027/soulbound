@@ -148,6 +148,11 @@ Every hosting phase ships to the real hosted environment. Every game phase works
   - [ ] Ownership checks on every save route.
   - [ ] The 20-slot cap.
   - [ ] **Daily Postgres backups plus a tested restore**, landing in the same phase, before anyone else's saves exist.
+  - [ ] **Shared-world seams** (see Technical Direction → Shared-world readiness):
+    - `applyWorldUpdate` and `mergeNarrativeMemory` move into `shared/`.
+    - `saves.world_id`.
+    - Stable entity IDs.
+    - A `turn_events` log.
 - [ ] **Phase 8, Metering and allowance:**
   - [ ] A per-call usage ledger; the monthly turn allowance (250); the creation counter (3 free, then 2 turns).
   - [ ] Remaining turns shown in the UI; a per-user rate limit.
@@ -197,7 +202,7 @@ Every hosting phase ships to the real hosted environment. Every game phase works
 ### Later
 - [ ] Top-up turn packs; annual plans; a free trial allowance.
 - [ ] Public beta with a waitlist; abuse controls at larger scale.
-- [ ] Shared persistent world. The per-account Postgres model is designed so world state can sit beside it.
+- [ ] Shared persistent world, including server-authoritative turns. The seams built in Phase 7 (shared turn logic, `world_id`, stable IDs, `turn_events`) are what make it a wiring change.
 - [ ] Local inference node or cluster (existing long-term vision).
 - [ ] An anti-framing header and CSP. More pressing once strangers log in; already listed under "Not taken" in `05-REVIEW.md`.
 
@@ -254,6 +259,24 @@ Every hosting phase ships to the real hosted environment. Every game phase works
   - `TRUST_PROXY` is set to the platform's hop count, so the per-IP limiter sees real clients.
   - Secrets live in the platform's secret store.
   - Backups are daily, with a restore drill before the first paying user.
+- **Shared-world readiness (decided 2026-09-24): seams now, authority later.**
+  - Hosted mode stays **client-applied** for Phases 6-13: the browser applies each turn, as it does today. The seams below make the later switch to a server-authoritative shared world a **wiring change, not a migration**.
+  - **Turn logic into `shared/`** (Phase 7):
+    - `applyWorldUpdate.ts` and `narrativeMemory.ts` move from `frontend/src/game/` to `shared/src/game/`, so the server can run exactly the same rules later.
+    - Their tests move with them, keeping all 14 `// MUTANT:` annotations. Mutation-test the moved code again after the move.
+    - `App.tsx` imports both by path (`./game/applyWorldUpdate`, `./game/narrativeMemory`, lines 89-90). The old files become **one-line re-exports**, so `App.tsx` stays byte-identical.
+  - **`saves.world_id`** (Phase 7): every save belongs to a world. Each solo save gets its own private world, so a shared world later is a new `world_id`, not a schema migration.
+  - **Stable IDs** (Phases 7 and 10):
+    - Narrative-memory entities get an `id` that `mergeNarrativeMemory` assigns when it first adds an entity. The ledger is already a `Record` keyed by name, so this is an internal field. **No World Voice contract change:** the model still returns names only.
+    - Quests carry an `id` from the start (Phase 10).
+    - Old saves get IDs backfilled on load.
+  - **`turn_events` log** (Phase 7):
+    - The world-engine and intro-scene routes append a row per call: `(id, world_id, save_id, user_id, turn_no, action, response jsonb, created_at)`. The client names the save it's playing in a request header, validated against the session's ownership.
+    - It records **what the server returned**, which is the authoritative record of World Voice output even while the client applies it.
+    - It enables replay and audit now, and lets a shared world rebuild state later.
+    - Size: ~2-4 KB per turn, under 1 MB per player per month.
+    - Deleted along with the account (7-day grace).
+  - **Not taken now:** server-authoritative turns. When the shared world comes, the server loads the save, calls the World Voice, runs the shared `applyWorldUpdate`, and stores the result in one transaction. That also fixes the "+ Slot" mid-turn race in hosted mode for free. The **self-host** mode keeps the race as a recorded, declined fix.
 - **Testing:** the existing suite must stay green in self-host mode throughout. Hosted-mode tests run against a throwaway Postgres in CI (a service container), plus Stripe webhooks in test mode.
 
 ## Open Questions
