@@ -34,7 +34,7 @@
     - `release.yml` derives the image name from the repo owner, so it follows the move automatically.
     - After the move, update the hardcoded `ghcr.io/deanitservices/soulbound` in `compose.selfhost.yml:41` and `README.md` (lines 68, 72, 115). Leave the historical mention in `docs/design-decisions-log.md` as it is.
   - **Key rotation is deferred by the developer**, who will rotate before friends are invited. It's tracked as a Phase 9 invite-gate item, so don't raise it again before then.
-- **Next Action**: Run `/legion:build` (Phase 6, wave 1: 06-01). Plan critique was offered at the end of planning; see Last Activity. (Previous: run `/legion:plan 6`.) (Superseded note, kept for history: **rotate the sandbox's Anthropic key** (exposed in a fix agent's transcript during review). Decide on the anti-framing header (05-REVIEW.md → Not taken).
+- **Next Action**: Run `/legion:build` (Phase 6, wave 1: 06-01). Plans critiqued once (QA REWORK: 2 blockers, security BLOCK: 1 blocker; both reviewers independently found the invite-reconciliation defect). All findings were verified against the files and applied (spec row 21; a `<critique_revisions>` block in each plan). (Previous: run `/legion:plan 6`.) (Superseded note, kept for history: **rotate the sandbox's Anthropic key** (exposed in a fix agent's transcript during review). Decide on the anti-framing header (05-REVIEW.md → Not taken).
   After merge: dispatch `release.yml` once (GitHub → Actions → Release → Run workflow) — the GHCR
   publish is the one UNTESTED step. ⚠️ `SOULBOUND_PASSPHRASE` is now **required at boot** — add it to
   `.env` (12+ printable ASCII characters).

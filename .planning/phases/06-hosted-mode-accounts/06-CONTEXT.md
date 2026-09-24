@@ -117,6 +117,10 @@ reach review without its guard.
   developer's accounts is recorded as **UNTESTED — awaiting developer**, never described as working.
 - **AI-5: serial execution for any agent that modifies the tree.** All seven waves are serial.
 - **AI-6: every plan writes a `SUMMARY.md`.**
+- **Mutations never destroy work.** Commit before any mutation step. Back up the mutated file with
+  `cp` and restore it with `cp`, never with `git checkout` (which reverts uncommitted work and can't
+  restore untracked files). A plan critique finding (QA #1) showed four plans would have lost work.
+- **Each plan's `<critique_revisions>` block is binding** and wins over the text above it.
 - **Counts carry their derivation.** Every test count in a SUMMARY comes from runner output quoted
   next to it.
 
