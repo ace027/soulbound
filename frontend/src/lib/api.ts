@@ -36,7 +36,11 @@ import {
   ACCESS_CHECK_PATH,
   ACCESS_HEADER,
   ACCESS_SCHEME,
+  ACCOUNT_PATH,
+  INVITE_REDEEM_PATH,
+  MODE_HEADER,
   PASSPHRASE_REQUIRED,
+  SIGN_IN_REQUIRED,
   UniqueSkillDeterminationSchema,
   WorldVoiceResponseSchema,
   type Character,
@@ -218,6 +222,12 @@ async function postJson<T>(
     if (response.status === 401 && code === PASSPHRASE_REQUIRED) {
       clearPassphrase();
       emitPassphraseRequired();
+    }
+
+    // Hosted mode (Phase 6): the session expired or was revoked mid-game.
+    // `ModeGate` listens and shows sign-in. Self-host never sends this code.
+    if (response.status === 401 && code === SIGN_IN_REQUIRED) {
+      emitSignInRequired();
     }
 
     const detail =
@@ -410,4 +420,115 @@ export async function checkAccess(): Promise<'ok' | 'required' | 'unknown'> {
   }
 
   return 'unknown';
+}
+
+// ─── Hosted mode (Phase 6) ──────────────────────────────────────────────────
+// Everything above this line is the self-host client and is unchanged, except
+// the one `SIGN_IN_REQUIRED` branch in `postJson`. `checkAccess` keeps its
+// three results because `AccessGate.tsx` stores them in a state typed to
+// exactly those values (06-CONTEXT addendum). Only `ModeGate` uses what follows.
+
+/** What `ModeGate` needs to know before anything else mounts. */
+export interface AccessState {
+  /** `'signin'` is hosted mode's 401 `SIGN_IN_REQUIRED`; the rest mean what `checkAccess` means. */
+  access: 'ok' | 'required' | 'signin' | 'unknown';
+  /** True only when the response carried `Soulbound-Mode: hosted`. Self-host never sends it. */
+  hosted: boolean;
+}
+
+/**
+ * The same probe as `checkAccess` (same request, same envelope parsing, same
+ * fail-open `'unknown'`), plus the one extra result and the mode header.
+ * Never throws.
+ */
+export async function getAccessState(): Promise<AccessState> {
+  let response: Response;
+  try {
+    response = await fetch(ACCESS_CHECK_PATH, {
+      method: 'GET',
+      headers: { Accept: 'application/json', ...authHeaders() },
+    });
+  } catch {
+    return { access: 'unknown', hosted: false };
+  }
+
+  const hosted = response.headers.get(MODE_HEADER) === 'hosted';
+
+  if (response.status === 204) return { access: 'ok', hosted };
+
+  if (response.status === 401) {
+    const contentType = response.headers.get('content-type');
+    const envelope = isJsonContentType(contentType)
+      ? await readErrorEnvelope(response)
+      : { message: null, code: null };
+    if (envelope.code === PASSPHRASE_REQUIRED) return { access: 'required', hosted };
+    if (envelope.code === SIGN_IN_REQUIRED) return { access: 'signin', hosted };
+  }
+
+  return { access: 'unknown', hosted };
+}
+
+/**
+ * `POST /api/invites/redeem`. A valid code sets the short-lived invite cookie
+ * that sign-up needs. `'invalid'` is the server's single 400 for a bad, used or
+ * expired code; anything else (network, 429, 5xx) is `'error'`. The passphrase
+ * header is never sent: hosted mode has no passphrase.
+ */
+export async function redeemInvite(code: string): Promise<'ok' | 'invalid' | 'error'> {
+  try {
+    const response = await fetch(INVITE_REDEEM_PATH, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    if (response.status === 204) return 'ok';
+    if (response.status === 400) return 'invalid';
+    return 'error';
+  } catch {
+    return 'error';
+  }
+}
+
+/**
+ * `DELETE /api/account`. 204 means every session is already revoked and the
+ * cookie cleared, so the caller goes straight to sign-in. A 401
+ * `SIGN_IN_REQUIRED` (the session had already gone) also tells `ModeGate`, as
+ * `postJson` does. No passphrase header.
+ */
+export async function deleteAccount(): Promise<'ok' | 'error'> {
+  let response: Response;
+  try {
+    response = await fetch(ACCOUNT_PATH, {
+      method: 'DELETE',
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json' },
+    });
+  } catch {
+    return 'error';
+  }
+  if (response.status === 204) return 'ok';
+  if (response.status === 401 && isJsonContentType(response.headers.get('content-type'))) {
+    const envelope = await readErrorEnvelope(response);
+    if (envelope.code === SIGN_IN_REQUIRED) emitSignInRequired();
+  }
+  return 'error';
+}
+
+// ─── "the session has gone" event ───────────────────────────────────────────
+// The same in-module listener Set as `passphrase.ts`'s `onPassphraseRequired`.
+
+const signInListeners = new Set<() => void>();
+
+/** Subscribe to "the server just said this player is not signed in". Returns an unsubscribe function. */
+export function onSignInRequired(fn: () => void): () => void {
+  signInListeners.add(fn);
+  return () => {
+    signInListeners.delete(fn);
+  };
+}
+
+/** Notify every subscriber. Called from this module's error paths. */
+export function emitSignInRequired(): void {
+  for (const fn of signInListeners) fn();
 }

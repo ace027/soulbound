@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@soulbound/shared": "*",
+    "better-auth": "1.7.6",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
