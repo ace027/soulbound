@@ -37,8 +37,8 @@ See .env.example for the expected format.
 /**
  * Wraps a secret string so accidental logging can't leak it. `console.log`
  * and `util.inspect` both honor `[inspect.custom]`; `JSON.stringify` honors
- * `toJSON`. Only `.reveal()` returns the real value, and nothing outside this
- * module calls it except `getAnthropicApiKey()` and `redact()`.
+ * `toJSON`. Only `.reveal()` returns the real value, and only this module
+ * calls it — from `getAnthropicApiKey()`, `checkPassphrase()` and `redact()`.
  */
 class Secret {
   readonly #value: string;

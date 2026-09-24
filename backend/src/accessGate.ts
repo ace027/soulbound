@@ -49,13 +49,25 @@ const WINDOW_MS = 60_000;
  * At roughly 100 bytes per `Bucket` entry plus its `Map` overhead, 10,000
  * entries caps this limiter's own memory at a low, fixed number of megabytes
  * regardless of how many distinct keys an attacker manages to present (see
- * the module doc comment for how this fails — toward throttling, never
- * bypass — once the cap is reached).
+ * `createRateLimiter`'s doc comment for how this fails — toward throttling,
+ * never bypass — once the cap is reached).
  */
 const MAX_TRACKED_KEYS = 10_000;
 
 /** The shared bucket every key past `MAX_TRACKED_KEYS` folds into. */
 const OVERFLOW_KEY = '\u0000overflow';
+
+/** A rate-limiter middleware with a test-only hook for inspecting its internal state. */
+export interface RateLimiterHandler extends RequestHandler {
+  /**
+   * Test-only: the current number of distinct tracked keys. Lets a test
+   * prove the sweep actually shrinks the map, without either reaching into
+   * module-private state or waiting on 1,000 real HTTP round trips just to
+   * observe it — the test still drives 1,000 real requests through the
+   * middleware to populate it, this just reads the result cheaply.
+   */
+  __trackedKeyCount(): number;
+}
 
 /**
  * A fixed-window, per-client rate limiter for gated `/api/*` requests.
@@ -88,18 +100,6 @@ const OVERFLOW_KEY = '\u0000overflow';
  *      budget with everyone else past the cap, so 429s arrive sooner), never
  *      toward bypass (nobody past the cap gets an unlimited, untracked ride).
  */
-/** A rate-limiter middleware with a test-only hook for inspecting its internal state. */
-export interface RateLimiterHandler extends RequestHandler {
-  /**
-   * Test-only: the current number of distinct tracked keys. Lets a test
-   * prove the sweep actually shrinks the map, without either reaching into
-   * module-private state or waiting on 1,000 real HTTP round trips just to
-   * observe it — the test still drives 1,000 real requests through the
-   * middleware to populate it, this just reads the result cheaply.
-   */
-  __trackedKeyCount(): number;
-}
-
 export function createRateLimiter(opts: {
   perMinute: number;
   now: () => number;

@@ -34,11 +34,11 @@ import { WORLD_SYSTEM_PROMPT } from './data/worldSystemPrompt.js';
 // ─── Lazy client, and lazy config import ────────────────────────────────────
 //
 // `config.ts`'s `getAnthropicApiKey()` reads the key from a module-scoped
-// `Secret` that was itself populated by `readApiKey()` — but `readApiKey()`
+// `Secret` that was itself populated by `validateApiKey()` — but that call
 // runs at config.ts's OWN module top level (`const anthropicApiKey =
-// readApiKey();`) and throws synchronously if the env var is absent. That
-// means the hazard isn't just "don't construct the client at this module's
-// load time" — a plain `import { getAnthropicApiKey } from './config.js'` at
+// validateApiKey(rawApiKey);`) and throws synchronously if the env var is
+// absent. That means the hazard isn't just "don't construct the client at
+// this module's load time" — a plain `import { getAnthropicApiKey } from './config.js'` at
 // the top of *this* file throws transitively the moment this module is
 // imported, with no key present, regardless of whether the client itself is
 // built lazily. (Caught by this module's own no-key-import verification: a
@@ -419,7 +419,7 @@ export interface CallWorldVoiceArgs<Schema extends z.ZodType> {
  *   - sets `max_tokens: 16000` (CLAUDE.md #5 — a floor, not a target)
  *   - builds `output_config.format` via the SDK's own `zodOutputFormat`, never
  *     from a pre-derived JSON Schema (see note below)
- *   - sets `output_config.effort` to the single, deliberate value above
+ *   - sets `output_config.effort` to the route's deliberate `EFFORT` value above
  *   - carries no assistant-role message (prefill) and no `budget_tokens` —
  *     both return 400 on these models
  *   - passes `model` through verbatim, exactly as given by the caller

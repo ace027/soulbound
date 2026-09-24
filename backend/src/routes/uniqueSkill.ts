@@ -162,14 +162,14 @@ async function handleUniqueSkill(req: Request, res: Response, next: NextFunction
     // effectively free.
     const { MODELS } = await import('../config.js');
 
-    const result = await callWorldVoice({
+    const determination = await callWorldVoice({
       route: 'uniqueSkill',
       model: MODELS.uniqueSkill,
       content: renderUniqueSkillPrompt(parsed.data),
       useSystem: false,
       schema: UniqueSkillDeterminationSchema,
     });
-    res.status(200).json(result);
+    res.status(200).json(determination);
   } catch (err) {
     next(err);
   }

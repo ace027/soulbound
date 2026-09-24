@@ -124,7 +124,7 @@ record $ok "2: GET / returns 200 text/html (got code=$code content-type='$ctype'
 rm -f /tmp/smoke-root-body.$$
 
 # ─── Check 3: /api/access without a header -> 401 PASSPHRASE_REQUIRED ──
-# This is request #1 against the rate limiter (rateLimit runs before the
+# This is request #1 against the rate limiter (the limiter runs before the
 # gate, and before express.json, per the spec's middleware order).
 body="$(curl -s --max-time 5 -o /tmp/smoke-c3-body.$$ -w '%{http_code}' "${BASE}/api/access")"
 code="$body"

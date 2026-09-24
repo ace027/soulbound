@@ -149,7 +149,7 @@ async function readErrorEnvelope(
 }
 
 /**
- * Every request the auth headers this module adds. When a passphrase is
+ * The auth headers this module adds to every request. When a passphrase is
  * stored, it goes in as `Authorization: Bearer <passphrase>` (Phase 5, R19) —
  * the same header name and scheme the backend gate checks
  * (`shared/src/accessGate.ts`), so no CORS change was needed. When none is
@@ -157,8 +157,8 @@ async function readErrorEnvelope(
  * `PASSPHRASE_REQUIRED` (unless the gate is unset, e.g. in tests).
  */
 function authHeaders(): Record<string, string> {
-  const p = getPassphrase();
-  return p === null ? {} : { [ACCESS_HEADER]: `${ACCESS_SCHEME} ${p}` };
+  const passphrase = getPassphrase();
+  return passphrase === null ? {} : { [ACCESS_HEADER]: `${ACCESS_SCHEME} ${passphrase}` };
 }
 
 /**
@@ -291,13 +291,13 @@ export interface UniqueSkillRequest {
   };
 }
 
-/** `POST /api/world-engine` body — `WorldEngineRequestSchema`, worldEngine.ts:143-146. */
+/** `POST /api/world-engine` body — `WorldEngineRequestSchema`, worldEngine.ts:145-148. */
 export interface WorldEngineRequest {
   action: string;
   gameState: GameState;
 }
 
-/** `POST /api/intro-scene` body — `IntroSceneRequestSchema`, introScene.ts:68-70. */
+/** `POST /api/intro-scene` body — `IntroSceneRequestSchema`, introScene.ts:75-77. */
 export interface IntroSceneRequest {
   character: {
     name: string;
@@ -307,8 +307,8 @@ export interface IntroSceneRequest {
 }
 
 /**
- * Soul-reading from the questionnaire. Backend: Sonnet 5, no system blocks
- * (CLAUDE.md #8 — deliberately lore-blind).
+ * Soul-reading from the questionnaire. Backend: Opus 5, no system blocks
+ * (CLAUDE.md #8 — deliberately system-blind).
  *
  * `answers` arrives as the questionnaire's `Record<string, string>`; the five
  * contract keys are named explicitly here rather than spread, so a missing one
@@ -336,7 +336,7 @@ export async function determineUniqueSkill(characterData: {
 }
 
 /**
- * One turn of the live world. Backend: Opus 5, WORLD_SYSTEM_PROMPT + cached
+ * One turn of the live world. Backend: Sonnet 5, WORLD_SYSTEM_PROMPT + cached
  * WORLD_LORE.
  *
  * `gameState` ships whole (including `actionHistory`, which grows unbounded
@@ -353,7 +353,7 @@ export async function callWorldEngine(
 }
 
 /**
- * The opening scene. Backend: Opus 5, same two system blocks as the world
+ * The opening scene. Backend: Sonnet 5, same two system blocks as the world
  * engine — this call is what warms the shared prompt cache.
  */
 export async function generateIntroScene(

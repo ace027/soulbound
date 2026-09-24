@@ -1,9 +1,10 @@
 /**
  * The Soulbound Chronicles backend entrypoint.
  *
- * Express app, JSON body parsing, a Host allow-list, a CORS policy for the
- * frontend dev origin, the health check, and a central error handler. Phase 2
- * adds the three World Voice routes; this file stays minimal on purpose.
+ * Express app, a Host allow-list, a CORS policy for the frontend origin, the
+ * health check, the `/api` rate limiter and access gate, JSON body parsing,
+ * the three World Voice routes, optional static frontend serving, and a
+ * central error handler — in the order `buildApp()`'s doc comment lists.
  *
  * The app itself is built by `buildApp()`, which is exported and takes its
  * configuration as an argument. That split exists so the route tests exercise
@@ -322,10 +323,10 @@ export function buildApp(config: AppConfig): Express {
   // server-side (redacted) and replaced with a sanitized shape.
   const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
     const apiErr = err as ApiError;
-    const bodyParser = mapBodyParserError(apiErr);
-    const statusCode = bodyParser?.statusCode ?? apiErr.statusCode ?? 500;
+    const bodyParserMapping = mapBodyParserError(apiErr);
+    const statusCode = bodyParserMapping?.statusCode ?? apiErr.statusCode ?? 500;
     const code =
-      bodyParser?.code ?? apiErr.code ?? (statusCode === 500 ? 'INTERNAL_ERROR' : 'ERROR');
+      bodyParserMapping?.code ?? apiErr.code ?? (statusCode === 500 ? 'INTERNAL_ERROR' : 'ERROR');
 
     const rawMessage = err instanceof Error ? err.message : String(err);
     const rawStack = err instanceof Error ? err.stack : undefined;

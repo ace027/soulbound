@@ -48,9 +48,9 @@ export function getPassphrase(): string | null {
 }
 
 /** Store the passphrase. Silently does nothing if storage is unavailable. */
-export function setPassphrase(p: string): void {
+export function setPassphrase(passphrase: string): void {
   try {
-    localStorage.setItem(ACCESS_STORAGE_KEY, p);
+    localStorage.setItem(ACCESS_STORAGE_KEY, passphrase);
   } catch {
     // Blocked storage: the form will simply reappear on the next check.
   }
