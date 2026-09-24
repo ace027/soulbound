@@ -1,6 +1,6 @@
 # Design Exploration — Hosted Soulbound: accounts, server saves and subscriptions
 
-*Explored 2026-09-24. Status: design only; no code written. Next step: add these as roadmap phases.*
+*Explored 2026-09-24; pricing refined the same day from live usage logs. Status: design only; no code written. Next step: add these as roadmap phases.*
 
 ## Initial Ask
 > "Let's explore adding more phases and how this can be adapted to be deployed to multiple people, sort
@@ -21,7 +21,7 @@ matching how the model-split reversals were handled.
 
 ## Research Summary
 - **Facts** (from this repo):
-  - **Cost per turn:** last measured at **$0.063–$0.080, mean $0.072**. Creation costs ≈$0.15, most of it the one-time cache write. Output tokens are ≈80% of turn cost (`.planning/phases/04-parity-verification/evidence/usage-lines.log`). The 2026-09-24 narration cut shortened responses, so the current figure is probably lower, but it hasn't been re-measured.
+  - **Cost per turn: $0.016–$0.027, mean $0.022** (see "Pricing" below). Re-measured from the 2026-09-24 usage logs at current rates. The older $0.072 figure dates from when the world engine ran on Opus 5, before PR #4 moved it to Sonnet 5, and is superseded.
   - **Usage data already exists:** every call already logs `input_tokens`, `output_tokens` and the two cache counters (`anthropic.ts`). That is exactly the data a usage meter needs.
   - **Phase 5 built pieces hosted mode reuses:** one image that serves the frontend and API from the same origin, a per-client rate limiter, a pre-body-parsing gate slot in `buildApp()`, the `TRUST_PROXY` opt-in, and a GHCR image.
   - **Existing save format:** the save layer (`frontend/src/lib/saves.ts`) is small: 5 functions, synchronous `localStorage`. The JSON is a `SaveSlot` (`gameState`, `log` capped at 80, `savedAt`, `schemaVersion`), shared from `shared/src/gameState.ts`.
@@ -29,7 +29,7 @@ matching how the model-split reversals were handled.
   - **Previously noted monetization options:** BYOK, credits, subscription, and a shared world (design log → "Product Direction").
 - **Inferences** (verify when planning):
   - **Prompt cache sharing:** caches are scoped to the Anthropic organization, not the end user. So all players would share one warm `WORLD_LORE` + `WORLD_SYSTEM_PROMPT` prefix (~15.6k tokens), and only the first call per TTL window pays the cache write. That makes cost per player *drop* as more people play, which helps the subscription math.
-  - **Subscription math:** $10/month, less Stripe's fees (≈2.9% + $0.30), leaves ≈$9.40. At ~$0.06/turn that covers ~150 turns, so the allowance needs to sit around 100–150 turns at that price, or the price rises.
+  - **Subscription math:** see "Pricing" below. At the real cost of ~$0.022/turn, $10 covers ~430 average turns, so a 250-turn allowance leaves a margin even for the heaviest players.
   - **Auth library:** an in-process library (candidate: Better Auth, which is open-source and TypeScript) keeps self-host mode free of third-party services. A hosted auth vendor would force a second auth path.
 - **Assumptions:**
   - Friends-scale traffic at launch (tens of players), so a single small instance plus managed Postgres is enough.
@@ -47,6 +47,42 @@ matching how the model-split reversals were handled.
   - credits or top-ups (possible later);
   - organizations or teams;
   - moderation tooling beyond the World Voice's existing MUST NOT rules.
+
+## Pricing (refined 2026-09-24)
+**Chosen: $10/month for 250 world-engine turns.** Both numbers are configurable, not fixed in code, and get re-checked against real usage in Phase 8.
+
+**Where the numbers come from.** These come from the live usage logs committed under `.planning/experiments/2026-09-24-*/usage-lines.log` (6 world-engine turns, 2 intro scenes, 10 unique-skill calls), priced at current API rates:
+- **Rates:** Sonnet 5 at $2 in / $10 out per million tokens; Opus 5 at $5 / $25.
+- **Cache:** 1-hour cache writes are billed at 2× input, cache reads at 0.1×.
+
+| Item | Cost | Notes |
+|---|---|---|
+| World-engine turn (Sonnet 5, `high`) | **$0.016–$0.027, mean $0.022** | 70–80% is output. Only ~400 output tokens are narration + JSON; the rest (1,100–2,200 total) is adaptive thinking |
+| Intro scene, cold cache | ~$0.07 | Includes the ~15.6k-token 1h cache write |
+| Intro scene, warm cache | ~$0.02 | The cache is shared across all players on the operator's key |
+| Unique-skill (Opus 5, `medium`) | ~$0.013 | No system blocks, so no cache (CLAUDE.md #8) |
+| New character | ~$0.035 warm / ~$0.08 cold | |
+
+**What the subscription covers.** $10 less Stripe's fees (2.9% + $0.30) leaves **$9.41**:
+
+| | Cost | Margin |
+|---|---|---|
+| Player who uses all 250 turns, at the worst observed turn cost ($0.027) | $6.73 | ~28% |
+| Same player, at the mean turn cost | $5.50 | ~42% |
+
+Players who use less leave more. 250 turns is roughly 5–8 play sessions a month.
+
+**Fixed costs.** Hosting at ~$20–30/month is covered once there are about 5 subscribers.
+
+**Caveats.**
+- The sample is small: n=6 turns, from one character.
+- Turn cost grows with the size of the entity ledger and notes. Both are capped, but long playthroughs cost more per turn than a fresh one.
+- Re-derive the numbers from the Phase 8 usage table after real play, before the public beta.
+
+**Cost levers, not taken.** Each of these trades quality for cost; test it before using it.
+- **Lower `effort` on world-engine.** Thinking is most of the output, so this is the biggest lever. It must change on intro-scene too, because the shared cache namespace also covers `output_config`, which is pinned by `config.test.ts`.
+- **A cheaper model for "exhausted allowance" play.**
+- **The 5-minute cache TTL** instead of 1 hour, once traffic is steady.
 
 ## Recommended Approach
 **Balanced and phased: one codebase, two modes.**
@@ -85,7 +121,7 @@ Why this approach over the alternatives:
   - [ ] Ownership checks on every save route: one player can never read another's save.
 - [ ] **Phase 8, Usage metering and allowance:**
   - [ ] A per-call usage ledger (tokens → cost), written from the usage data `anthropic.ts` already logs.
-  - [ ] A monthly turn allowance, checked *before* each paid call and debited *after*.
+  - [ ] A monthly turn allowance (default 250, configurable), checked *before* each paid call and debited *after*.
   - [ ] Remaining turns shown in the UI.
   - [ ] A per-user rate limit in hosted mode, alongside the per-IP one.
   - [ ] An operator view of cost per user.
@@ -153,7 +189,7 @@ Why this approach over the alternatives:
 - **Testing:** the existing suite must stay green in self-host mode throughout. Hosted-mode tests run against a throwaway Postgres in CI (a service container), plus Stripe webhooks in test mode.
 
 ## Open Questions
-- **Price point and allowance size**, e.g. $10 for ~120 turns. Resolve with a fresh cost measurement after the narration cut: re-derive the per-turn cost from a live usage log in Phase 8.
+- ~~**Price point and allowance size**~~ Settled 2026-09-24: **$10 / 250 turns**, configurable (see Pricing). Still to do: re-check against the Phase 8 usage table before the public beta.
 - **Does character creation count against the allowance?** It costs ≈2 turns. Decide in Phase 8 planning.
 - **Pay from day one for friends?** Friends could get a free allowance until Phase 9 lands. Decide at the Phase 7→8 boundary.
 - **Which auth library, and which email provider?** Verify Better Auth's Express + Postgres support and its magic-link and Discord support when planning Phase 6.
@@ -165,7 +201,7 @@ Why this approach over the alternatives:
 Existing project, not a new one: add **Phases 6-10** to `.planning/ROADMAP.md` rather than running
 `/legion:start`.
 
-- **Goal:** a hosted, invite-only, subscription-funded Soulbound where players sign in (email link, Google or Discord), keep saves on the server, and play within a monthly turn allowance. The unchanged self-host mode stays alongside it.
+- **Goal:** a hosted, invite-only, subscription-funded Soulbound where players sign in (email link, Google or Discord), keep saves on the server, and play within a monthly turn allowance ($10/month for 250 turns, configurable; ~$0.022 per turn measured). The unchanged self-host mode stays alongside it.
 - **Reversals to record:** CLAUDE.md's auth section (hosted mode added; key architecture unchanged; BYOK still rejected), constraint #2 (server saves in hosted mode), and PROJECT.md's out-of-scope list.
 - **Phases:**
   - **6:** hosted mode and accounts.
