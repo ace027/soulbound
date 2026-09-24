@@ -27,3 +27,6 @@ pnpm-debug.log*
 *.swp
 *.swo
 *~
+
+# Hosted test suite's JSON report (backend `npm run test:hosted`)
+.vitest-hosted.json
