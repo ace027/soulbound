@@ -1,7 +1,7 @@
 # Project State
 
 ## Current Position
-- **Phase**: 5 of 5 (complete)
+- **Phase**: 5 of 5 (shipped — [PR #6](https://github.com/DeanItServices/soulbound/pull/6), open against `main`)
 - **Review cycle 3**: Security PASS, QA PASS, Infra PASS — **review PASSED (3 cycles)**. Cycle-3 suggestions applied in `3c50def`. Full record: `.planning/phases/05-docker-image-publishing/05-REVIEW.md`. Tests at close: 187 backend + 190 frontend, e2e 6/6.
 - **Review cycle 2**: Security PASS, QA PASS, Infra NEEDS WORK (1 warning: the pushed amd64 image was claimed byte-identical to the smoke-tested one, unenforced). Fixed: `fdb1306` (matching labels + post-push amd64 diff-ID check that fails closed; `github.ref` injection removed; arm64 cache), `585330c` (README 403 cause), `efb4829` (rejected passphrase cleared; stored non-ASCII value dropped; each mutation-verified), plus summary wording corrections. Tests 187 + 189, e2e 6/6.
 - **Review cycle 1** (3-reviewer panel: Security, QA, Infra): NEEDS WORK — 1 blocker (self-host healthcheck 403 on any non-default port), 6 warnings, 12 suggestions. Fixed: `8e382e0`..`3f64eb3` (healthcheck proven healthy on :3999; release perms scoped to publish, main-only, smoke the pushed build, runbook, unpublished-image note, timeouts; AccessGate non-ASCII + unreachable-server recovery; wrong-passphrase test; real e2e submit; length-mismatch mutation recorded as caught). Not taken: CSP/anti-framing headers (CSP is out of scope in PROJECT.md — developer decision), SHA-pinning `docker/*` actions, build/npm caches.
@@ -17,14 +17,17 @@
   applied; see `05-CONTEXT.md` → Execution protocol). Zero Anthropic spend planned.
 - **Phases 1-4**: **All four phases complete and shipped.** Phase 4 review PASSED after 3 cycles (3-reviewer panel, 29 findings, 0 blockers); shipped as [PR #3](https://github.com/DeanItServices/soulbound/pull/3), 15 commits / 48 files / +4,757−1,474. R13, R14, R15, R16 close. The legacy artifact is deleted — recover it with `git show 3d01fa5:legacy/souldbound-world.jsx` (the `parity-oracle` tag is local-only and cannot be pushed from this environment; the SHA is on the branch and works everywhere).
   ⚠️ **Correction**: this file previously said PR #2 was "open against `main`". It was **merged** 2026-09-18T01:49Z (head `5147bd8`). That is why Phase 4 needed a new PR rather than additions to #2.
-- **Last Activity**: Phase 5 planning (2026-09-23) on `claude/legion-status-uxlaqo` (pushed, no PR
-  yet). Earlier the same day: stale compose comment fixed (`1506c3a`), map refreshed (`7856b7d`),
+- **Last Activity**: 2026-09-24 — Phase 5 shipped as [PR #6](https://github.com/DeanItServices/soulbound/pull/6)
+  (pre-ship gate 6/6, CI green on `33d5aca`). Also on the PR, after the review: playtest prompt
+  fixes (`fc5b2cd`, `363026f`, `2085d39` — narration length, no contrast framing, Unique Skill
+  legibility; live-verified, Tier 0 adversarial tests re-run and held), polish (`727e7ca`,
+  `35ac809`), map refresh (`33d5aca`). Before that: Phase 5 planning (2026-09-23). Earlier the same day: stale compose comment fixed (`1506c3a`), map refreshed (`7856b7d`),
   auth decided — option 2, a deployer-set access gate (Next Action 2).
   Planning decisions: GHCR; `workflow_dispatch`-only release; passphrase stored in `localStorage`;
   architecture **Pragmatic + 2 from Clean** (one image, the backend serves the bundle; gate and
   limiter before `express.json`; `Authorization: Bearer`), chosen from three read-only proposals.
   Spec: `.planning/specs/05-docker-image-publishing-spec.md`. ROADMAP now lists Phase 5 (0/6).
-- **Next Action**: All phases complete. Ship Phase 5: open a NEW PR from `claude/legion-status-uxlaqo` (`/legion:ship`). **Rotate the sandbox's Anthropic key** (exposed in a fix agent's transcript during review). Decide on the anti-framing header (05-REVIEW.md → Not taken).
+- **Next Action**: All phases shipped. Merge [PR #6](https://github.com/DeanItServices/soulbound/pull/6). **Rotate the sandbox's Anthropic key** (exposed in a fix agent's transcript during review). Decide on the anti-framing header (05-REVIEW.md → Not taken).
   After merge: dispatch `release.yml` once (GitHub → Actions → Release → Run workflow) — the GHCR
   publish is the one UNTESTED step. ⚠️ `SOULBOUND_PASSPHRASE` is now **required at boot** — add it to
   `.env` (12+ printable ASCII characters).

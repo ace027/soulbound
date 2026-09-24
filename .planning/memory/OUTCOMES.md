@@ -61,3 +61,14 @@ summary: Phase 5 review passed in 3 cycles. 1 blocker (self-host healthcheck 403
   a healthcheck — check both. Every fix round again seeded a smaller same-class defect (the
   byte-identical claim, the re-dispatch remedy), each caught by the next cycle.
 tags: docker-image-publishing, review-passed, 3-cycles
+
+## Phase 5 — Shipped 2026-09-24
+task_type: ship
+agent: ship-pipeline
+result: success
+pr: https://github.com/DeanItServices/soulbound/pull/6
+verification: 6/6 gates passed (build, tests 187+190, e2e 6/6, App.tsx identical, compose configs, clean tree); CI green on 33d5aca
+summary: First ship attempt was aborted by the developer pending review of post-review work; re-run
+  after the map refresh. The PR body names the post-review prompt changes and polish explicitly,
+  with the evidence that covers them instead of the review panel.
+tags: docker-image-publishing, shipped, pr-6
