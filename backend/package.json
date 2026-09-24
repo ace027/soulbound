@@ -20,7 +20,7 @@
     "@soulbound/shared": "*",
     "better-auth": "1.7.6",
     "express": "^5.2.1",
-    "node-pg-migrate": "^9.0.0",
+    "node-pg-migrate": "9.0.0",
     "pg": "^8.23.0"
   },
   "devDependencies": {

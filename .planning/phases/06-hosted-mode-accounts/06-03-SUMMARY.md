@@ -333,3 +333,32 @@ CI run 120 on `235eb11` (the last code commit): https://github.com/DeanItService
    the app's. On a managed Postgres, any failed insert into `"user"` can therefore put an email into the
    provider's DB logs. The runbook should record that log's retention alongside Resend and Sentry (spec,
    Deletion flow → processor retention).
+
+## Addendum: review cycle 1 (2026-09-24)
+Changes to what this plan built, from the Phase 6 review. Spec Revision History row 22 has the summary.
+- **S3, Google link check (the developer's choice: "keep Google trusted, add a check").**
+  `trustedProviders: ['google']` stays. Better Auth then links a Google identity into an existing account
+  without checking `emailVerified` (BA `oauth2/link-account.mjs:137-139`). A new `databaseHooks.account.create.before`
+  refuses a `providerId === 'google'` row unless the row's `idToken` payload has `email_verified === true`.
+  - That is the same claim Better Auth reads for Google's `emailVerified` (CORE `social-providers/google.mjs:119`, `:130`).
+  - Every path that writes a Google account row puts the token in the row: the link at BA `oauth2/link-account.mjs:159-169`,
+    first sign-up at `:264-287`, and ID-token sign-in at `api/routes/sign-in.mjs:190-194`.
+  - A Google sign-in with no ID token stops earlier (`google.mjs:118`). `createWithHooks` hands the row to the hook (BA `db/with-hooks.mjs:11-18`).
+  - Tests drive the real `sign-in/social` → `callback/google` routes, with only Google's token endpoint stubbed.
+  - Two older fixtures that created a Google account with no ID token now carry a verified one.
+- **S2 caps.**
+  - The invite-path cap is keyed on `invite.inviteId`, not the nonce.
+  - `INVITE_PATH_SENDS_PER_HOUR = 30` is a process-wide ceiling.
+  - Separate per-address maps (`perExistingEmail`, `perNewEmail`), so invite traffic can't push returning players into an overflow bucket.
+  - `AuthDeps.limits` is a test seam only.
+- **S5 login CSRF.** An invite-path send records `(inviteId, nonce, email)` **in memory** for the link's lifetime (`MAGIC_LINK_EXPIRES_IN_SECONDS = 300`, now passed to `magicLink` explicitly).
+  - Why memory:
+    - hosted mode runs one instance (as the send limiters already assume);
+    - entries sit behind the 30/h ceiling, so only a few dozen can be live;
+    - a restart fails closed (the player requests a new link).
+  - `user.create.before` refuses a magic-link create (`context.path === '/magic-link/verify'`, better-call `router.mjs:30-38`, `:61-62`) whose address wasn't sent a link for that cookie, with `INVITE_REQUIRED`, before any reservation.
+  - OAuth sign-ups send no email and are not checked.
+  - A refused open still burns the link (Better Auth consumes the token first), so the player asks again.
+- **S7.**
+  - `account.encryptOAuthTokens: true` (CORE `types/init-options.d.mts:1165`; BA `oauth2/utils.mjs:21-26`; it encrypts the access and refresh tokens, and the ID token stays plain, which the S3 hook relies on).
+  - `advanced.ipAddress.disableIpTracking: true` (CORE `init-options.d.mts:232`, `:249`; CORE `utils/ip.mjs:204`). Session rows now hold `''` for the IP.

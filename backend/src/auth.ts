@@ -14,8 +14,16 @@
  *    rest of the request inside `inviteContext` (AsyncLocalStorage). Task 1
  *    proved the store is visible in `sendMagicLink` and in every database
  *    hook (hosted/alsPropagation.test.ts).
+ *  - `sendMagicLink` sends to an address with no account only for a usable
+ *    invite cookie, within the caps (per address, per invite id, and a
+ *    process-wide hourly ceiling), and records which address that cookie was
+ *    sent a link for.
  *  - `user.create.before` refuses a missing or unverified email, then needs a
- *    valid invite and reserves it for the cookie's nonce.
+ *    valid invite; a magic-link sign-up must also be for the address that
+ *    cookie was sent a link for (login CSRF). It then reserves the invite for
+ *    the cookie's nonce.
+ *  - `account.create.before` refuses a Google account whose ID token does not
+ *    say the email is verified (Google is a trusted linking provider).
  *  - `user.create.after` consumes the reservation. If that fails, it deletes
  *    the user it was called for (compensation) and throws.
  *  Every method (magic link, Google, Discord) creates users through the same
@@ -84,16 +92,32 @@ export interface AuthDeps {
   consumeInvite?: typeof consumeInviteSql;
   /** config.ts's `redact()`, applied to every line Better Auth logs. */
   redact?: (input: string) => string;
+  /**
+   * Test seam for the send limiters. Production never sets it:
+   *  - `maxTrackedKeys`: keys per limiter before the overflow bucket (default 10 000);
+   *  - `inviteSendsPerHour`: the process-wide invite-path ceiling (default 30).
+   */
+  limits?: { maxTrackedKeys?: number; inviteSendsPerHour?: number };
 }
 
 /** Session lifetime: 30 days, rolling (spec R24a). */
 export const SESSION_EXPIRES_IN_SECONDS = 2_592_000;
 /** How often a used session's expiry is pushed forward: daily. */
 export const SESSION_UPDATE_AGE_SECONDS = 86_400;
-/** Magic-link sends allowed per email address, and per invite nonce, per window. */
+/** Magic-link sends allowed per email address, and per invite (its id, not the cookie's nonce), per window. */
 export const MAGIC_LINK_SENDS_PER_WINDOW = 3;
 /** The send limiters' window: 15 minutes. */
 export const MAGIC_LINK_WINDOW_MS = 15 * 60_000;
+/**
+ * Process-wide ceiling on invite-path sends (to addresses with no account),
+ * per hour (review cycle 1, S2). Invites are hand-issued, so 30 an hour is far
+ * above real use; it bounds what a leaked batch of invites can send.
+ */
+export const INVITE_PATH_SENDS_PER_HOUR = 30;
+/** How long a magic link works (Better Auth's default, stated explicitly: the link bindings use it too). */
+export const MAGIC_LINK_EXPIRES_IN_SECONDS = 300;
+/** The magic-link verify route, as Better Auth's router reports it (`ctx.path`, basePath stripped). */
+const MAGIC_LINK_VERIFY_PATH = '/magic-link/verify';
 /** Most keys each send limiter tracks before new keys share one overflow bucket. */
 const MAX_TRACKED_KEYS = 10_000;
 const OVERFLOW_KEY = '\u0000overflow';
@@ -161,7 +185,8 @@ export function allowedAuthPaths(providers: { google: boolean; discord: boolean 
  * In memory because hosted mode runs as one instance (spec, "Purge
  * scheduling"). Phase 13 revisits this if it ever runs as more than one.
  */
-function createSendLimiter(opts: { max: number; windowMs: number; now: () => number }) {
+function createSendLimiter(opts: { max: number; windowMs: number; now: () => number; maxKeys?: number }) {
+  const maxKeys = opts.maxKeys ?? MAX_TRACKED_KEYS;
   const buckets = new Map<string, { count: number; windowStart: number }>();
   let lastSweep = opts.now();
   return {
@@ -173,7 +198,7 @@ function createSendLimiter(opts: { max: number; windowMs: number; now: () => num
         for (const [k, b] of buckets) if (t - b.windowStart >= opts.windowMs) buckets.delete(k);
       }
       let key = rawKey;
-      if (!buckets.has(key) && buckets.size >= MAX_TRACKED_KEYS) key = OVERFLOW_KEY;
+      if (!buckets.has(key) && buckets.size >= maxKeys) key = OVERFLOW_KEY;
       let bucket = buckets.get(key);
       if (bucket === undefined || t - bucket.windowStart >= opts.windowMs) {
         bucket = { count: 0, windowStart: t };
@@ -185,6 +210,66 @@ function createSendLimiter(opts: { max: number; windowMs: number; now: () => num
     },
     size: () => buckets.size,
   };
+}
+
+/**
+ * Which email each invite cookie was sent a sign-up link for (review cycle 1,
+ * S5, login CSRF). Keyed on `(inviteId, nonce, email)`; an entry lives as
+ * long as the link it records (MAGIC_LINK_EXPIRES_IN_SECONDS).
+ *
+ * In memory, not a table: hosted mode runs one instance (the send limiters
+ * above rely on that too), entries are only written behind the invite-path
+ * ceiling (INVITE_PATH_SENDS_PER_HOUR), so at most a few dozen are ever live,
+ * and a restart fails closed: a link sent before it is refused, and the
+ * player asks for a new one (the same outcome as any spent link).
+ */
+function createLinkBindings(opts: { ttlMs: number; now: () => number; maxKeys?: number }) {
+  const maxKeys = opts.maxKeys ?? MAX_TRACKED_KEYS;
+  const entries = new Map<string, number>();
+  const keyOf = (invite: Pick<InvitePayload, 'inviteId' | 'nonce'>, email: string) =>
+    `${invite.inviteId}\u0000${invite.nonce}\u0000${email}`;
+  const sweep = (t: number) => {
+    for (const [k, expiresAt] of entries) if (expiresAt <= t) entries.delete(k);
+  };
+  return {
+    /** Records a send; false if the map is full (the caller then sends nothing). */
+    record(invite: Pick<InvitePayload, 'inviteId' | 'nonce'>, email: string): boolean {
+      const t = opts.now();
+      sweep(t);
+      const key = keyOf(invite, email);
+      if (!entries.has(key) && entries.size >= maxKeys) return false;
+      entries.set(key, t + opts.ttlMs);
+      return true;
+    },
+    has(invite: Pick<InvitePayload, 'inviteId' | 'nonce'>, email: string): boolean {
+      const expiresAt = entries.get(keyOf(invite, email));
+      return expiresAt !== undefined && expiresAt > opts.now();
+    },
+    size: () => entries.size,
+  };
+}
+
+/**
+ * Whether a Google account row carries an ID token whose `email_verified`
+ * claim is `true`. This is the very claim Better Auth reads for Google's
+ * `emailVerified` (core `social-providers/google.mjs:119`, `:130`), taken from
+ * the same token: every path that creates a Google account row passes the
+ * token in the row (`oauth2/link-account.mjs:165`, `:267`; `api/routes/sign-in.mjs:193`),
+ * and a Google sign-in without one never gets that far (`google.mjs:118`).
+ * The token is not re-verified here: Better Auth received it from Google's
+ * token endpoint over TLS, or verified it against Google's keys
+ * (`sign-in.mjs:160`). Anything missing or malformed counts as unverified.
+ */
+export function googleEmailVerified(idToken: unknown): boolean {
+  if (typeof idToken !== 'string') return false;
+  const payload = idToken.split('.')[1];
+  if (payload === undefined || payload === '') return false;
+  try {
+    const claims = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { email_verified?: unknown };
+    return claims.email_verified === true;
+  } catch {
+    return false;
+  }
 }
 
 /** Sends email through Resend's HTTP API (no SDK). `fetchImpl` is for tests. */
@@ -227,8 +312,24 @@ export async function createAuth(deps: AuthDeps) {
   const consume = deps.consumeInvite ?? consumeInviteSql;
   const cookieKey = inviteCookieKey(secret);
   const inviteContext = new AsyncLocalStorage<InviteStore>();
-  const perEmail = createSendLimiter({ max: MAGIC_LINK_SENDS_PER_WINDOW, windowMs: MAGIC_LINK_WINDOW_MS, now });
-  const perNonce = createSendLimiter({ max: MAGIC_LINK_SENDS_PER_WINDOW, windowMs: MAGIC_LINK_WINDOW_MS, now });
+  const maxKeys = deps.limits?.maxTrackedKeys;
+  const perAddress = { max: MAGIC_LINK_SENDS_PER_WINDOW, windowMs: MAGIC_LINK_WINDOW_MS, now, maxKeys };
+  // Two per-address maps (S2): invite-driven sends to new addresses fill only
+  // `perNewEmail`, so they can never push returning players into an overflow
+  // bucket. `perExistingEmail`'s keys are real accounts' addresses, a set no
+  // request can grow.
+  const perExistingEmail = createSendLimiter(perAddress);
+  const perNewEmail = createSendLimiter(perAddress);
+  // Keyed on the invite id (S2): re-redeeming an invite mints a new cookie
+  // nonce, which must not reset the invite's allowance.
+  const perInvite = createSendLimiter(perAddress);
+  const invitePathCeiling = createSendLimiter({
+    max: deps.limits?.inviteSendsPerHour ?? INVITE_PATH_SENDS_PER_HOUR,
+    windowMs: 60 * 60_000,
+    now,
+    maxKeys,
+  });
+  const linkBindings = createLinkBindings({ ttlMs: MAGIC_LINK_EXPIRES_IN_SECONDS * 1000, now, maxKeys });
   const db: Queryable = pool;
   const redact = deps.redact ?? ((input: string) => input);
 
@@ -270,6 +371,9 @@ export async function createAuth(deps: AuthDeps) {
       cookieCache: { enabled: false },
     },
     account: {
+      // Access and refresh tokens are stored AES-GCM encrypted with the secret
+      // (review cycle 1, S7; better-auth `oauth2/utils.mjs:21-26`).
+      encryptOAuthTokens: true,
       accountLinking: {
         enabled: true,
         trustedProviders: ['google'],
@@ -284,6 +388,9 @@ export async function createAuth(deps: AuthDeps) {
       disableOriginCheck: false,
       // Never derive the base URL from X-Forwarded-Host (it is fixed by baseURL anyway).
       trustedProxyHeaders: false,
+      // No IP on session rows (S7). Nothing reads it: our limiters key on
+      // Express's req.ip, and Better Auth's own limiter is off.
+      ipAddress: { disableIpTracking: true },
     },
     onAPIError: { errorURL: '/' },
     disabledPaths: [...DISABLED_PATHS],
@@ -291,6 +398,7 @@ export async function createAuth(deps: AuthDeps) {
     plugins: [
       magicLink({
         storeToken: 'hashed',
+        expiresIn: MAGIC_LINK_EXPIRES_IN_SECONDS,
         sendMagicLink: async ({ email, url }) => {
           const key = normalizeEmail(email);
           const invite = currentInvite();
@@ -299,9 +407,19 @@ export async function createAuth(deps: AuthDeps) {
             invite === undefined ? Promise.resolve(false) : inviteUsable(db, invite),
           ]);
           const hasAccount = existing.rows.length > 0;
-          if (!hasAccount && !inviteOk) return;
-          if (!hasAccount && invite !== undefined && !perNonce.take(invite.nonce)) return;
-          if (!perEmail.take(key)) return;
+          if (hasAccount) {
+            if (!perExistingEmail.take(key)) return;
+          } else {
+            if (!inviteOk || invite === undefined) return;
+            // Each check counts only once the ones before it passed; a send
+            // refused later still spends the earlier counts, failing toward
+            // throttling.
+            if (!perInvite.take(invite.inviteId)) return;
+            if (!perNewEmail.take(key)) return;
+            if (!invitePathCeiling.take('all')) return;
+            // Bind this invite cookie to the address the link goes to (S5).
+            if (!linkBindings.record(invite, key)) return;
+          }
           // Not awaited, so both answers take the same time whether or not an
           // email goes out. Errors are logged without the address or the link.
           void deps.sendEmail(magicLinkEmail(deps.emailFrom, email, url)).catch((err: unknown) => {
@@ -314,7 +432,7 @@ export async function createAuth(deps: AuthDeps) {
     databaseHooks: {
       user: {
         create: {
-          before: async (user) => {
+          before: async (user, context) => {
             const email = typeof user.email === 'string' ? user.email.trim() : '';
             if (email === '') {
               throw new APIError('BAD_REQUEST', { code: 'EMAIL_REQUIRED', message: EMAIL_REQUIRED_MESSAGE });
@@ -324,6 +442,17 @@ export async function createAuth(deps: AuthDeps) {
             }
             const invite = currentInvite();
             if (invite === undefined) {
+              throw new APIError('FORBIDDEN', { code: INVITE_REQUIRED, message: INVITE_REQUIRED_MESSAGE });
+            }
+            // Login CSRF (S5): a magic-link sign-up must come from the very
+            // invite cookie the link was sent for, to that address. Otherwise
+            // anyone could send a link to their own address under their
+            // invite, get a victim's browser to open it, and spend the
+            // victim's invite on the attacker's account. Checked before the
+            // reservation, so a refused attempt leaves the victim's invite
+            // untouched. OAuth sign-ups send no email, so they have no binding
+            // and are not checked here (the provider vouches for the address).
+            if (context?.path === MAGIC_LINK_VERIFY_PATH && !linkBindings.has(invite, normalizeEmail(email))) {
               throw new APIError('FORBIDDEN', { code: INVITE_REQUIRED, message: INVITE_REQUIRED_MESSAGE });
             }
             const reserved = await reserveInvite(db, { inviteId: invite.inviteId, nonce: invite.nonce, email });
@@ -349,6 +478,23 @@ export async function createAuth(deps: AuthDeps) {
               httpOnly: true,
               sameSite: 'lax',
             });
+          },
+        },
+      },
+      account: {
+        create: {
+          // Google is a trusted provider, so Better Auth links it into an
+          // existing account without checking `emailVerified`
+          // (`oauth2/link-account.mjs:137-139`). This refuses the row unless
+          // Google itself reported the address verified (review cycle 1, S3:
+          // the developer chose to keep Google trusted and add this check).
+          // Throwing here rolls the link back; the callback redirects with
+          // `error=EMAIL_NOT_VERIFIED`. Other providers are untrusted, so
+          // Better Auth already requires a verified email for them.
+          before: async (account) => {
+            if (account.providerId === 'google' && !googleEmailVerified(account.idToken)) {
+              throw new APIError('FORBIDDEN', { code: 'EMAIL_NOT_VERIFIED', message: EMAIL_UNVERIFIED_MESSAGE });
+            }
           },
         },
       },
@@ -413,7 +559,13 @@ export async function createAuth(deps: AuthDeps) {
     inviteContext,
     revokeUserSessions,
     /** Test-only view of the send limiters' tracked-key counts. */
-    __sendLimiterSizes: () => ({ perEmail: perEmail.size(), perNonce: perNonce.size() }),
+    __sendLimiterSizes: () => ({
+      perExistingEmail: perExistingEmail.size(),
+      perNewEmail: perNewEmail.size(),
+      perInvite: perInvite.size(),
+      invitePathCeiling: invitePathCeiling.size(),
+      linkBindings: linkBindings.size(),
+    }),
   };
 }
 

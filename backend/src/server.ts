@@ -711,24 +711,43 @@ export async function buildHostedDeps(options: HostedBootOptions): Promise<Hoste
   }
 }
 
-/** How long SIGTERM waits for open requests before exiting anyway (hosted only). */
-const SHUTDOWN_TIMEOUT_MS = 10_000;
+/**
+ * How long SIGTERM waits for open requests before exiting anyway (hosted
+ * only). A world-engine turn can run for well over a minute, so this must
+ * outlast one; render.yaml's `maxShutdownDelaySeconds: 120` gives the process
+ * 120 s before a SIGKILL, and 110 s leaves 10 s of margin inside that.
+ */
+export const SHUTDOWN_TIMEOUT_MS = 110_000;
 
 /**
  * Hosted: on SIGTERM, stop accepting, let open requests finish, stop the
  * purge schedule (waiting for a run in progress), then close the pool.
+ * Logs a fixed line at the start and at the end (no request data, no PII).
+ * Exported for its test.
  */
-function closePoolOnSigterm(server: Server, pool: Pool, stopPurge: () => Promise<void>): void {
+export function closePoolOnSigterm(server: Server, pool: Pool, stopPurge: () => Promise<void>): void {
   process.once('SIGTERM', () => {
-    setTimeout(() => process.exit(1), SHUTDOWN_TIMEOUT_MS).unref();
+    const started = Date.now();
+    const seconds = () => ((Date.now() - started) / 1000).toFixed(1);
+    console.log(`[shutdown] SIGTERM received: draining open requests (up to ${SHUTDOWN_TIMEOUT_MS / 1000} s)`);
+    setTimeout(() => {
+      console.log(`[shutdown] timed out after ${seconds()} s with requests still open; exiting 1`);
+      process.exit(1);
+    }, SHUTDOWN_TIMEOUT_MS).unref();
     // Timers are cleared at once, so no purge starts while requests drain.
     const purgeStopped = stopPurge().catch(() => undefined);
     server.close(() => {
       purgeStopped
         .then(() => pool.end())
         .then(
-          () => process.exit(0),
-          () => process.exit(1),
+          () => {
+            console.log(`[shutdown] drained in ${seconds()} s; exiting 0`);
+            process.exit(0);
+          },
+          () => {
+            console.log(`[shutdown] drained in ${seconds()} s, but closing the pool failed; exiting 1`);
+            process.exit(1);
+          },
         );
     });
   });

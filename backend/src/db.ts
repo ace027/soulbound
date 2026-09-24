@@ -88,6 +88,16 @@ export function redactError(err: unknown, redact: Redactor): Error {
   return safe;
 }
 
+/**
+ * Pool limits (review cycle 1, Infra S5). At most 10 connections: one
+ * instance, and a small managed Postgres plan caps connections well below
+ * `pg`'s unbounded growth under load. A 5 s connect timeout: `pg`'s default is
+ * none, so an unreachable or silent database would hang a request (and the
+ * boot check) until the OS gives up on the TCP connection, minutes later.
+ */
+export const POOL_MAX_CONNECTIONS = 10;
+export const POOL_CONNECTION_TIMEOUT_MS = 5000;
+
 /** The redactor `createPool` attached to each pool, for `assertNoPendingMigrations`. */
 const poolRedactors = new WeakMap<Pool, Redactor>();
 
@@ -115,7 +125,12 @@ export async function createPool(
   const redact = chain(urlRedactor(databaseUrl), options.redact);
   try {
     const { default: pg } = await import('pg');
-    const pool = new pg.Pool({ ...options.pool, connectionString: databaseUrl });
+    const pool = new pg.Pool({
+      max: POOL_MAX_CONNECTIONS,
+      connectionTimeoutMillis: POOL_CONNECTION_TIMEOUT_MS,
+      ...options.pool,
+      connectionString: databaseUrl,
+    });
     pool.on('error', (err) => {
       console.error('[db] idle client error:', redactError(err, redact).message);
     });
@@ -160,6 +175,9 @@ export async function assertNoPendingMigrations(
   const schema = options.schema ?? 'public';
   let pending: string[];
   try {
+    // A deep import: `node-pg-migrate/migration` is a legacy subpath export,
+    // not part of the documented API, which is why package.json pins
+    // node-pg-migrate exactly (9.0.0). Re-check this path on any upgrade.
     const { getMigrationFilePaths } = await import('node-pg-migrate/migration');
     const files = await getMigrationFilePaths(options.dir ?? MIGRATIONS_DIR);
     const names = files.map((file) => path.basename(file, path.extname(file)));

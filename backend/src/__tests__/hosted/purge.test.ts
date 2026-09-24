@@ -44,6 +44,20 @@ const q = <R extends Record<string, unknown> = Record<string, unknown>>(text: st
 const verificationRowsFor = (email: string) =>
   q(`SELECT id FROM verification WHERE (CASE WHEN value IS JSON OBJECT THEN value::jsonb ->> 'email' END) = $1`, [email]);
 
+/**
+ * Moves this email's (real) verification rows' expiry 30 days out. Since
+ * review cycle 1 (S4) the purge also deletes every EXPIRED row, and these
+ * tests purge days ahead on the injected clock, so a 5-minute row would go
+ * whichever way. Pushed past the purge clock, only the email match can
+ * remove it, which is what these tests pin.
+ */
+const outlivePurgeClock = (email: string) =>
+  q(
+    `UPDATE verification SET "expiresAt" = now() + interval '30 days'
+      WHERE (CASE WHEN value IS JSON OBJECT THEN value::jsonb ->> 'email' END) = $1`,
+    [email],
+  );
+
 interface Player {
   userId: string;
   email: string;
@@ -71,6 +85,7 @@ async function deletedPlayer(label: string, requestedAt: Date): Promise<Player> 
   });
   expect(send.status).toBe(200);
   expect((await verificationRowsFor(email)).length).toBeGreaterThanOrEqual(1);
+  await outlivePurgeClock(email);
   await q('INSERT INTO account_deletions (user_id, requested_at) VALUES ($1, $2)', [userId, requestedAt]);
   return { userId, email, inviteId };
 }
@@ -101,6 +116,7 @@ describe('purgeDeletedAccounts: the grace period, on the injected clock', () => 
     const { userId: keptId, email: keptEmail } = await h.signIn();
     await q('INSERT INTO invites (code_hash, used_by, used_at) VALUES ($1, $2, now())', [randomBytes(32), keptId]);
     await h.request({ method: 'POST', path: '/api/auth/sign-in/magic-link', json: { email: keptEmail }, headers: { origin: PUBLIC_URL } });
+    await outlivePurgeClock(keptEmail);
     const keptVerifications = (await verificationRowsFor(keptEmail)).length;
     expect(keptVerifications).toBeGreaterThanOrEqual(1);
 
@@ -132,7 +148,7 @@ describe('purgeDeletedAccounts: the grace period, on the injected clock', () => 
     const p = await deletedPlayer('nonjson', t0);
     const oddId = randomUUID();
     await q(
-      `INSERT INTO verification (id, identifier, value, "expiresAt") VALUES ($1, $2, 'not json {', now() + interval '5 min')`,
+      `INSERT INTO verification (id, identifier, value, "expiresAt") VALUES ($1, $2, 'not json {', now() + interval '30 days')`,
       [oddId, randomUUID()],
     );
     const result = await purgeDeletedAccounts(h.deps.pool, new Date(t0.getTime() + DELETION_GRACE_MS + MINUTE));

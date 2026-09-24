@@ -124,10 +124,12 @@ export interface SessionUser {
 /**
  * Reads the session for a request: Better Auth's `auth.api.getSession`,
  * handed in through HostedDeps so this file never imports `better-auth`.
+ * `disableRefresh` is part of the type so the gate can't forget it (see
+ * `sessionGate`).
  */
 export type GetSession = (options: {
   headers: Headers;
-  query: { disableCookieCache: true };
+  query: { disableCookieCache: true; disableRefresh: true };
 }) => Promise<{ user: { id: string; email: string } } | null>;
 
 /** `better-auth/node`'s `fromNodeHeaders`, likewise handed in. */
@@ -144,6 +146,13 @@ function signInRequired(res: Response): void {
  * a user with no pending deletion. Either failure is the same 401
  * `SIGN_IN_REQUIRED`. There is no exemption list: health, the webhook slot,
  * redeem and `/api/auth/*` all end before this is reached.
+ *
+ * `disableRefresh`: the gate only reads the session. Rolling it forward is
+ * left to the browser's own `GET /api/auth/get-session`, the one response
+ * that can carry the renewed cookie back. If the gate refreshed the row, as
+ * it did before review cycle 1 (S1), `get-session` would find nothing left to
+ * refresh, and the browser cookie would still expire 30 days after sign-in
+ * (better-auth `api/routes/session.mjs:170`, `:181`).
  */
 export function sessionGate(opts: {
   getSession: GetSession;
@@ -154,7 +163,7 @@ export function sessionGate(opts: {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const session = await getSession({
       headers: fromNodeHeaders(req.headers),
-      query: { disableCookieCache: true },
+      query: { disableCookieCache: true, disableRefresh: true },
     });
     if (session === null || session === undefined) {
       signInRequired(res);

@@ -103,6 +103,10 @@ export interface PurgeOptions {
  *      sets `invites.used_by` to null);
  *   4. run the invite reconciliation.
  *
+ * Before step 2, every `verification` row already past its `expiresAt` is
+ * deleted too (review cycle 1, S4): those hold typed emails that may have no
+ * account behind them at all.
+ *
  * Every cutoff is computed from `now` and passed as a parameter; SQL `now()`
  * is never used, so an injected clock controls the whole job.
  */
@@ -126,6 +130,12 @@ export async function purgeDeletedAccounts(
     }
     await options.afterLock?.();
 
+    // Expired verification rows (review cycle 1, S4). Better Auth writes one
+    // for every magic-link request, eligible or not, with the typed address
+    // in `value`, and deletes it only when the link is used. So an address
+    // someone typed with no account behind it would otherwise stay forever.
+    // Cut off by the injected clock, like everything else here.
+    await client.query('DELETE FROM verification WHERE "expiresAt" < $1', [now]);
     await client.query(
       `DELETE FROM verification v
         WHERE (CASE WHEN v.value IS JSON OBJECT THEN lower(btrim(v.value::jsonb ->> 'email')) END)

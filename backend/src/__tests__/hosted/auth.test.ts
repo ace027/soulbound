@@ -23,6 +23,7 @@ import {
   createResendSender,
   DISABLED_PATHS,
   EMAIL_REQUIRED_MESSAGE,
+  INVITE_PATH_SENDS_PER_HOUR,
   INVITE_REQUIRED_MESSAGE,
   SESSION_EXPIRES_IN_SECONDS,
   type AuthDeps,
@@ -72,6 +73,9 @@ async function startHarness(overrides: Partial<AuthDeps> = {}): Promise<Harness>
     onSessionCreated: (userId) => {
       sessionsCreatedFor.push(userId);
     },
+    // The shared harness makes far more invite-path sends than the
+    // production ceiling allows; the ceiling has its own harness below.
+    limits: { inviteSendsPerHour: 100_000 },
     ...overrides,
   });
   const app = express();
@@ -198,6 +202,77 @@ async function insertAccount(email: string): Promise<string> {
 
 const uniqueEmail = (label: string) => `${label}-${randomUUID().slice(0, 8)}@example.test`;
 
+/**
+ * An ID token shaped like Google's. Unsigned: on the authorization-code path
+ * Better Auth only decodes it (core `social-providers/google.mjs:119`), having
+ * received it straight from Google's token endpoint.
+ */
+function fakeIdToken(claims: Record<string, unknown>): string {
+  const part = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  return `${part({ alg: 'RS256', typ: 'JWT' })}.${part({ iss: 'https://accounts.google.com', aud: FAKE_GOOGLE.clientId, ...claims })}.sig`;
+}
+
+/** The raw `name=value` pairs of every Set-Cookie on a response. */
+function cookiePairs(res: Result): string[] {
+  return setCookies(res).map((c) => c.split(';')[0]!);
+}
+
+/**
+ * The real Google flow through the real routes: `POST /sign-in/social`, then
+ * `GET /callback/google` with the state it issued. Only Google's token
+ * endpoint is stubbed, so the ID token (and its `email_verified`) is ours.
+ */
+async function googleSignIn(
+  h: Harness,
+  claims: { sub: string; email: string; email_verified: unknown },
+  inviteCookie?: string,
+): Promise<Result> {
+  const start = await request(h.port, {
+    method: 'POST',
+    path: '/api/auth/sign-in/social',
+    json: { provider: 'google', callbackURL: '/' },
+    headers: { origin: PUBLIC_URL, ...(inviteCookie ? { cookie: inviteCookie } : {}) },
+  });
+  expect(start.status, start.body).toBe(200);
+  const state = new URL((JSON.parse(start.body) as { url: string }).url).searchParams.get('state');
+  expect(state).toBeTruthy();
+  const realFetch = globalThis.fetch;
+  const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    if (url.startsWith('https://oauth2.googleapis.com/token')) {
+      return new Response(
+        JSON.stringify({
+          access_token: 'fake-google-access-token',
+          token_type: 'Bearer',
+          expires_in: 3600,
+          scope: 'openid email profile',
+          id_token: fakeIdToken({ name: 'G', ...claims }),
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    }
+    if (url.startsWith(`http://127.0.0.1:`)) return realFetch(input, init);
+    throw new Error(`unexpected fetch in test: ${url}`);
+  });
+  try {
+    return await request(h.port, {
+      method: 'GET',
+      path: `/api/auth/callback/google?code=fake-code&state=${encodeURIComponent(state!)}`,
+      headers: { cookie: [...cookiePairs(start), ...(inviteCookie ? [inviteCookie] : [])].join('; ') },
+    });
+  } finally {
+    spy.mockRestore();
+  }
+}
+
+async function googleAccountRows(sub: string) {
+  const { rows } = await db.pool.query<{ userId: string; accessToken: string | null }>(
+    `SELECT "userId", "accessToken" FROM account WHERE "providerId" = 'google' AND "accountId" = $1`,
+    [sub],
+  );
+  return rows;
+}
+
 describe('hosted auth (06-03)', () => {
   let h: Harness;
 
@@ -224,6 +299,8 @@ describe('hosted auth (06-03)', () => {
       expect(o.session?.cookieCache?.enabled).toBe(false);
       expect(o.account?.accountLinking?.trustedProviders).toEqual(['google']);
       expect(o.account?.accountLinking?.allowDifferentEmails).toBe(false);
+      expect(o.account?.encryptOAuthTokens).toBe(true);
+      expect(o.advanced?.ipAddress?.disableIpTracking).toBe(true);
       expect(o.advanced?.useSecureCookies).toBe(true);
       expect(o.advanced?.disableCSRFCheck).toBe(false);
       expect(o.advanced?.disableOriginCheck).toBe(false);
@@ -505,11 +582,13 @@ describe('hosted auth (06-03)', () => {
       )!;
       const email = uniqueEmail('oauthfail');
       const ctx = await failing.a.auth.$context;
+      const sub = `g-${randomUUID()}`;
       await expect(
         failing.a.inviteContext.run({ invite }, () =>
           ctx.internalAdapter.createOAuthUser(
             { email, emailVerified: true, name: '' },
-            { providerId: 'google', accountId: `g-${randomUUID()}` },
+            // Google always supplies an ID token (google.mjs:118); S3's hook reads it.
+            { providerId: 'google', accountId: sub, idToken: fakeIdToken({ sub, email, email_verified: true }) },
           ),
         ),
       ).rejects.toMatchObject({ body: { code: INVITE_INVALID } });
@@ -533,10 +612,12 @@ describe('hosted auth (06-03)', () => {
       const { inviteId, invite } = await inviteInContext();
       const email = uniqueEmail('google');
       const ctx = await h.a.auth.$context;
+      const sub = `g-${randomUUID()}`;
       const created = await h.a.inviteContext.run({ invite }, () =>
         ctx.internalAdapter.createOAuthUser(
           { email, emailVerified: true, name: 'G' },
-          { providerId: 'google', accountId: `g-${randomUUID()}` },
+          // Google always supplies an ID token (google.mjs:118); S3's hook reads it.
+          { providerId: 'google', accountId: sub, idToken: fakeIdToken({ sub, email, email_verified: true }) },
         ),
       );
       expect((await inviteRow(inviteId)).used_by).toBe(created.user.id);
@@ -680,16 +761,158 @@ describe('hosted auth (06-03)', () => {
         const email = uniqueEmail('sweep');
         await insertAccount(email);
         await sendLink(small, email);
-        expect(small.a.__sendLimiterSizes().perEmail).toBe(1);
+        expect(small.a.__sendLimiterSizes().perExistingEmail).toBe(1);
         clock += 16 * 60_000;
         await sendLink(small, email);
         await sendLink(small, email);
         await sendLink(small, email);
         expect(small.sent).toHaveLength(4); // the window reset after 15 minutes
-        expect(small.a.__sendLimiterSizes().perEmail).toBe(1);
+        expect(small.a.__sendLimiterSizes().perExistingEmail).toBe(1);
       } finally {
         await small.close();
       }
+    });
+  });
+
+  describe('review cycle 1', () => {
+    it('S2: re-redeeming an invite does not reset its send cap (3 per invite, not per cookie)', async () => {
+      const { id, code } = await createInvite(db.pool);
+      const c1 = await inviteCookieFor(id, code);
+      const c2 = await inviteCookieFor(id, code);
+      for (const cookie of [c1, c2]) {
+        for (let i = 0; i < 3; i += 1) await sendLink(h, uniqueEmail('recap'), { cookie });
+      }
+      expect(h.sent).toHaveLength(3);
+    });
+
+    it('S2: invite-path sends have a process-wide ceiling of 30 per hour', async () => {
+      const fresh = await startHarness({ limits: {} });
+      try {
+        expect(INVITE_PATH_SENDS_PER_HOUR).toBe(30);
+        for (let i = 0; i < 11; i += 1) {
+          const { cookie } = await newInviteCookie();
+          for (let j = 0; j < 3; j += 1) await sendLink(fresh, uniqueEmail(`ceil${i}-${j}`), { cookie });
+        }
+        expect(fresh.sent).toHaveLength(30);
+        // Returning players are outside the ceiling.
+        const returning = uniqueEmail('ceil-returning');
+        await insertAccount(returning);
+        await sendLink(fresh, returning);
+        expect(fresh.sent.at(-1)?.to).toBe(returning);
+      } finally {
+        await fresh.close();
+      }
+    });
+
+    it('S2: invite-driven sends cannot fill the per-email map returning players use', async () => {
+      const small = await startHarness({ limits: { maxTrackedKeys: 2, inviteSendsPerHour: 100_000 } });
+      try {
+        // Two invites, five new addresses: past 2 keys, new addresses share
+        // the overflow bucket, which then fills.
+        for (const n of [3, 2]) {
+          const { cookie } = await newInviteCookie();
+          for (let i = 0; i < n; i += 1) await sendLink(small, uniqueEmail('flood'), { cookie });
+        }
+        const returning = uniqueEmail('crowded-out');
+        await insertAccount(returning);
+        small.sent.length = 0;
+        await sendLink(small, returning);
+        expect(small.sent.map((m) => m.to)).toEqual([returning]);
+      } finally {
+        await small.close();
+      }
+    });
+
+    it('S5: a link sent under invite A cannot create an account under invite B (login CSRF)', async () => {
+      const a = await newInviteCookie();
+      const victim = await newInviteCookie();
+      const before = await inviteRow(victim.inviteId);
+      const attackerEmail = uniqueEmail('attacker');
+      expect((await sendLink(h, attackerEmail, { cookie: a.cookie })).status).toBe(200);
+      // The victim's browser opens the attacker's link, carrying invite B.
+      const res = await openLink(h, linkFor(h, attackerEmail), victim.cookie);
+      expect(res.status).toBe(302);
+      expect(new URL(res.headers.location!, PUBLIC_URL).searchParams.get('error')).toBe(INVITE_REQUIRED);
+      expect(setCookies(res).some((c) => c.startsWith('__Secure-better-auth.session_token='))).toBe(false);
+      expect(await usersWithEmail(attackerEmail)).toEqual([]);
+      expect(await inviteRow(victim.inviteId)).toEqual(before);
+    });
+
+    it('S5: the same invite, re-redeemed on another device, cannot use a link the first cookie was sent', async () => {
+      const { id, code } = await createInvite(db.pool);
+      const first = await inviteCookieFor(id, code);
+      const second = await inviteCookieFor(id, code);
+      const email = uniqueEmail('rebind');
+      await sendLink(h, email, { cookie: first });
+      const res = await openLink(h, linkFor(h, email), second);
+      expect(new URL(res.headers.location!, PUBLIC_URL).searchParams.get('error')).toBe(INVITE_REQUIRED);
+      expect(await usersWithEmail(email)).toEqual([]);
+      // The refused attempt spent that link (Better Auth consumes the token
+      // before creating the user); the cookie that asked for it asks again
+      // and completes the sign-up.
+      await sendLink(h, email, { cookie: first });
+      const ok = await openLink(h, linkFor(h, email), first);
+      expect(ok.headers.location).toBe(`${PUBLIC_URL}/`);
+      expect(await usersWithEmail(email)).toHaveLength(1);
+    });
+
+    it('S3: an unverified Google identity cannot link into an existing account, and no account row is written', async () => {
+      const email = uniqueEmail('g-unverified-link');
+      const userId = await insertAccount(email);
+      const sub = `g-${randomUUID()}`;
+      const res = await googleSignIn(h, { sub, email, email_verified: false });
+      expect(res.status).toBe(302);
+      expect(new URL(res.headers.location!, PUBLIC_URL).searchParams.get('error')).toBe('EMAIL_NOT_VERIFIED');
+      expect(setCookies(res).some((c) => c.startsWith('__Secure-better-auth.session_token='))).toBe(false);
+      expect(await googleAccountRows(sub)).toEqual([]);
+      expect(await usersWithEmail(email)).toEqual([userId]);
+    });
+
+    it('S3: a verified Google identity still links, and its tokens are stored encrypted (S7)', async () => {
+      const email = uniqueEmail('g-verified-link');
+      const userId = await insertAccount(email);
+      const sub = `g-${randomUUID()}`;
+      const res = await googleSignIn(h, { sub, email, email_verified: true });
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe('/'); // the callbackURL, as given to sign-in/social
+      expect(setCookies(res).some((c) => c.startsWith('__Secure-better-auth.session_token='))).toBe(true);
+      const rows = await googleAccountRows(sub);
+      expect(rows.map((r) => r.userId)).toEqual([userId]);
+      expect(rows[0]!.accessToken).not.toBe('fake-google-access-token');
+      expect(rows[0]!.accessToken).not.toContain('fake-google-access-token');
+    });
+
+    it('S3: a first-time verified Google sign-up with an invite is unaffected', async () => {
+      const { inviteId, cookie } = await newInviteCookie();
+      const email = uniqueEmail('g-first');
+      const sub = `g-${randomUUID()}`;
+      const res = await googleSignIn(h, { sub, email, email_verified: true }, cookie);
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe('/');
+      const [userId] = await usersWithEmail(email);
+      expect(userId).toBeDefined();
+      expect((await googleAccountRows(sub)).map((r) => r.userId)).toEqual([userId]);
+      expect((await inviteRow(inviteId)).used_by).toBe(userId);
+    });
+
+    it('S7: no IP address is recorded on the session row', async () => {
+      const { cookie } = await newInviteCookie();
+      const email = uniqueEmail('noip');
+      expect((await sendLink(h, email, { cookie, headers: { 'x-forwarded-for': '203.0.113.9' } })).status).toBe(200);
+      const res = await request(h.port, {
+        method: 'GET',
+        path: `${linkFor(h, email).pathname}${linkFor(h, email).search}`,
+        headers: { cookie, 'x-forwarded-for': '203.0.113.9' },
+      });
+      expect(res.headers.location).toBe(`${PUBLIC_URL}/`);
+      const [userId] = await usersWithEmail(email);
+      const { rows } = await db.pool.query<{ ipAddress: string | null }>(
+        'SELECT "ipAddress" FROM session WHERE "userId" = $1',
+        [userId],
+      );
+      expect(rows).toHaveLength(1);
+      // Better Auth writes '' (or NULL) when tracking is off; never the address.
+      expect(rows[0]!.ipAddress ?? '').toBe('');
     });
   });
 

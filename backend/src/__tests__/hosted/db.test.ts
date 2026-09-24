@@ -214,3 +214,43 @@ describe('DB errors are redacted (R25d)', () => {
     expect(out).toBe('a [REDACTED] b [REDACTED] c [REDACTED] d');
   });
 });
+
+describe('pool limits (review cycle 1, Infra S5)', () => {
+  it('the pool is capped at 10 connections, with a 5 s connect timeout', async () => {
+    const pool = await createPool('postgres://soulbound:fake-password-pool-limits-0000@127.0.0.1:1/nowhere');
+    try {
+      expect(pool.options.max).toBe(10);
+      expect(pool.options.connectionTimeoutMillis).toBe(5000);
+    } finally {
+      await pool.end();
+    }
+  });
+
+  it('a host that accepts but never answers fails within about 6 s, redacted', { timeout: 15_000 }, async () => {
+    // A TCP listener that never speaks the Postgres protocol: DNS and the TCP
+    // connect succeed, so only the connect timeout can end the attempt.
+    const { createServer } = await import('node:net');
+    const sockets: import('node:net').Socket[] = [];
+    const silent = createServer((socket) => void sockets.push(socket));
+    await new Promise<void>((resolve) => silent.listen(0, '127.0.0.1', () => resolve()));
+    const { port } = silent.address() as import('node:net').AddressInfo;
+    const url = `postgres://soulbound:${FAKE_PW}@127.0.0.1:${port}/nowhere`;
+    const pool = await createPool(url);
+    const started = Date.now();
+    try {
+      const err = await pool.query('SELECT 1').then(
+        () => undefined,
+        (e: unknown) => e,
+      );
+      const elapsed = Date.now() - started;
+      expect(err).toBeInstanceOf(Error);
+      expect(elapsed).toBeGreaterThanOrEqual(4_500);
+      expect(elapsed).toBeLessThan(6_500);
+      expect(inspect(err)).not.toContain(FAKE_PW);
+    } finally {
+      for (const s of sockets) s.destroy();
+      await pool.end().catch(() => undefined);
+      await new Promise<void>((resolve) => silent.close(() => resolve()));
+    }
+  });
+});
