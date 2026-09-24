@@ -29,6 +29,7 @@ import type {
 import {
   ApiClientError,
   callWorldEngine,
+  checkAccess,
   determineUniqueSkill,
   generateIntroScene,
 } from '../api';
@@ -37,6 +38,7 @@ import {
   stubDetermineUniqueSkill,
   stubGenerateIntroScene,
 } from '../apiStub';
+import { getPassphrase, onPassphraseRequired, setPassphrase } from '../passphrase';
 
 // ─── Fixtures ───────────────────────────────────────────────────────────────
 
@@ -183,11 +185,14 @@ beforeEach(() => {
     throw new Error('Unqueued fetch call — no test may reach the network.');
   });
   vi.stubGlobal('fetch', fetchMock);
+  // No test in this file may see another's stored passphrase.
+  localStorage.clear();
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  localStorage.clear();
 });
 
 /**
@@ -397,7 +402,7 @@ describeSharedContract(
 
 // ─── POST /api/intro-scene ──────────────────────────────────────────────────
 // Contract: backend/src/routes/introScene.ts IntroSceneRequestSchema (68-70)
-//   { character: { name, race: { name }, uniqueSkill: { skill_name, soul_resonance } } }
+//   { character: { name, race: { name }, uniqueSkill: { skill_name, soul_resonance, description } } }
 
 describe('generateIntroScene', () => {
   it('returns the parsed, typed World Voice response on the happy path', async () => {
@@ -420,6 +425,7 @@ describe('generateIntroScene', () => {
         uniqueSkill: {
           skill_name: 'Patient Ledger',
           soul_resonance: UNIQUE_SKILL.soul_resonance,
+          description: UNIQUE_SKILL.description,
         },
       },
     });
@@ -494,5 +500,158 @@ describe('apiStub', () => {
     expect(skill.description).toContain('STUB');
     expect(intro.narration).toContain('Vel');
     expect(intro.narration).toContain('Ashkin');
+  });
+});
+
+// ─── R19: the access-gate passphrase header ─────────────────────────────────
+
+describe('the access-gate header', () => {
+  it('is present on all three fetchers when a passphrase is stored', async () => {
+    setPassphrase('correct-horse-battery');
+    respondWith(jsonResponse(200, UNIQUE_SKILL));
+    respondWith(jsonResponse(200, WORLD_VOICE_RESPONSE));
+    respondWith(jsonResponse(200, WORLD_VOICE_RESPONSE));
+
+    await determineUniqueSkill({ name: 'Vel', race: RACE, answers: ANSWERS });
+    await callWorldEngine('Refuse the toll.', GAME_STATE);
+    await generateIntroScene(CHARACTER);
+
+    for (let i = 0; i < 3; i++) {
+      const headers = (fetchMock.mock.calls[i]?.[1] as RequestInit).headers as Record<
+        string,
+        string
+      >;
+      expect(headers['Authorization']).toBe('Bearer correct-horse-battery');
+    }
+  });
+
+  it('is absent when no passphrase is stored', async () => {
+    expect(getPassphrase()).toBeNull();
+    respondWith(jsonResponse(200, UNIQUE_SKILL));
+    await determineUniqueSkill({ name: 'Vel', race: RACE, answers: ANSWERS });
+
+    const headers = (fetchMock.mock.calls[0]?.[1] as RequestInit).headers as Record<
+      string,
+      string
+    >;
+    expect(headers['Authorization']).toBeUndefined();
+  });
+
+  it('401 PASSPHRASE_REQUIRED clears storage, notifies subscribers, and throws with that code', async () => {
+    setPassphrase('correct-horse-battery');
+    const listener = vi.fn();
+    const unsubscribe = onPassphraseRequired(listener);
+
+    respondWith(
+      jsonResponse(401, {
+        error: { message: 'Passphrase required', code: 'PASSPHRASE_REQUIRED' },
+      }),
+    );
+
+    await expect(determineUniqueSkill({ name: 'Vel', race: RACE, answers: ANSWERS })).rejects.toThrow(
+      ApiClientError,
+    );
+
+    expect(getPassphrase()).toBeNull();
+    expect(listener).toHaveBeenCalledTimes(1);
+    unsubscribe();
+  });
+
+  it('401 AUTHENTICATION_FAILED does NOT clear the stored passphrase', async () => {
+    setPassphrase('correct-horse-battery');
+    const listener = vi.fn();
+    const unsubscribe = onPassphraseRequired(listener);
+
+    respondWith(
+      jsonResponse(401, {
+        error: { message: 'Bad Anthropic key', code: 'AUTHENTICATION_FAILED' },
+      }),
+    );
+
+    await expect(determineUniqueSkill({ name: 'Vel', race: RACE, answers: ANSWERS })).rejects.toThrow(
+      ApiClientError,
+    );
+
+    expect(getPassphrase()).toBe('correct-horse-battery');
+    expect(listener).not.toHaveBeenCalled();
+    unsubscribe();
+  });
+
+  it('429 TOO_MANY_REQUESTS surfaces its message and does not clear storage', async () => {
+    setPassphrase('correct-horse-battery');
+    respondWith(
+      jsonResponse(429, {
+        error: { message: 'Too many requests — try again shortly', code: 'TOO_MANY_REQUESTS' },
+      }),
+    );
+
+    await expect(
+      determineUniqueSkill({ name: 'Vel', race: RACE, answers: ANSWERS }),
+    ).rejects.toThrow(/Too many requests/);
+
+    expect(getPassphrase()).toBe('correct-horse-battery');
+  });
+});
+
+describe('checkAccess', () => {
+  it('maps a 204 to ok', async () => {
+    respondWith(makeResponse({ status: 204, body: '' }));
+    await expect(checkAccess()).resolves.toBe('ok');
+  });
+
+  it('maps a 401 with PASSPHRASE_REQUIRED to required', async () => {
+    respondWith(
+      jsonResponse(401, {
+        error: { message: 'Passphrase required', code: 'PASSPHRASE_REQUIRED' },
+      }),
+    );
+    await expect(checkAccess()).resolves.toBe('required');
+  });
+
+  it('maps a 401 with no recognisable code to unknown', async () => {
+    respondWith(jsonResponse(401, { error: { message: 'nope' } }));
+    await expect(checkAccess()).resolves.toBe('unknown');
+  });
+
+  it('maps a 502 text/plain (Vite proxy, no backend) to unknown', async () => {
+    respondWith(makeResponse({ status: 502, body: 'Bad Gateway', contentType: 'text/plain' }));
+    await expect(checkAccess()).resolves.toBe('unknown');
+  });
+
+  it('maps a network rejection to unknown', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('offline'));
+    await expect(checkAccess()).resolves.toBe('unknown');
+  });
+
+  it('maps a 200 HTML body to unknown', async () => {
+    respondWith(
+      makeResponse({ status: 200, body: '<!doctype html><html></html>', contentType: 'text/html' }),
+    );
+    await expect(checkAccess()).resolves.toBe('unknown');
+  });
+
+  it('never rejects, whatever fetch does', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('offline'));
+    await expect(checkAccess()).resolves.toBe('unknown');
+  });
+
+  it('sends the stored passphrase as a Bearer header, and none when unset', async () => {
+    respondWith(makeResponse({ status: 204, body: '' }));
+    await checkAccess();
+    let headers = (fetchMock.mock.calls[0]?.[1] as RequestInit).headers as Record<string, string>;
+    expect(headers['Authorization']).toBeUndefined();
+
+    setPassphrase('correct-horse-battery');
+    respondWith(makeResponse({ status: 204, body: '' }));
+    await checkAccess();
+    headers = (fetchMock.mock.calls[1]?.[1] as RequestInit).headers as Record<string, string>;
+    expect(headers['Authorization']).toBe('Bearer correct-horse-battery');
+  });
+
+  it('GETs the shared ACCESS_CHECK_PATH', async () => {
+    respondWith(makeResponse({ status: 204, body: '' }));
+    await checkAccess();
+    expect(postedPath()).toBe('/api/access');
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('GET');
   });
 });

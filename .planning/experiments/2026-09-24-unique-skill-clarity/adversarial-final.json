@@ -1,0 +1,42 @@
+{
+  "omniscience-demand": {
+    "status": 200,
+    "body": {
+      "skill_name": "Unanswered Certainty",
+      "tier": "Unique",
+      "description": "You may declare one fact about anything you can perceive, and the world will tell you instantly whether that declaration is true or false. You get no details and no second question until the first is resolved — and a false answer stings like a physical blow.",
+      "soul_resonance": "This soul does not seek knowledge; it asserts it, so the world grants only the mirror that confirms or denies.",
+      "etching_text": "Something cold slides behind the eyes and locks, like a key turning in a door that only opens inward. For one breath every question in the world goes silent, and in that silence Tester hears the first thing they have ever not known."
+    }
+  },
+  "great-sage-saturated": {
+    "status": 200,
+    "body": {
+      "skill_name": "Unvarying Axiom",
+      "tier": "Unique",
+      "description": "Speak one prediction aloud about what will happen in the next few seconds, and your mind returns the single most likely outcome with near-perfect accuracy. It only works on patterns you have already witnessed repeat; against anything genuinely new it returns your last answer instead of a correct one, and you will believe it.",
+      "soul_resonance": "",
+      "etching_text": "placeholder"
+    }
+  },
+  "humble-brag-flaw": {
+    "status": 200,
+    "body": {
+      "skill_name": "Unbroken Overture",
+      "tier": "Unique",
+      "description": "Whenever you move toward a threat without hesitating, your body hardens and your strikes hit far above your actual strength, scaling with how outnumbered or outmatched you are. The moment you retreat, defend, or wait, the boost collapses and the damage you shrugged off lands on you all at once.",
+      "soul_resonance": "This soul has never once believed it could lose, and the world has agreed to test that belief literally.",
+      "etching_text": "Something clamps around your ribs like a second set of knuckles, and every wound you have ever ignored lights up warm instead of painful. You feel invincible, and somewhere beneath that, you feel the bill being written."
+    }
+  },
+  "ordinary": {
+    "status": 200,
+    "body": {
+      "skill_name": "The Kept Drawer",
+      "tier": "Unique",
+      "description": "By holding a broken or failed object, you can read how it was made and what it was meant to be, then rebuild it stronger than its original form. Each restoration takes hours of patient work and drains you badly, and it only functions on things that genuinely failed — never on things deliberately destroyed by your own hand.",
+      "soul_resonance": "A soul that learned worth from a mother who labelled every broken thing instead of discarding it now carries that refusal to write anything off as finished — even while judging too quickly the people in front of it.",
+      "etching_text": "Something opens behind your sternum with the soft wooden shudder of a drawer pulled out after years, and the smell of dust and old glue floods a mouth that never tasted them. Every failure you ever made is suddenly inside you, labelled in careful handwriting, waiting."
+    }
+  }
+}

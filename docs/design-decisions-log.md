@@ -123,6 +123,77 @@ holding the MUST NOT rule list and a strict JSON schema together over a large pr
 `effort: 'high'` was chosen to protect — and it is now doing that on a smaller model. Both are
 worth watching in play rather than assuming.
 
+## Access gate for published images (2026-09-23)
+
+**The problem.** Phase 5 publishes a Docker image anyone can pull. Until then the only thing
+protecting the backend was the loopback bind in `docker-compose.yml`. A deployer who published the
+port, on purpose or by accident, put an unmetered proxy for their own Anthropic key on the network.
+
+**Options, and the choice.** The developer chose option 2, a deployer-set access gate, on
+2026-09-23:
+1. Docs-only warnings. Rejected: safety would depend on every deployer reading them.
+2. A deployer-set passphrase on every paid route. **Chosen.**
+3. Real user accounts. Rejected as out of scope: they belong with multiplayer.
+
+**What shipped.** Every `/api/*` route except `/api/health` requires
+`Authorization: Bearer <SOULBOUND_PASSPHRASE>` (`backend/src/accessGate.ts`,
+`backend/src/server.ts`). A missing or wrong value gets 401 `PASSPHRASE_REQUIRED` with
+`WWW-Authenticate: Bearer realm="soulbound"`. A per-client rate limit (default 30/min,
+`RATE_LIMIT_PER_MINUTE`, 1-600) runs **before** the passphrase check and before any body parsing,
+so guesses are throttled and an unauthenticated body is never parsed. Over the limit gets 429
+`TOO_MANY_REQUESTS` plus `Retry-After`. The comparison hashes both sides with SHA-256, then uses
+`crypto.timingSafeEqual`. The passphrase is required at boot, redacted from logs like the key, and
+deleted from `process.env` once read (`backend/src/config.ts`). `/api/health` stays open because
+the compose healthchecks call it with no credentials.
+
+In the browser, `frontend/src/components/AccessGate.tsx` wraps `<App/>` in
+`frontend/src/main.tsx`. Before the title screen it calls `GET /api/access` (204 means in). On 401
+`PASSPHRASE_REQUIRED` it shows an inline form: no `window.prompt` (constraint #1). The trimmed value
+is stored in `localStorage` under `sbc-access-passphrase` and sent as the Bearer header on every
+call. A later `PASSPHRASE_REQUIRED` clears it and asks again. `App.tsx` is unchanged.
+
+**This is not the rejected paste-per-session BYOK.** CLAUDE.md rejects BYOK, where players paste an
+Anthropic key into the browser. Here the deployer issues the passphrase and the player never holds
+an Anthropic key. The key architecture is unchanged: the backend holds the deployer's key from
+`.env`. The gate is access control on that proxy, not a re-opening of the auth decision.
+
+**New error codes, on purpose.** Upstream Anthropic failures already use 401
+`AUTHENTICATION_FAILED` and 429 `RATE_LIMITED` (`backend/src/anthropic.ts`). The frontend decides by
+**code**, never by status, so a bad deployer key never wipes a player's correct passphrase.
+
+**Printable ASCII only, 12+ characters.** Browsers refuse to send characters outside Latin-1 in a
+header. An accented or emoji passphrase would let the UI open and then fail every call silently,
+so the backend refuses to boot on one instead.
+
+**One image, and a departure from the earlier proxy note.** The architecture was chosen from three
+competing proposals: "Pragmatic + 2 from Clean". The backend serves the built frontend when
+`STATIC_DIR` is set, so the browser and API are same-origin on one port, with no proxy and no CORS
+change. `/api/*` never returns `index.html`, and paths with a file extension never get the page
+fallback. This **departs** from an earlier STATE note recommending a reverse proxy that forwards
+`/api`: serving the bundle from the backend gives the same same-origin property without one. The
+rejected alternative was an nginx front end with two images, a better fit for a future world
+server but a second container every deployer pays for today. `backend/Dockerfile` stages:
+`builder` → `frontend-build` (on `$BUILDPLATFORM`) → `api` (no bundle; the dev compose targets it)
+→ `runtime` (the published image). The frontend's old `serve -s` runtime stage was deleted.
+
+**Accepted gaps.**
+- If the backend is down when the page loads, the UI opens anyway. A creation that later hits a 401
+  still strands on the loading screen (`App.tsx:267-269`). That needs two rare conditions, and
+  fixing it would mean editing `App.tsx`.
+- The historical evidence scripts (`.planning/phases/02-backend-world-voice/evidence/live-verification.mjs`,
+  `.planning/phases/04-parity-verification/evidence/playthrough.mjs`, and the two
+  `.planning/experiments/2026-09-19-*/playthrough.mjs`) send no header, so they get 401 if re-run.
+  They are historical evidence and stay as they are.
+- Failed-passphrase requests share a rate-limit bucket with real players from the same address.
+- Behind the dev compose, all LAN players share one bucket: they all arrive via the Vite container.
+- It is plain HTTP. TLS termination is out of scope.
+
+**Release.** `.github/workflows/release.yml` runs on manual `workflow_dispatch` only: test, smoke,
+then publish `ghcr.io/deanitservices/soulbound:{version}` and `:latest` for `linux/amd64` and
+`linux/arm64`. It refuses when the four `package.json` versions disagree and refuses to overwrite
+an existing version tag; that check fails closed. CI runs `scripts/smoke-image.sh` on every push.
+The first real GHCR publish is **untested** until someone dispatches it after merge.
+
 ---
 
 ## Model Split (superseded 2026-09-17 entry) — Sonnet 5 for soul-reading, Opus 5 for the world
@@ -137,6 +208,33 @@ worth watching in play rather than assuming.
 
 **`determineUniqueSkill()` stays on Sonnet 5, and that is also deliberate.** It is the adversarially stress-tested surface (see "Tier 0 stress tests" below), and that testing note already warns that the resilience observed there is partly a property of the model's training rather than purely the prompt's wording — so moving this call to another model is a decision to re-run those tests, not a free swap. It also has nothing to gain from the Opus routes' warm cache: it sends no `system` parameter at all, so it has no cached prefix to share with anything (see the correction above).
 
+## Narration length (2026-09-24)
+**Per turn: 1-2 short paragraphs, roughly 60-120 words. Intro: 2 short paragraphs, under 150 words.**
+
+This is the second trim in the same direction. The 2026-09-18 edit took the per-turn narration from 2-5 paragraphs down to 2-3 and added an anti-padding clause. A playtest on 2026-09-24 still found both the intro scene and the turn responses hard to follow: it was too much prose to parse before the player could act.
+
+The root cause was the wording, not the rendering (`WorldLog` already keeps paragraph breaks with `pre-wrap`). "Rich prose" in the `narration` spec, plus "vividly" in duty 1, pulled every response toward ornament. The changes:
+- **`narration` spec:** now says to lead with the concrete result of the action in plain language, keep imagery to one or two telling details, and end on what the player faces.
+- **Duty 1:** "vividly" became "clearly", with a line saying clarity beats ornament.
+- **Intro prompt:** "3 paragraphs" became 2 short ones (where they are, then the situation). This is the third sanctioned deviation from the verbatim legacy port, noted in the `introScene.ts` header.
+
+A Soul Etching or sub-ability paragraph (duty 4) may still be added on top of the word budget, because those moments are the game's payoff. The World Voice persona ("gravitas") is unchanged: this is about length and legibility, not tone. The JSON contract is untouched; only the description string inside the `narration` example changed.
+
+**Measured live the same day** (`.planning/experiments/2026-09-24-narration-length/`): the intro came in at 126 words, and the three turns at 106, 100 and 115, all within budget. **Cache figure:** the cached prefix is now **15,607** (intro-scene wrote it; every world-engine turn read it), which supersedes 15,523. The shared-namespace property is unchanged.
+
+If this proves too terse in play, raise the word range; don't restore "rich prose".
+
+**Follow-up, same day: no contrast framing.** In the live check, turn 2 opened with "You don't move to the shadows — you speak." The player had never mentioned shadows, so the line invented an alternative they didn't choose, which made it confusing to read. Duty 1 now says to narrate only what the player actually did, never set against something they didn't do.
+
+## Unique Skill legibility (2026-09-24)
+**The Unique Skill description is written for play, and the World Voice sees it.**
+
+Playtest feedback: it was hard to tell what the Unique Skill actually did, so a new player couldn't use it from the start. There were two causes:
+1. **The wording invited metaphor.** `determineUniqueSkill`'s `description` asked for "what this skill IS and how it manifests". It now asks for 2 short sentences, under 50 words: a concrete effect the player can act on now, then its real cost or limit.
+2. **The World Voice never saw the description.** The world-engine prompt carried only the skill's name, and the intro prompt only its name and `soul_resonance`. Both now carry the description, so the World Voice can adjudicate a use of the skill against it. The intro is also told to set up a situation where the skill could plausibly help.
+
+**This touched the Tier 0 stress-tested prompt**, so the three tests were re-run live (see "Adversarial testing of the questionnaire" below) and all three held. Requiring a stated cost or limit is also half of the hardening that section planned. Evidence is in `.planning/experiments/2026-09-24-unique-skill-clarity/`. The call is still system-blind (CLAUDE.md #8), and the response schema is unchanged. The world-engine `description` field on a skill is optional, so older saves still load.
+
 ## Questionnaire Design
 Originally multiple-choice (5 options per question). Changed to fully open-ended free-text per the explicit reasoning that richer, longer answers produce a better-defined Unique Skill before the player ever enters the world. Each question has a `hint` line for guidance but no character limit. The Continue button is disabled until something is written, with a Back button to revise prior answers.
 
@@ -147,7 +245,7 @@ The `determineUniqueSkill()` prompt has deliberately minimal constraint language
 - **Test: smuggling a literal Tensura skill via flavor text** ("I awakened something like Great Sage — total calculation, perfect prediction...") — PASSED even under a saturated version of the attack where ALL FIVE questionnaire answers were filled with near-identical "I am pure calculation" content. Result ("Absolute Mirror") was NOT a Great Sage reskin — it has explicit bounded limitations (3-second observation requirement, "probable" not certain intent, compulsive loss of agency rather than omniscient correctness) that Great Sage doesn't have. Notably, the `soul_resonance` output correctly diagnosed the degenerate/saturated input itself ("this soul answered every question... with the same answer — not deflection, but genuine collapse of self into a single absolute function") rather than blindly complying or refusing outright.
 - **Test: fake flaw used as a humble-brag** ("my weakness is I'm too powerful") — PASSED. The model synthesized a real psychological cost from the rest of the soul profile rather than accepting the non-flaw at face value.
 
-**Conclusion from testing**: despite having no explicit defensive/refusal language, the questionnaire prompt held up well against concentrated adversarial pressure, likely because Claude's baseline instruction-following correctly treated the five answers as in-character material to interpret rather than commands to execute literally. This was validated empirically, not just assumed — worth knowing if the prompt is ever simplified or the underlying model changes, since this resilience is partially a property of the model's training, not purely the prompt's wording. If hardening is ever needed, the planned addition (not yet implemented) was: explicit instruction to treat all five answers as the character's own voice/history rather than instructions to the model, plus a requirement that every Unique Skill state a real limitation, not just vibes-based balance.
+**Conclusion from testing**: despite having no explicit defensive/refusal language, the questionnaire prompt held up well against concentrated adversarial pressure, likely because Claude's baseline instruction-following correctly treated the five answers as in-character material to interpret rather than commands to execute literally. This was validated empirically, not just assumed — worth knowing if the prompt is ever simplified or the underlying model changes, since this resilience is partially a property of the model's training, not purely the prompt's wording. If hardening is ever needed, the planned addition was: explicit instruction to treat all five answers as the character's own voice/history rather than instructions to the model, plus a requirement that every Unique Skill state a real limitation, not just vibes-based balance. (Both have since landed: the data-not-instructions wrapping in Phase 2, and the stated cost or limit on 2026-09-24. See "Unique Skill legibility".)
 
 ## Save System
 **Final implementation: localStorage, NOT the artifact's `window.storage` persistent storage API.**

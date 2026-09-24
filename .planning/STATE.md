@@ -1,11 +1,39 @@
 # Project State
 
 ## Current Position
-- **Phase**: 4 of 4 (complete)
-- **Status**: **All four phases complete and shipped.** Phase 4 review PASSED after 3 cycles (3-reviewer panel, 29 findings, 0 blockers); shipped as [PR #3](https://github.com/DeanItServices/soulbound/pull/3), 15 commits / 48 files / +4,757−1,474. R13, R14, R15, R16 close. The legacy artifact is deleted — recover it with `git show 3d01fa5:legacy/souldbound-world.jsx` (the `parity-oracle` tag is local-only and cannot be pushed from this environment; the SHA is on the branch and works everywhere).
+- **Phase**: 5 of 5 (shipped — [PR #6](https://github.com/DeanItServices/soulbound/pull/6), open against `main`)
+- **Review cycle 3**: Security PASS, QA PASS, Infra PASS — **review PASSED (3 cycles)**. Cycle-3 suggestions applied in `3c50def`. Full record: `.planning/phases/05-docker-image-publishing/05-REVIEW.md`. Tests at close: 187 backend + 190 frontend, e2e 6/6.
+- **Review cycle 2**: Security PASS, QA PASS, Infra NEEDS WORK (1 warning: the pushed amd64 image was claimed byte-identical to the smoke-tested one, unenforced). Fixed: `fdb1306` (matching labels + post-push amd64 diff-ID check that fails closed; `github.ref` injection removed; arm64 cache), `585330c` (README 403 cause), `efb4829` (rejected passphrase cleared; stored non-ASCII value dropped; each mutation-verified), plus summary wording corrections. Tests 187 + 189, e2e 6/6.
+- **Review cycle 1** (3-reviewer panel: Security, QA, Infra): NEEDS WORK — 1 blocker (self-host healthcheck 403 on any non-default port), 6 warnings, 12 suggestions. Fixed: `8e382e0`..`3f64eb3` (healthcheck proven healthy on :3999; release perms scoped to publish, main-only, smoke the pushed build, runbook, unpublished-image note, timeouts; AccessGate non-ASCII + unreachable-server recovery; wrong-passphrase test; real e2e submit; length-mismatch mutation recorded as caught). Not taken: CSP/anti-framing headers (CSP is out of scope in PROJECT.md — developer decision), SHA-pinning `docker/*` actions, build/npm caches.
+  ⚠️ **A real `SOULBOUND_ANTHROPIC_KEY` from this sandbox's environment was printed into one fix agent's session transcript** (not into any file or commit — exact-match checked). Rotation recommended to the developer.
+- **Phase 5 results**: 05-01 ✅ `5c45340`, `421d896` — passphrase required at boot, config readers, shared contract; backend tests 117 → 146, 3/3 mutations caught
+  05-02 ✅ `846d7e8`..`95609ae` — rate limiter + gate before body parsing, `/api/access`; independent Security Engineer review (orchestrator-run) PASS WITH FIXES → all fixed (map sweep + 10k cap, `/api`-scoped JSON parsing, TRUST_PROXY Docker warning, test gaps); backend tests 146 → 180; mutations 5/6 caught, 1 behaviourally-equivalent (`===` vs timingSafeEqual) recorded
+  05-03 ✅ `0f16655`..`aa886bf` — passphrase store, Bearer header + `checkAccess`, `AccessGate` wrapping `App` in `main.tsx`; `App.tsx` byte-identical; frontend tests 150 → 184; e2e 6/6 (guard narrowed to `/api/access` only); mutations 2/2 caught
+  05-04 ✅ `b9181de`..`a400774` — backend serves the bundle (`STATIC_DIR`; no fallback for file paths; `/api` 404 first); `backend/Dockerfile` builder → frontend-build (`$BUILDPLATFORM`) → api → runtime; dev compose targets `api`; frontend `runtime` stage removed; image `soulbound:05-04` 373MB, uid 1000; backend tests 180 → 187; mutations 2/2 caught
+  05-05 ✅ `a54ddeb`..`236b006` — `scripts/smoke-image.sh` (7/7 local; negative run on pre-gate `7856b7d` fails checks 2,3,4,6); CI `smoke-image` job green on `af876ca` (run 78); `release.yml` dispatch-only, fail-closed overwrite check verified under `bash -e`. UNTESTED until first dispatch after merge: GHCR push, arm64, real GHCR existence response
+  05-06 ✅ `87f3f0a`, `2900ccc`, `706d62d` — `compose.selfhost.yml` (verified on :3999), README/design log/CLAUDE.md (+2/−0)/PROJECT.md, `0.1.0`; phase-close re-verification: 187 + 184 tests, e2e 6/6, App.tsx unchanged, fresh-build smoke 7/7, mutations 11/12 caught (#6 equivalent, as recorded)
+- **Status**: **Phase 5 complete — review passed (3 cycles)**; all 6 plans executed successfully (serial waves; was: planned — 6 plans across 6 serial waves) (`.planning/phases/05-docker-image-publishing/`).
+  Spec critiqued once (REWORK → 12 findings applied), plans critiqued once (CAUTION → 29 findings
+  applied; see `05-CONTEXT.md` → Execution protocol). Zero Anthropic spend planned.
+- **Phases 1-4**: **All four phases complete and shipped.** Phase 4 review PASSED after 3 cycles (3-reviewer panel, 29 findings, 0 blockers); shipped as [PR #3](https://github.com/DeanItServices/soulbound/pull/3), 15 commits / 48 files / +4,757−1,474. R13, R14, R15, R16 close. The legacy artifact is deleted — recover it with `git show 3d01fa5:legacy/souldbound-world.jsx` (the `parity-oracle` tag is local-only and cannot be pushed from this environment; the SHA is on the branch and works everywhere).
   ⚠️ **Correction**: this file previously said PR #2 was "open against `main`". It was **merged** 2026-09-18T01:49Z (head `5147bd8`). That is why Phase 4 needed a new PR rather than additions to #2.
-- **Last Activity**: Phase 4 shipped as PR #3 (2026-09-18)
-- **Next Action**: `/legion:retro` to capture the review's process findings, and `/legion:map --refresh` — deleting `legacy/` changed the codebase fingerprint.
+- **Last Activity**: 2026-09-24 — Phase 5 shipped as [PR #6](https://github.com/DeanItServices/soulbound/pull/6)
+  (pre-ship gate 6/6, CI green on `33d5aca`). Also on the PR, after the review: playtest prompt
+  fixes (`fc5b2cd`, `363026f`, `2085d39` — narration length, no contrast framing, Unique Skill
+  legibility; live-verified, Tier 0 adversarial tests re-run and held), polish (`727e7ca`,
+  `35ac809`), map refresh (`33d5aca`). Before that: Phase 5 planning (2026-09-23). Earlier the same day: stale compose comment fixed (`1506c3a`), map refreshed (`7856b7d`),
+  auth decided — option 2, a deployer-set access gate (Next Action 2).
+  Planning decisions: GHCR; `workflow_dispatch`-only release; passphrase stored in `localStorage`;
+  architecture **Pragmatic + 2 from Clean** (one image, the backend serves the bundle; gate and
+  limiter before `express.json`; `Authorization: Bearer`), chosen from three read-only proposals.
+  Spec: `.planning/specs/05-docker-image-publishing-spec.md`. ROADMAP now lists Phase 5 (0/6).
+- **Next Action**: All phases shipped. Merge [PR #6](https://github.com/DeanItServices/soulbound/pull/6). **Rotate the sandbox's Anthropic key** (exposed in a fix agent's transcript during review). Decide on the anti-framing header (05-REVIEW.md → Not taken).
+  After merge: dispatch `release.yml` once (GitHub → Actions → Release → Run workflow) — the GHCR
+  publish is the one UNTESTED step. ⚠️ `SOULBOUND_PASSPHRASE` is now **required at boot** — add it to
+  `.env` (12+ printable ASCII characters).
+- **Branch**: work continues on `claude/legion-status-uxlaqo`, which descends from `origin/main`
+  (`f70aa31`) and carries this session's commits. It needs a NEW pull request; #5 is merged and
+  cannot track it.
 
 ### Two things to carry into any next phase
 1. **A fix is a claim, and carries the same derivation burden as a finding.** All three review cycles
@@ -14,9 +42,27 @@
 2. **Retaining raw evidence pays immediately.** The screenshots committed to close one finding caught
    a wrong number in the very summary they were filed under, on their first use.
 
-### Known environment limit
+### Known environment limits
 `git push origin <tag>` fails here (`remote end hung up`) while branch pushes succeed — a tag-ref
-permission. Any durability scheme must survive without tags.
+permission. Any durability scheme must survive without tags. This matters for the Docker publish work
+below: a tag-triggered release workflow cannot be tagged from this environment.
+
+**Docker works, but the daemon is not started.** `docker` and `dockerd` are both installed
+(`/usr/bin/`, Engine 29.3.1) and `/var/run/docker.sock` exists — with nothing listening on it, which
+makes every command fail as if Docker were unavailable. It is not. Start it and it works:
+
+```bash
+nohup dockerd > /tmp/dockerd.log 2>&1 &   # run as root, detached
+sleep 8                                    # not listening instantly
+docker version --format 'Server {{.Server.Version}}'
+```
+
+Verified 2026-09-22 end to end: `docker run --rm hello-world` pulled from Docker Hub through the agent
+proxy and ran. overlayfs storage driver, cgroups v1, ~30 GB free. Per-session — a fresh container
+starts with no daemon. The daemon was stopped again afterwards, so this session left it as found.
+
+**The app was never run under Docker here.** Every live test ran natively: `node backend/dist/server.js`
+on :3001 and `vite` on :5173, with Playwright driving the pre-installed Chromium at `/opt/pw-browsers/`.
 
 ## Progress
 ```
@@ -59,11 +105,11 @@ permission. Any durability scheme must survive without tags.
 
 ## Recent Decisions
 - **Design source**: `.planning/explorations/2026-09-17-soulbound-artifact-to-app-design.md` (committed `e56f400`)
-- **Codebase map**: ✅ refreshed 2026-09-18 at commit `3288223` — `.planning/CODEBASE.md` plus the
-  `.planning/codebase/` dataset (**54 chunks, 125 symbols, fingerprint `29353e65f863b7d1`**).
-  The Phase 4 invalidation is resolved: `legacy/souldbound-world.jsx` is deleted and no longer
-  indexed, and the map now covers the Playwright e2e domain and the three new constraint guards.
-  Previous dataset was `8a9f165` / `55cdb963eeca5ba7`.
+- **Codebase map**: ✅ refreshed 2026-09-24 at commit `35ac809` — `.planning/CODEBASE.md` plus the
+  `.planning/codebase/` dataset (**63 chunks, 150 symbols, fingerprint `76035132f82dfdd9`**).
+  Picks up Phase 5 (access gate, limiter, single image, `AccessGate.tsx`, `passphrase.ts`) and the
+  2026-09-24 prompt changes. Previous dataset was `1506c3a` / `9ff2babb3c9f807f`. The fingerprint
+  command sorts blob hashes by hash — see `.planning/codebase/search.md`.
 - **Scope**: full migration to playable, not a scaffold or vertical slice
 - **Language**: TypeScript both sides; the World Voice contract lives in `shared/` so prompt/parser drift becomes a compile error
 - **JSON contract**: structured outputs (`output_config.format`), field names unchanged
@@ -74,7 +120,68 @@ permission. Any durability scheme must survive without tags.
 
 ## Next Action
 
-**Phase 4 is planned** — 6 plans across 4 waves. Run `/legion:build` to execute it.
+**Nothing is in flight.** All 4 phases are shipped and merged; the roadmap is exhausted. Open
+items, newest first:
+
+1. ~~**Stale comment in `docker-compose.yml`**~~ — **DONE** 2026-09-23 (`1506c3a`). It now says the
+   `runtime` stage fails every game call, that `lib/api.ts` surfaces it as `NON_JSON_RESPONSE` while
+   the container reports healthy, and names the same-origin reverse proxy as the preferred fix.
+
+2. **Publishing Docker images is a real Phase 5**, not a quick task. The blocker is documented above:
+   `frontend/Dockerfile`'s `runtime` stage serves the bundle with `serve -s dist`, whose SPA fallback
+   answers ANY unmatched path with 200 + index.html — including `/api/*`, which the frontend calls as
+   relative same-origin paths. It would return HTML to a JSON parser on every call. Fix by serving
+   behind a proxy that forwards `/api` (keeps same-origin, keeps CORS out of it) rather than by adding
+   a configurable API base (which forces CORS and exposing the backend). Then: versioning (everything
+   is `0.0.1`), a publish workflow (`ci.yml` only runs build-and-test), multi-arch, a consumer compose
+   file using `image:` instead of `build:`, and env that is not hardcoded to one machine.
+   ✅ **Auth question DECIDED 2026-09-23 (developer): option 2 — a deployer-set access gate.**
+   The problem: the backend has no application-level auth or rate limiting; loopback port binding
+   is its only protection. A public image makes it easy for strangers to expose one (VPS,
+   port-forward, the README's LAN section taken further), and an exposed instance is an open proxy
+   billing the deployer's Anthropic key at ~$0.06-0.08 per turn.
+   Options weighed:
+   1. Stay single-tenant, docs-only warnings — rejected: safety depends on every deployer reading them.
+   2. **Access gate — CHOSEN.** The deployer sets a shared passphrase/token in `.env`; the backend
+      rejects `/api/*` without it (plus a basic rate limit). Still one deployer, one key.
+   3. Real user accounts — rejected: out of scope per PROJECT.md (belongs with multiplayer).
+   What this does NOT change: the settled key architecture (backend proxy holding the deployer's
+   own key from `.env`, never in the browser). This is access control on that proxy, not a
+   re-opening of it — CLAUDE.md's "do not re-litigate" still holds.
+   Carry into Phase 5 planning:
+   - The gate belongs in `server.ts`, which carries a standing rule: no new middleware without a
+     test asserting what it emits. Test the 401/429 bodies and that the token never appears in logs
+     or error responses (same bar as `ANTHROPIC_API_KEY`, R2).
+   - `/api/health` stays open — the compose healthcheck calls it from inside the container.
+   - Decide how the browser holds the token (e.g. entered once, kept in `localStorage` alongside
+     saves). It is a deployer-issued passphrase, not the Anthropic key, so this is NOT the rejected
+     paste-per-session BYOK — say so in the design log to head off that misreading.
+   - Out of scope stays out: PROJECT.md lists rate limiting as out of scope for the migration;
+     Phase 5 deliberately brings a basic limit in as part of this decision — record that in
+     PROJECT.md when the phase is planned.
+   - Log the decision and its rationale in `docs/design-decisions-log.md` in the same change that
+     implements it.
+
+3. **LAN exposure is documented, not applied.** README's "Expose the frontend on your LAN" describes
+   the one-line compose change; `docker-compose.yml` is deliberately unchanged, so the default stays
+   loopback-only. Applying it is the deployer's affirmative choice.
+
+4. **The intro-scene prompt was left untouched** when the entity-ledger bug was fixed. A live probe
+   showed the model already populates `new_entities` unprompted, so no change was needed. Making it
+   explicit would be a third sanctioned deviation from that verbatim port — flagged, not taken.
+
+### Shipped after Phase 4 (both merged)
+- **PR #5** — https://github.com/DeanItServices/soulbound/pull/5 — merged `f70aa31`. README only:
+  the LAN section, and Setup moved to `SOULBOUND_ANTHROPIC_KEY` (it had been telling readers to use
+  the one name `.env.example` warns against).
+- **PR #4** — https://github.com/DeanItServices/soulbound/pull/4 — merged `c994f53`. The model split
+  swapped to Sonnet 5 on world-engine + intro-scene / Opus 5 on unique-skill, narration cut to 2-3
+  paragraphs, prompt cache moved to a 1-hour TTL, and **the entity-ledger drift fixed** — creation
+  discarded the intro scene's `narrative_memory_updates`, so turn 1 was told "KNOWN ENTITIES: (none
+  yet)" about a cast the intro had just introduced, and denied its own NPC. Evidence for both live
+  runs is under `.planning/experiments/`.
+  **Cached prefix is now 15,523, confirmed live twice.** Re-derive with `count_tokens` (free) rather
+  than re-measuring; `CLAUDE.md` carries the number.
 
 ### Phase 4 Plans
 | Plan | Wave | Deliverable | Agent | Cost |

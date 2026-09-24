@@ -1,0 +1,336 @@
+name: Release
+#
+# First release / first dispatch: see README.md → Self-hosting → "First
+# release" for the runbook (how to dispatch, what a failed-closed existence
+# check on a brand-new package looks like, the org package-creation policy,
+# making the package public afterwards).
+
+# workflow_dispatch ONLY (Phase 5, R21): tag pushes are unavailable from the
+# agent sandbox this project is developed in (STATE.md, Known environment
+# limits), and every step here must therefore work without git tags. There
+# is no `push:`/`tags:` trigger, and none should ever be added — that's the
+# whole point of the "one click, can't overwrite" design. No inputs: the
+# version comes from the workspace package.json files, never a form field a
+# dispatcher could get wrong.
+on:
+  workflow_dispatch:
+
+# Workflow-level default is read-only; only the `publish` job below elevates
+# to `packages: write`, and only for as long as it needs to push to GHCR.
+permissions:
+  contents: read
+
+# Only one release can run at a time, so two dispatches can't race the
+# existence check (spec: Overwrite policy).
+concurrency: release
+
+jobs:
+  # Same steps as ci.yml's build-and-test job. Duplicated rather than shared
+  # because GitHub Actions has no first-class "call this other workflow's
+  # job" primitive that's simpler than a reusable workflow, and this keeps
+  # release.yml self-contained and readable top to bottom.
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # workflow_dispatch can run off any branch. publish (below, which also
+      # builds and smoke-tests the image) refuses to run off anything but
+      # main, since :latest is what compose.selfhost.yml pulls by default and
+      # only reviewed main may move it — but this test job still runs in
+      # full, so a branch dispatch is a real dry run of build+test.
+      - name: Warn if dispatched off main
+        if: github.ref != 'refs/heads/main'
+        env:
+          REF: ${{ github.ref }}
+        run: echo "::notice::Dispatched from $REF, not main — test will run, but the publish job (build, smoke, push) will be skipped."
+
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build (all workspaces)
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 60
+    # :latest is what compose.selfhost.yml pulls by default, so only a
+    # reviewed main may move it. test (above) still runs on any branch, so a
+    # branch dispatch remains a real dry run of build+test — only the
+    # publish (and its own build/smoke/push) is skipped.
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Refuses to publish four package.json files that disagree with each
+      # other about the version — a half-bumped repo should never reach
+      # GHCR (spec: R22, Acceptance "Versions agree at 0.1.0").
+      - name: Check workspace versions agree
+        run: |
+          node -e '
+            const fs = require("fs");
+            const files = [
+              "package.json",
+              "shared/package.json",
+              "backend/package.json",
+              "frontend/package.json",
+            ];
+            const versions = files.map((f) => [f, JSON.parse(fs.readFileSync(f, "utf8")).version]);
+            const distinct = new Set(versions.map(([, v]) => v));
+            if (distinct.size > 1) {
+              console.error("Workspace package.json versions disagree:");
+              for (const [f, v] of versions) console.error(`  ${f}: ${v}`);
+              process.exit(1);
+            }
+            console.log(`All workspace versions agree: ${versions[0][1]}`);
+          '
+
+      # GHCR image names must be lowercase; the repo owner
+      # (DeanItServices) is not. Derived here rather than hardcoded so a
+      # future repo transfer or fork doesn't silently publish to the wrong
+      # (or an inaccessible) namespace.
+      - name: Derive IMAGE and VERSION
+        run: |
+          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/soulbound" >> "$GITHUB_ENV"
+          echo "VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
+
+      - name: Show derived image and version
+        run: echo "Publishing $IMAGE:$VERSION"
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Overwrite policy (spec: Key Decisions): published versions are
+      # immutable. The check runs AFTER login, because anonymous GHCR
+      # answers "denied" for both an absent AND a private package — an
+      # unauthenticated check would fail OPEN (silently treat "denied" as
+      # "absent") and let this step overwrite a real release. Authenticated,
+      # `imagetools inspect` exiting 0 means the tag already exists, so that
+      # is treated as "already published" and the job fails. A non-zero exit
+      # is checked against a small set of known "genuinely absent" stderr
+      # patterns; anything else — including a string this project hasn't
+      # seen GHCR produce yet under GITHUB_TOKEN for a brand-new package
+      # (spec: UNVERIFIED) — fails the job closed rather than risking an
+      # overwrite. The worst case of failing closed on an unrecognized
+      # string is a failed dispatch that needs the pattern widened; the
+      # worst case of failing open is a silently overwritten release.
+      #
+      # Written to survive Actions' default `bash -e`: capturing `imagetools
+      # inspect`'s output with a bare `out=$(...)` would exit the step on
+      # its non-zero status before the pattern match ever ran, and every
+      # dispatch against a not-yet-published version would fail. The `if
+      # out=$(...); then ... ; fi` form runs the command under the `if`
+      # condition, so `set -e` never sees its exit status as a top-level
+      # command failure.
+      - name: Refuse to overwrite an existing version
+        run: |
+          if out=$(docker buildx imagetools inspect "$IMAGE:$VERSION" 2>&1); then
+            echo "::error::$IMAGE:$VERSION already published — refusing to overwrite"
+            echo "$out"
+            exit 1
+          fi
+          if echo "$out" | grep -qiE 'not found|manifest unknown|name unknown'; then
+            echo "$IMAGE:$VERSION not yet published — proceeding"
+          else
+            echo "::error::Unexpected response checking $IMAGE:$VERSION — failing closed rather than risking an overwrite"
+            echo "$out"
+            exit 1
+          fi
+
+      # The pushed image must be the smoke-tested one (review finding: it
+      # wasn't). Build linux/amd64 only, load it into the local Docker
+      # daemon, and smoke it BEFORE anything is pushed, using the exact same
+      # `labels:` as the push step below — labels live in the image config,
+      # so if this build's labels ever drifted from the push's, the pushed
+      # amd64 config (and its digest) could never match this one even if
+      # every layer's contents were exactly the same. This replaces the
+      # separate top-level `smoke` job this workflow used to have: that job
+      # built its own image with a plain `docker build` sharing no cache
+      # with this one, so it proved a *different* set of bytes than the ones
+      # that ended up on GHCR — exactly this finding. One build, cached here
+      # and reused below, is both simpler and actually load-bearing.
+      - name: Build amd64 image for smoke test
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: soulbound:release-smoke
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ env.VERSION }}
+
+      - name: Smoke test the amd64 image
+        run: scripts/smoke-image.sh soulbound:release-smoke
+
+      # Multi-platform push. The amd64 layers are meant to come from the gha
+      # cache written above, so in the normal case this is the same build,
+      # with the same cached layers, as the one just smoke-tested — not
+      # merely "built the same way" but the same cache hit. That is CHECKED
+      # below, not just assumed: a `type=gha` cache-import failure is only a
+      # warning in BuildKit, so amd64 could otherwise be silently rebuilt
+      # with different layers and pushed untested. The "Verify pushed amd64
+      # layers match the smoke-tested image" step compares this image's
+      # actual layer diff IDs against the smoke image's and fails the run on
+      # any mismatch. arm64 is built fresh under QEMU in this step and is
+      # NEVER executed or smoke-tested, only built; that gap is accepted
+      # (spec: Open Question 1) until a real workflow_dispatch on an
+      # arm64 runner exists. `provenance: false`: the default build
+      # attestation shows as an extra "unknown/unknown" platform entry in
+      # GHCR's UI, which reads as a broken manifest to a deployer just
+      # pulling `:latest`; the OCI labels below already carry source,
+      # revision and version, so nothing about traceability is lost by
+      # turning it off.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ${{ env.IMAGE }}:${{ env.VERSION }}
+            ${{ env.IMAGE }}:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ env.VERSION }}
+
+      # Post-push check for the gap named above: compare the smoke-tested
+      # image's layer diff IDs against the pushed linux/amd64 image's
+      # config diff IDs, and fail the run if they don't match. At that
+      # point the tag is already on GHCR — this can only catch the problem
+      # and say so loudly, not prevent the push (the manifest can't be
+      # verified before it exists).
+      #
+      # `docker buildx imagetools inspect --format '{{json .Image}}'`'s
+      # exact shape for a multi-platform ref isn't something this workflow
+      # can pin down offline (no registry to push a real multi-platform
+      # image to from the dev sandbox — see 05-CONTEXT.md's environment
+      # facts), so the parser below does not assume one fixed shape. It
+      # searches the returned JSON for image-config-shaped objects
+      # (anything with an "architecture" or "rootfs" key), keeps the ones
+      # tagged linux/amd64, and requires exactly one such match with a
+      # non-empty rootfs.diff_ids list. Anything else — zero matches, more
+      # than one, or a missing/empty diff_ids — fails closed rather than
+      # risking a false "match".
+      - name: Verify pushed amd64 layers match the smoke-tested image
+        run: |
+          smoke_diffs=$(docker image inspect soulbound:release-smoke --format '{{json .RootFS.Layers}}')
+          pushed_image=$(docker buildx imagetools inspect "$IMAGE:$VERSION" --format '{{json .Image}}')
+          SMOKE_DIFFS="$smoke_diffs" PUSHED_IMAGE="$pushed_image" python3 - <<'PY'
+          import json
+          import os
+          import sys
+
+          def fail(msg):
+              print(f"::error::{msg}")
+              sys.exit(1)
+
+          try:
+              smoke_diffs = json.loads(os.environ["SMOKE_DIFFS"])
+          except Exception as e:
+              fail(f"Could not parse smoke image diff IDs: {e}")
+
+          if not isinstance(smoke_diffs, list) or not smoke_diffs:
+              fail(f"Smoke image diff IDs missing or not a non-empty list: {smoke_diffs!r}")
+
+          raw = os.environ["PUSHED_IMAGE"]
+          try:
+              pushed = json.loads(raw)
+          except Exception as e:
+              fail(f"Could not parse pushed image config JSON: {e}\nRaw: {raw}")
+
+          # A plain re-dispatch cannot fix a failed verification: this version
+          # is already on GHCR, so "Refuse to overwrite an existing version"
+          # stops it by design. The way out is a new version number.
+          REMEDY = (
+              "Remedy: retag ':latest' back to the previous known-good version "
+              "now, then fix the cause, bump the version in all four "
+              "package.json files, and dispatch again."
+          )
+
+          def image_config_candidates(node):
+              # Depth-first search for any dict that looks like an OCI image
+              # config. It must carry "rootfs" (the layer list this step
+              # compares); "architecture" alone is not enough, because an
+              # image label literally named "architecture" would otherwise
+              # count as a second amd64 config and fail a good push.
+              # Deliberately shape-agnostic: see the step comment above.
+              if isinstance(node, dict):
+                  if "rootfs" in node:
+                      yield node
+                  for value in node.values():
+                      yield from image_config_candidates(value)
+              elif isinstance(node, list):
+                  for item in node:
+                      yield from image_config_candidates(item)
+
+          amd64_configs = [
+              c for c in image_config_candidates(pushed)
+              if c.get("architecture") == "amd64" and c.get("os", "linux") == "linux"
+          ]
+
+          if len(amd64_configs) != 1:
+              fail(
+                  "Expected exactly one linux/amd64 image config in the pushed "
+                  f"manifest, found {len(amd64_configs)}. The tag is ALREADY "
+                  "PUSHED to GHCR but could not be verified against the "
+                  f"smoke-tested image. {REMEDY}\nRaw imagetools output: {raw}"
+              )
+
+          rootfs = amd64_configs[0].get("rootfs") or {}
+          pushed_diffs = rootfs.get("diff_ids")
+
+          if not isinstance(pushed_diffs, list) or not pushed_diffs:
+              fail(
+                  "Pushed amd64 image config has no non-empty rootfs.diff_ids. "
+                  "The tag is ALREADY PUSHED to GHCR but could not be verified "
+                  f"against the smoke-tested image. {REMEDY}\nConfig: {amd64_configs[0]!r}"
+              )
+
+          if smoke_diffs != pushed_diffs:
+              fail(
+                  "Pushed linux/amd64 layers do NOT match the smoke-tested "
+                  "image. The tag is ALREADY PUSHED to GHCR but is NOT the "
+                  "image that passed the smoke test (a stale or failed `type=gha` "
+                  f"cache import is the likely cause). {REMEDY}\n"
+                  f"smoke diff_ids:  {smoke_diffs}\n"
+                  f"pushed diff_ids: {pushed_diffs}"
+              )
+
+          print(
+              "Verified: pushed linux/amd64 layers match the smoke-tested "
+              f"image ({len(pushed_diffs)} layers)."
+          )
+          PY

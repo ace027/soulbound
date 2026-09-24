@@ -40,13 +40,21 @@ Initially the developer and their playtester. Then self-hosting deployers who su
 - **R16** — Vitest contract test (fixture parses against the shared type, malformed fails loudly) and save/load round-trip tests
 - **R15** — `docs/` move so `CLAUDE.md`'s own references resolve; `CLAUDE.md` and `design-decisions-log.md` updated in the same change that makes the model split
 
+**Distribution**
+- **R17** — Access gate: every `/api/*` route except `/api/health` requires `Authorization: Bearer <SOULBOUND_PASSPHRASE>`; required at boot (12+ printable ASCII), constant-time compare, never logged; 401 `PASSPHRASE_REQUIRED`
+- **R18** — Rate limit: per-client fixed window on `/api/*`, before the gate and before body parsing; default 30/min (`RATE_LIMIT_PER_MINUTE`, 1-600); 429 `TOO_MANY_REQUESTS` + `Retry-After`; `TRUST_PROXY` opt-in only
+- **R19** — Frontend gate: `AccessGate` wraps `<App/>`, checks `GET /api/access` before the title screen, inline passphrase form, stored in `localStorage` (`sbc-access-passphrase`); `App.tsx` unchanged
+- **R20** — Single deployable image: the backend serves the built frontend when `STATIC_DIR` is set; `/api/*` never returns HTML; `backend/Dockerfile` `api` and `runtime` stages
+- **R21** — Release pipeline: `release.yml` on `workflow_dispatch` only, test → smoke → publish `ghcr.io/deanitservices/soulbound` for amd64 and arm64; refuses version mismatches and overwrites; CI smoke-tests the image on every push
+- **R22** — Self-host package and records: `compose.selfhost.yml`, README Self-hosting section, design-log entry, CLAUDE.md pointer, versions at `0.1.0`
+
 ### Out of Scope
 - Multiplayer, Postgres authoritative world state, server-side saves, user accounts
 - Monetization; local inference cluster; fine-tuning (LoRA/QLoRA)
 - Streaming narration
 - Any styling-system change (inline styles port verbatim)
 - Any lore, balance, or `WORLD_SYSTEM_PROMPT` MUST NOT list change
-- CSP headers / output-sanitization hardening pass; rate limiting
+- CSP headers / output-sanitization hardening pass (rate limiting moved into scope as R18, Phase 5)
 - Race-select grid cosmetic fix (9 races leave an uneven final row in a 2-column layout)
 
 ## Constraints

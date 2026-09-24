@@ -6,26 +6,31 @@
 #
 # Frontend: http://localhost:5173    Backend: http://localhost:3001
 #
-# The frontend runs Vite's dev server (the Dockerfile's `builder` stage) rather
-# than the static `runtime` stage, for two reasons: it keeps HMR working for
-# by-feel iteration, and the static server has no `/api` proxy, so the browser
-# would have no route to the backend.
-#
-# The `runtime` stage is NOT production-ready as it stands. It serves the built
-# bundle with `serve -s`, whose SPA fallback answers ANY unmatched path with
-# 200 + index.html — including /api/*. A frontend deployed that way would see
-# every API call "succeed" while receiving HTML instead of JSON, which is a
-# worse failure than a connection error because it does not look like a
-# networking problem. Before that image is deployed it needs either a reverse
-# proxy forwarding /api to the backend, or a configurable API base URL instead
-# of a same-origin /api path. Dormant today only because the frontend makes no
-# API calls yet.
+# This file is for DEVELOPMENT only. The published app (Phase 5, R20) is one
+# image, built untargeted from `backend/Dockerfile`: the backend serves the
+# built frontend bundle itself, same-origin, on one port — see the self-host
+# compose file for that shape. Here, the two halves still run as separate
+# containers on purpose: the frontend runs Vite's dev server (the frontend
+# Dockerfile's `builder` stage, its only remaining stage) for HMR, proxying
+# `/api/*` to the backend container, and the backend builds `target: api` —
+# `backend/Dockerfile`'s stage with no frontend bundle at all, so a dev
+# rebuild neither builds a frontend it will never serve nor risks serving a
+# stale one from a previous build's cache on :3001 (BuildKit skips any stage
+# nothing asks for, so this costs nothing extra). A healthy container is not
+# proof the app is reachable: this compose's own backend healthcheck curls
+# localhost from *inside* the container, so it never exercises the
+# frontend-to-backend path the browser actually uses — see the
+# `ALLOWED_HOSTS` comment below for the failure mode that gap once caused.
 
 services:
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
+      # The stage with no frontend bundle — see the header comment above.
+      # Dev serves the frontend from the `frontend` service's Vite dev
+      # server instead, over the proxy below.
+      target: api
       secrets:
         - npm_ca
     environment:
@@ -42,6 +47,10 @@ services:
       # Falls back to ANTHROPIC_API_KEY if SOULBOUND_ANTHROPIC_KEY is unset, so
       # a .env carrying either name works.
       - ANTHROPIC_API_KEY=${SOULBOUND_ANTHROPIC_KEY:-${ANTHROPIC_API_KEY}}
+      # Required (Phase 5's access gate). The `:?` form fails `docker compose
+      # up` immediately with this message if it's unset in .env, rather than
+      # letting the backend fall through to config.ts's own boot failure.
+      - SOULBOUND_PASSPHRASE=${SOULBOUND_PASSPHRASE:?Set SOULBOUND_PASSPHRASE in .env — see .env.example}
       - PORT=3001
       - FRONTEND_ORIGIN=http://localhost:5173
       # Host allow-list. MUST include the compose service name: the frontend
@@ -53,12 +62,12 @@ services:
       # reverse proxy in front, and this list must change with it.
       - ALLOWED_HOSTS=localhost:3001,127.0.0.1:3001,[::1]:3001,backend:3001
     ports:
-      # Loopback by default. The backend holds the API key and has no
-      # application-level auth, so binding 0.0.0.0 on a host with a public IP
-      # would expose it — and from Phase 2 that means an unmetered Anthropic
-      # proxy for anyone who finds the port. Exposing it beyond this host is an
-      # affirmative choice: change this, and put a reverse proxy and auth in
-      # front of it.
+      # Loopback by default. The backend now requires the passphrase on /api
+      # (Phase 5's access gate), but it still holds the API key and speaks
+      # plain HTTP, so it stays off the network unless you decide otherwise.
+      # Vite reaches it over the compose network and needs no exposure.
+      # Exposing it beyond this host is an affirmative choice: change this,
+      # and put TLS in front of it.
       - "127.0.0.1:3001:3001"
     # Runtime hardening. The backend holds the API key and proxies paid calls, so
     # it gets the tightest posture the service can actually run under:

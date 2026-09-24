@@ -1,9 +1,10 @@
 /**
  * The Soulbound Chronicles backend entrypoint.
  *
- * Express app, JSON body parsing, a Host allow-list, a CORS policy for the
- * frontend dev origin, the health check, and a central error handler. Phase 2
- * adds the three World Voice routes; this file stays minimal on purpose.
+ * Express app, a Host allow-list, a CORS policy for the frontend origin, the
+ * health check, the `/api` rate limiter and access gate, JSON body parsing,
+ * the three World Voice routes, optional static frontend serving, and a
+ * central error handler — in the order `buildApp()`'s doc comment lists.
  *
  * The app itself is built by `buildApp()`, which is exported and takes its
  * configuration as an argument. That split exists so the route tests exercise
@@ -18,6 +19,7 @@
  */
 
 import type { Server } from 'node:http';
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import express, {
   type ErrorRequestHandler,
@@ -26,7 +28,8 @@ import express, {
   type Request,
   type Response,
 } from 'express';
-import { assertWorldVoiceContract } from '@soulbound/shared';
+import { ACCESS_CHECK_PATH, assertWorldVoiceContract } from '@soulbound/shared';
+import { createAccessGate, createRateLimiter } from './accessGate.js';
 import { WORLD_SYSTEM_PROMPT } from './data/worldSystemPrompt.js';
 // These three route modules never import config.ts at their own top level
 // (see each file's "Lazy import" comment) — they only reach for it inside
@@ -49,6 +52,27 @@ export interface AppConfig {
   FRONTEND_ORIGIN: string;
   ALLOWED_HOSTS: readonly string[];
   redact: (input: string) => string;
+  checkPassphrase: (candidate: string) => boolean;
+  RATE_LIMIT_PER_MINUTE: number;
+  TRUST_PROXY: false | 'loopback' | 'uniquelocal' | number;
+  /**
+   * Absolute path to a pre-built frontend (its `index.html` at the root),
+   * served by this same process when set — the published image (Phase 5,
+   * R20). Undefined in dev, where Vite serves the frontend separately.
+   */
+  STATIC_DIR?: string;
+  /**
+   * Injectable clock for the rate limiter's tests; defaults to
+   * `performance.now()`, not `Date.now()`. The limiter only ever compares two
+   * readings of this clock to each other (`t - bucket.windowStart`) — it
+   * never needs a wall-clock/epoch value — so a monotonic clock is strictly
+   * better here: `Date.now()` can jump backward or forward if the system
+   * clock is stepped (NTP correction, a container host suspend/resume,
+   * a manual `date` change), which could silently reopen an already-spent
+   * window or freeze a fresh one open far longer than one minute.
+   * `performance.now()` cannot be adjusted this way.
+   */
+  now?: () => number;
 }
 
 /**
@@ -136,13 +160,53 @@ function mapBodyParserError(err: ApiError): { statusCode: number; code: string }
 }
 
 /**
- * Builds the real Express pipeline: Host allow-list, CORS, JSON body parsing,
- * health check, the three World Voice routes, the JSON 404, and the central
- * sanitizing error handler — in that order.
+ * Builds the real Express pipeline, in this order: Host allow-list, CORS,
+ * `GET /api/health` (no credentials needed — the compose healthcheck calls
+ * it), the `/api` rate limiter, the `/api` access gate, `/api`-scoped JSON
+ * body parsing, `GET /api/access` (the frontend's pre-flight passphrase
+ * check), the three World Voice routes, an `/api`-scoped JSON 404, then
+ * (only when `STATIC_DIR` is set) the built frontend and its SPA fallback,
+ * then a global JSON 404, and finally the central sanitizing error handler.
+ *
+ * This is now the only server in the published image (Phase 5, R20): when
+ * `STATIC_DIR` points at a built frontend, this same process serves it
+ * same-origin, so there is no second container and no separate CORS/proxy
+ * story to keep in sync with this one. The ordering below is load-bearing
+ * for that: the `/api`-scoped JSON 404 is registered BEFORE the static
+ * middleware and its SPA fallback, so nothing under the `/api` mount can
+ * ever fall through to `index.html` — an unmatched `/api/*` path always gets
+ * JSON, in either mode, even for `/API/x` or `/api/../api/x` (Express 5's
+ * router normalizes these to `/api` before `app.use('/api', …)` ever sees
+ * them). With `STATIC_DIR` unset (dev, where Vite serves the frontend), no
+ * static middleware or fallback is registered at all, and the chain ends in
+ * the same global JSON 404 this app has always had.
+ *
+ * The limiter runs BEFORE the gate so a passphrase-guessing burst is
+ * throttled even though every guess also gets rejected. Both run BEFORE
+ * `express.json` so an unauthenticated request's body is never parsed —
+ * `routes.test.ts` proves this with an oversized, unauthenticated body that
+ * gets 401, not 413. `express.json` itself is scoped to `/api` (not a global
+ * `app.use`), same as the limiter and gate: every real route in this app
+ * lives under `/api`, and a global mount would parse a body for ANY path —
+ * including one with no passphrase required at all — before anything is
+ * known to even match a route. Every `/api` middleware is mounted with
+ * `app.use('/api', …)`, never a hand-written `req.path.startsWith` check:
+ * Express 5's router matches `/API/x`, `/api/x/` and `/api/../api/x` as
+ * `/api`, and a string-prefix check would not (verified by probe).
  */
 export function buildApp(config: AppConfig): Express {
-  const { FRONTEND_ORIGIN, ALLOWED_HOSTS, redact } = config;
+  const {
+    FRONTEND_ORIGIN,
+    ALLOWED_HOSTS,
+    redact,
+    checkPassphrase,
+    RATE_LIMIT_PER_MINUTE,
+    TRUST_PROXY,
+    STATIC_DIR,
+    now = () => performance.now(),
+  } = config;
   const app = express();
+  app.set('trust proxy', TRUST_PROXY);
 
   // Host allow-list, FIRST — ahead of CORS and ahead of body parsing. CORS
   // headers are read by the browser only after the request has already been
@@ -170,23 +234,84 @@ export function buildApp(config: AppConfig): Express {
     next();
   });
 
-  app.use(express.json({ limit: JSON_BODY_LIMIT }));
-
+  // Registered ahead of the limiter and gate below, and ending the response
+  // itself, so it is never limited or gated — the compose healthcheck
+  // (docker-compose.yml) calls this with no credentials.
   app.get('/api/health', (_req: Request, res: Response) => {
     res.status(200).json({ status: 'ok' });
   });
 
+  // Rate limiter, then access gate, both scoped to /api and both BEFORE
+  // express.json — see this function's header comment for why the order
+  // matters. Wrong-passphrase attempts still count against the limiter.
+  app.use('/api', createRateLimiter({ perMinute: RATE_LIMIT_PER_MINUTE, now }));
+  app.use('/api', createAccessGate(checkPassphrase));
+
+  // Scoped to /api, like the limiter and gate above — NOT a global
+  // app.use(express.json(...)). A non-/api path (e.g. an eventual static
+  // asset request, or simply a typo'd route) has no reason to have its body
+  // read and buffered up to JSON_BODY_LIMIT before it is even known whether
+  // anything matches; every real route in this app lives under /api. Fixed
+  // per the independent security review: the previous global mount parsed a
+  // request body for ANY path with no passphrase required, contradicting
+  // this function's own header comment that both middlewares above run
+  // before body parsing.
+  app.use('/api', express.json({ limit: JSON_BODY_LIMIT }));
+
+  // The frontend's pre-flight check: reaching this handler at all means the
+  // limiter and gate above already passed, so there is nothing left to
+  // verify beyond returning success with no body.
+  app.get(ACCESS_CHECK_PATH, (_req: Request, res: Response) => {
+    res.sendStatus(204);
+  });
+
   // The three World Voice routes (plan 02-03). Each goes through the single
   // `callWorldVoice` helper in anthropic.ts — none builds its own request.
-  // Registered ahead of the JSON 404 handler and the error handler below so
-  // both still apply to them.
+  // Registered ahead of the JSON 404 handlers and the error handler below so
+  // all still apply to them.
   app.use(uniqueSkillRouter);
   app.use(worldEngineRouter);
   app.use(introSceneRouter);
 
-  // Unmatched routes. Without this, Express answers with its default HTML
-  // error page, which a JSON client cannot parse — the frontend's fetch
-  // wrapper would fail on JSON.parse rather than surfacing a clean 404.
+  // Unmatched /api routes get a JSON 404, scoped the same way as the limiter
+  // and gate above (never a hand-written path check). This must be
+  // registered before any later catch-all (05-04's static/SPA fallback), so
+  // nothing under /api can ever fall through to an HTML response.
+  app.use(
+    '/api',
+    (_req: Request, res: Response) => {
+      res.status(404).json({
+        error: { message: 'Not found', code: 'NOT_FOUND' },
+      });
+    },
+  );
+
+  // Serve the built frontend when STATIC_DIR is set (the published image,
+  // Phase 5/R20) — registered AFTER the /api JSON 404 above, so nothing
+  // under /api can ever reach this. express.static answers real files
+  // (index.html, /assets/*.js, etc.) directly. The GET fallback after it
+  // only ever answers a path with NO file extension (an SPA route like
+  // /some/deep/link): a path WITH an extension (a stale/renamed chunk after
+  // an upgrade, e.g. /assets/missing-chunk.js) falls through to the global
+  // JSON 404 below instead of getting index.html back — returning HTML for
+  // that case would silently blank the page instead of surfacing a 404 the
+  // client can detect and recover from (a cache-busted reload).
+  if (STATIC_DIR !== undefined) {
+    app.use(express.static(STATIC_DIR));
+    app.get(/.*/, (req: Request, res: Response, next: NextFunction) => {
+      if (path.extname(req.path) !== '') {
+        next();
+        return;
+      }
+      res.sendFile(path.join(STATIC_DIR, 'index.html'));
+    });
+  }
+
+  // Unmatched routes — either STATIC_DIR is unset (dev; every real route is
+  // under /api, so this is the only thing left to hit), or STATIC_DIR is set
+  // and this is an extensioned path express.static didn't recognize (a
+  // stale chunk). Without this, Express answers with its default HTML error
+  // page, which a JSON client cannot parse.
   app.use((_req: Request, res: Response) => {
     res.status(404).json({
       error: { message: 'Not found', code: 'NOT_FOUND' },
@@ -198,10 +323,10 @@ export function buildApp(config: AppConfig): Express {
   // server-side (redacted) and replaced with a sanitized shape.
   const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
     const apiErr = err as ApiError;
-    const bodyParser = mapBodyParserError(apiErr);
-    const statusCode = bodyParser?.statusCode ?? apiErr.statusCode ?? 500;
+    const bodyParserMapping = mapBodyParserError(apiErr);
+    const statusCode = bodyParserMapping?.statusCode ?? apiErr.statusCode ?? 500;
     const code =
-      bodyParser?.code ?? apiErr.code ?? (statusCode === 500 ? 'INTERNAL_ERROR' : 'ERROR');
+      bodyParserMapping?.code ?? apiErr.code ?? (statusCode === 500 ? 'INTERNAL_ERROR' : 'ERROR');
 
     const rawMessage = err instanceof Error ? err.message : String(err);
     const rawStack = err instanceof Error ? err.stack : undefined;

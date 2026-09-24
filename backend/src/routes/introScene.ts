@@ -25,6 +25,9 @@
  *      example literally produced output that failed schema validation and
  *      came back as INVALID_RESPONSE_SHAPE — on the one call per playthrough
  *      that also warms the Opus prompt cache.
+ *   3. Length: "3 paragraphs" became "2 short paragraphs, under 150 words"
+ *      (developer playtest, 2026-09-24: the opening was hard to follow). See
+ *      docs/design-decisions-log.md → "Narration length".
  */
 
 import { Router, type NextFunction, type Request, type Response } from 'express';
@@ -60,6 +63,10 @@ const IntroCharacterRequestSchema = z
           .string()
           .min(1, 'character.uniqueSkill.soul_resonance is required')
           .max(2000),
+        description: z
+          .string()
+          .min(1, 'character.uniqueSkill.description is required')
+          .max(2000),
       })
       .passthrough(),
   })
@@ -93,9 +100,9 @@ function describeIssues(error: z.ZodError): string {
 // ─── Prompt (ported verbatim, content only — see header comment) ────────────
 
 export function renderIntroScenePrompt({ character }: IntroSceneRequestBody): string {
-  return `Generate the opening scene for a new soul entering Vaeltharion. Character: ${wrapUntrusted('player_name', character.name)}, a ${stripDelimiters(character.race.name)}. Their Unique Skill is "${stripDelimiters(character.uniqueSkill.skill_name)}" — ${stripDelimiters(character.uniqueSkill.soul_resonance)}
+  return `Generate the opening scene for a new soul entering Vaeltharion. Character: ${wrapUntrusted('player_name', character.name)}, a ${stripDelimiters(character.race.name)}. Their Unique Skill is "${stripDelimiters(character.uniqueSkill.skill_name)}" — ${stripDelimiters(character.uniqueSkill.soul_resonance)} What it does: ${stripDelimiters(character.uniqueSkill.description)}
  
-Set the scene somewhere in the world that fits their nature. 3 paragraphs. Give them an immediate situation to react to. End with a clear prompt for what they see/face.
+Set the scene somewhere in the world that fits their nature. 2 short paragraphs, under 150 words total, in plain concrete language: first where they are, then the immediate situation they must react to — one where their Unique Skill could plausibly help, so the player sees a way to use it from the start. End with one clear line on what they see/face.
  
 Respond with the standard JSON format. No new skills granted (they just arrived). Set "location" and "scene_summary" in world_events as: [{"type": "scene_set", "location": "...", "scene_summary": "...", "description": null}]`;
 }

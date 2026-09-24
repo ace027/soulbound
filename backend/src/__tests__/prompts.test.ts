@@ -73,6 +73,8 @@ const introSceneInput: IntroSceneRequestBody = {
       skill_name: 'Ledger of Debts',
       soul_resonance:
         'She keeps an account of every unpaid thing, and the world settles up eventually.',
+      description:
+        'You can sense exactly what any person you touch owes and to whom. Each reading costs you a memory of your own.',
     },
   },
 };
@@ -98,6 +100,8 @@ const worldEngineFullInput: WorldEngineRequestBody = {
         name: 'Ledger of Debts',
         tier: 'Unique',
         mastery: 27,
+        description:
+          'You can sense exactly what any person you touch owes and to whom. Each reading costs you a memory of your own.',
         sub_abilities: [{ name: 'Accrual' }],
         usage_notes: [
           '(mastery 20→24) Action: "Count what the guard owes the baker"',

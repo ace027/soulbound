@@ -1,0 +1,85 @@
+# The Soulbound Chronicles — self-hosting.
+#
+# One container, pulled from GHCR. It serves the game and its API on a
+# single port, so there is nothing else to run.
+#
+#   1. Download this file, and create a `.env` beside it:
+#        SOULBOUND_ANTHROPIC_KEY=sk-ant-...   # your Anthropic Console key
+#        SOULBOUND_PASSPHRASE=...             # 12+ printable ASCII characters
+#      then `chmod 600 .env`.
+#   2. docker compose -f compose.selfhost.yml up -d
+#   3. Open http://localhost:3001 and enter the passphrase.
+#
+# What each variable does:
+#   SOULBOUND_ANTHROPIC_KEY   Required. Your Anthropic API key; it stays inside
+#                             the container and never reaches the browser.
+#                             (ANTHROPIC_API_KEY also works, as in .env.example.)
+#   SOULBOUND_PASSPHRASE      Required. A passphrase YOU choose and give to your
+#                             players. Every /api call needs it, so reaching the
+#                             port is not enough to spend your key. It is not
+#                             your Anthropic key.
+#   SOULBOUND_VERSION         Image tag to run. Default `latest`; pin a version
+#                             (e.g. 0.1.0) to control upgrades.
+#   SOULBOUND_PORT            Host port. Default 3001. ALLOWED_HOSTS and
+#                             FRONTEND_ORIGIN below follow it automatically.
+#   SOULBOUND_BIND            Host address to bind. Default 127.0.0.1.
+#   ALLOWED_HOSTS             Override only if players reach this server by a
+#                             name other than localhost (e.g. a LAN hostname):
+#                             ALLOWED_HOSTS=myhost.lan:3001,localhost:3001
+#   RATE_LIMIT_PER_MINUTE     Optional. Per-client /api limit, default 30.
+#   TRUST_PROXY               Optional. Set ONLY behind a real reverse proxy that
+#                             overwrites X-Forwarded-For. See .env.example —
+#                             Docker's own port publishing is not such a proxy.
+#
+# Loopback by default. With SOULBOUND_BIND=127.0.0.1 only this machine can
+# connect. Setting it to 0.0.0.0 exposes the game to your network: the
+# passphrase and rate limit still gate every paid call, but traffic is plain
+# HTTP, so put TLS in front before exposing it beyond a network you trust.
+
+services:
+  soulbound:
+    image: ghcr.io/deanitservices/soulbound:${SOULBOUND_VERSION:-latest}
+    environment:
+      # Listed explicitly (no env_file) so nothing unexpected from .env leaks
+      # into the container.
+      - ANTHROPIC_API_KEY=${SOULBOUND_ANTHROPIC_KEY:-${ANTHROPIC_API_KEY:?Set SOULBOUND_ANTHROPIC_KEY in .env}}
+      - SOULBOUND_PASSPHRASE=${SOULBOUND_PASSPHRASE:?Set SOULBOUND_PASSPHRASE in .env (12+ printable ASCII characters)}
+      - PORT=3001
+      # The Host allow-list must match how browsers reach the server, so the
+      # default is built from SOULBOUND_PORT. But the healthcheck below runs
+      # INSIDE the container and always calls localhost:3001 — the
+      # container's own port, not the published host port — so localhost:3001
+      # must always be allowed too, even when SOULBOUND_PORT differs (e.g.
+      # 3999), or the healthcheck gets 403 forever and the container never
+      # reports healthy. Harmless to keep: browsers never send Host:
+      # localhost:3001 unless that IS the host port. Any override of
+      # ALLOWED_HOSTS must keep localhost:3001 in the list for the same
+      # reason.
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost:${SOULBOUND_PORT:-3001},127.0.0.1:${SOULBOUND_PORT:-3001},[::1]:${SOULBOUND_PORT:-3001},localhost:3001}
+      - FRONTEND_ORIGIN=${FRONTEND_ORIGIN:-http://localhost:${SOULBOUND_PORT:-3001}}
+      - RATE_LIMIT_PER_MINUTE=${RATE_LIMIT_PER_MINUTE:-30}
+      - TRUST_PROXY=${TRUST_PROXY:-false}
+    ports:
+      - "${SOULBOUND_BIND:-127.0.0.1}:${SOULBOUND_PORT:-3001}:3001"
+    restart: unless-stopped
+    # Runtime hardening: no privilege escalation, no capabilities, and an
+    # immutable root filesystem (the process only reads its own bundle and
+    # writes to stdout).
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    healthcheck:
+      # Liveness only, from inside the container. A healthy container does not
+      # prove players can reach it: if ALLOWED_HOSTS does not match the name
+      # they use, every request gets 403 while this stays green.
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3001/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s

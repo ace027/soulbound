@@ -8,11 +8,17 @@ on:
     branches: ['**']
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
@@ -30,3 +36,24 @@ jobs:
       # needing a key has stopped being a unit test.
       - name: Test
         run: npm test
+
+  # Proves the published image itself works — not just the source it's built
+  # from — on every push, so a broken image can never reach main unnoticed
+  # (Phase 5, R21). scripts/smoke-image.sh is the same script release.yml
+  # runs before it ever pushes to GHCR: one definition of "the image works"
+  # for both. Needs no secrets: the image is run with a bogus Anthropic key
+  # and a throwaway passphrase, and makes zero calls to the real API.
+  smoke-image:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Build image
+        run: docker build -f backend/Dockerfile -t soulbound:ci .
+
+      - name: Smoke test image
+        run: scripts/smoke-image.sh soulbound:ci

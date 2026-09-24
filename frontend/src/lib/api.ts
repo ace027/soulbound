@@ -15,9 +15,10 @@
  *    fell straight through to `JSON.parse` on an error body, so the player saw
  *    a JSON syntax error instead of "rate limited" or "bad API key".
  *
- * 2. The 200-with-HTML trap. docker-compose.yml records that the production
- *    `runtime` frontend image serves /api/* with `serve -s`, whose SPA fallback
- *    answers ANY unmatched path with 200 + index.html. A 200 sails past
+ * 2. The 200-with-HTML trap. Any SPA fallback in front of the API (the old
+ *    `serve -s` frontend image did exactly this, before Phase 5 moved static
+ *    serving into the backend) answers an unmatched /api path with 200 +
+ *    index.html. A 200 sails past
  *    `response.ok`; the Zod parse then throws and the player sees a schema dump
  *    while the operator sees a healthy container — Phase 2's "green healthcheck
  *    masked a total outage", repeated. So the helper also asserts the
@@ -32,6 +33,10 @@
  */
 
 import {
+  ACCESS_CHECK_PATH,
+  ACCESS_HEADER,
+  ACCESS_SCHEME,
+  PASSPHRASE_REQUIRED,
   UniqueSkillDeterminationSchema,
   WorldVoiceResponseSchema,
   type Character,
@@ -42,6 +47,8 @@ import {
   type WorldVoiceResponse,
 } from '@soulbound/shared';
 
+import { clearPassphrase, emitPassphraseRequired, getPassphrase } from './passphrase.js';
+
 // ─── Error type ─────────────────────────────────────────────────────────────
 
 /**
@@ -51,8 +58,9 @@ import {
  *
  * `code` is the backend's `error.code` when the backend answered
  * (INVALID_REQUEST, AUTHENTICATION_FAILED, RATE_LIMITED, UPSTREAM_UNAVAILABLE,
- * UPSTREAM_ERROR, INVALID_RESPONSE_SHAPE, PAYLOAD_TOO_LARGE, NOT_FOUND, ...),
- * or one of the client-side codes below when it did not.
+ * UPSTREAM_ERROR, INVALID_RESPONSE_SHAPE, PAYLOAD_TOO_LARGE, NOT_FOUND,
+ * PASSPHRASE_REQUIRED, TOO_MANY_REQUESTS, ...), or one of the client-side codes
+ * below when it did not.
  */
 export type ApiClientErrorCode =
   /** A 200 (or any status) whose content-type was not JSON — the SPA-fallback trap. */
@@ -142,11 +150,29 @@ async function readErrorEnvelope(
 }
 
 /**
+ * The auth headers this module adds to every request. When a passphrase is
+ * stored, it goes in as `Authorization: Bearer <passphrase>` (Phase 5, R19) —
+ * the same header name and scheme the backend gate checks
+ * (`shared/src/accessGate.ts`), so no CORS change was needed. When none is
+ * stored, the header is simply absent and the backend answers 401
+ * `PASSPHRASE_REQUIRED` (unless the gate is unset, e.g. in tests).
+ */
+function authHeaders(): Record<string, string> {
+  const passphrase = getPassphrase();
+  return passphrase === null ? {} : { [ACCESS_HEADER]: `${ACCESS_SCHEME} ${passphrase}` };
+}
+
+/**
  * POST JSON to a backend route and return the schema-validated response.
  *
  * Order of gates matters and each one is load-bearing:
  *   1. fetch rejection          → NETWORK_ERROR
  *   2. `response.ok`            → R12. Non-2xx never reaches a parse.
+ *      A 401 `PASSPHRASE_REQUIRED` here also clears the stored passphrase and
+ *      notifies `AccessGate` — but a 401 `AUTHENTICATION_FAILED` (the
+ *      deployer's own Anthropic key is bad) must NOT: that would wipe a
+ *      correct passphrase over an unrelated upstream problem. Keyed on `code`,
+ *      never on status alone (05-CONTEXT.md derived fact 1).
  *   3. content-type is JSON     → the SPA-fallback trap, which (2) cannot see.
  *   4. body parses as JSON      → MALFORMED_JSON
  *   5. body matches the schema  → INVALID_RESPONSE_SHAPE
@@ -163,6 +189,7 @@ async function postJson<T>(
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
+        ...authHeaders(),
       },
       body: JSON.stringify(body),
     });
@@ -187,6 +214,12 @@ async function postJson<T>(
       : { message: null, code: null };
 
     const code = envelope.code ?? 'HTTP_ERROR';
+
+    if (response.status === 401 && code === PASSPHRASE_REQUIRED) {
+      clearPassphrase();
+      emitPassphraseRequired();
+    }
+
     const detail =
       envelope.message ??
       `The server returned ${response.status} ${response.statusText || 'error'} ` +
@@ -259,24 +292,24 @@ export interface UniqueSkillRequest {
   };
 }
 
-/** `POST /api/world-engine` body — `WorldEngineRequestSchema`, worldEngine.ts:143-146. */
+/** `POST /api/world-engine` body — `WorldEngineRequestSchema`, worldEngine.ts:145-148. */
 export interface WorldEngineRequest {
   action: string;
   gameState: GameState;
 }
 
-/** `POST /api/intro-scene` body — `IntroSceneRequestSchema`, introScene.ts:68-70. */
+/** `POST /api/intro-scene` body — `IntroSceneRequestSchema`, introScene.ts:75-77. */
 export interface IntroSceneRequest {
   character: {
     name: string;
     race: { name: string };
-    uniqueSkill: { skill_name: string; soul_resonance: string };
+    uniqueSkill: { skill_name: string; soul_resonance: string; description: string };
   };
 }
 
 /**
- * Soul-reading from the questionnaire. Backend: Sonnet 5, no system blocks
- * (CLAUDE.md #8 — deliberately lore-blind).
+ * Soul-reading from the questionnaire. Backend: Opus 5, no system blocks
+ * (CLAUDE.md #8 — deliberately system-blind).
  *
  * `answers` arrives as the questionnaire's `Record<string, string>`; the five
  * contract keys are named explicitly here rather than spread, so a missing one
@@ -304,7 +337,7 @@ export async function determineUniqueSkill(characterData: {
 }
 
 /**
- * One turn of the live world. Backend: Opus 5, WORLD_SYSTEM_PROMPT + cached
+ * One turn of the live world. Backend: Sonnet 5, WORLD_SYSTEM_PROMPT + cached
  * WORLD_LORE.
  *
  * `gameState` ships whole (including `actionHistory`, which grows unbounded
@@ -321,7 +354,7 @@ export async function callWorldEngine(
 }
 
 /**
- * The opening scene. Backend: Opus 5, same two system blocks as the world
+ * The opening scene. Backend: Sonnet 5, same two system blocks as the world
  * engine — this call is what warms the shared prompt cache.
  */
 export async function generateIntroScene(
@@ -334,8 +367,47 @@ export async function generateIntroScene(
       uniqueSkill: {
         skill_name: character.uniqueSkill.skill_name,
         soul_resonance: character.uniqueSkill.soul_resonance,
+        description: character.uniqueSkill.description,
       },
     },
   };
   return postJson('/api/intro-scene', body, WorldVoiceResponseSchema);
+}
+
+// ─── Access check ───────────────────────────────────────────────────────────
+
+/**
+ * Probes `GET /api/access` so `AccessGate` can ask before the title screen,
+ * never after a paid call has already started (05-CONTEXT.md derived fact 2:
+ * a failed creation strands the player mid-flow with no retry).
+ *
+ * Never throws. Every outcome that is not a clean 204 or a clean 401
+ * `PASSPHRASE_REQUIRED` — a network error, a 502 from Vite's dev proxy with no
+ * backend running, a 200 with an HTML body, a 401 with no recognisable
+ * envelope — reads as `'unknown'`, and `AccessGate` fails OPEN on `'unknown'`.
+ * The backend enforces regardless; failing closed here would lock out every
+ * dev run started before the backend is up.
+ */
+export async function checkAccess(): Promise<'ok' | 'required' | 'unknown'> {
+  let response: Response;
+  try {
+    response = await fetch(ACCESS_CHECK_PATH, {
+      method: 'GET',
+      headers: { Accept: 'application/json', ...authHeaders() },
+    });
+  } catch {
+    return 'unknown';
+  }
+
+  if (response.status === 204) return 'ok';
+
+  if (response.status === 401) {
+    const contentType = response.headers.get('content-type');
+    const envelope = isJsonContentType(contentType)
+      ? await readErrorEnvelope(response)
+      : { message: null, code: null };
+    return envelope.code === PASSPHRASE_REQUIRED ? 'required' : 'unknown';
+  }
+
+  return 'unknown';
 }
