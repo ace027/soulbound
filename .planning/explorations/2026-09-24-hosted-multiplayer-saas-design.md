@@ -140,6 +140,10 @@ Every hosting phase ships to the real hosted environment. Every game phase works
   - [ ] Invite codes; account deletion.
   - [ ] Anti-framing header (now that there are logged-in sessions).
   - [ ] **Deployed** to the managed platform (Fly.io, Render or Railway) with managed Postgres, TLS, `TRUST_PROXY` set, and platform secrets. Only the developer is invited.
+  - [ ] **Ops baseline, from the first deploy:**
+    - A monthly spend limit on the Anthropic Console workspace that the hosted key belongs to.
+    - A hosted error tracker for the backend and frontend (e.g. the Sentry free tier). It is **off unless a DSN is configured**, so self-host is unaffected. It has redaction rules, tested to the same bar as R2, that keep keys, the passphrase, session cookies and player text out of reports.
+    - An external uptime check on `/api/health` that emails the operator.
   - [ ] Self-host mode unchanged, proven by the existing suite plus the smoke test.
 - [ ] **Phase 7, Server saves:**
   - [ ] `/api/saves` CRUD per account, stored as JSONB `SaveSlot` with `schemaVersion`.
@@ -156,7 +160,11 @@ Every hosting phase ships to the real hosted environment. Every game phase works
 - [ ] **Phase 8, Metering and allowance:**
   - [ ] A per-call usage ledger; the monthly turn allowance (250); the creation counter (3 free, then 2 turns).
   - [ ] Remaining turns shown in the UI; a per-user rate limit.
-  - [ ] An operator cost view and a **daily-spend alert**.
+  - [ ] An operator cost view.
+  - [ ] **An app-wide daily spend cap** (configurable), computed from the usage ledger:
+    - Alerts at 50% and 80% of the cap.
+    - At 100%, paid calls pause with a friendly in-UI message (no native dialog). Saves and loading keep working.
+    - The operator can raise the cap without a redeploy.
   - [ ] Before inviting anyone: check Anthropic's usage-policy requirements for consumer apps, and show a short privacy notice at sign-up ("your in-game text is processed by Anthropic's API").
 - [ ] **Phase 9, Game: follow-ability (suggested actions + recap). Then invite friends free:**
   - [ ] **Suggested actions: a JSON contract change (CLAUDE.md #4).**
@@ -168,6 +176,8 @@ Every hosting phase ships to the real hosted environment. Every game phase works
   - [ ] **Story-so-far recap: no API cost.**
     - On load, a "Previously…" panel is assembled from what the save already holds: `currentScene`, the last few narrative-memory notes, and the most relevant entities. No model call.
     - Works in self-host mode too. It's an in-UI panel; `App.tsx` changes go through the established review rather than a rewrite.
+  - [ ] A Discord server for feedback and bug reports, linked from the game and from the invite email.
+  - [ ] **Pass the "ready to invite friends" checklist** (Technical Direction → Launch & operations).
   - [ ] **Then invite friends, free**: the developer funds it, and all caps are enforced. Worst case is ~$7 per friend per month.
 - [ ] **Phase 10, Game: quests and objectives (while friends play):**
   - [ ] A new `state_updates.quest_updates` field: `[{id, title, status: opened|progressed|completed|failed, note}]`. This is a contract change, so the prompt, schema and parser change in one commit.
@@ -277,6 +287,24 @@ Every hosting phase ships to the real hosted environment. Every game phase works
     - Size: ~2-4 KB per turn, under 1 MB per player per month.
     - Deleted along with the account (7-day grace).
   - **Not taken now:** server-authoritative turns. When the shared world comes, the server loads the save, calls the World Voice, runs the shared `applyWorldUpdate`, and stores the result in one transaction. That also fixes the "+ Slot" mid-turn race in hosted mode for free. The **self-host** mode keeps the race as a recorded, declined fix.
+- **Launch & operations (decided 2026-09-24).**
+  - **Spend protection, three layers.** The first two are enforced by the app; the third is Anthropic's backstop.
+    1. The per-player allowance and the creation cap (Phase 8).
+    2. An app-wide daily spend cap with 50% and 80% alerts, which pauses paid calls at 100% (Phase 8).
+    3. A monthly limit on the Anthropic Console workspace (Phase 6). A metering bug can't bypass it, because Anthropic enforces it rather than our code.
+  - **Monitoring:** an error tracker plus an uptime check from Phase 6. Reports are redacted: no API key, passphrase, session cookie or player-written text. A test proves it, like the Phase 5 redaction tests.
+  - **Support:** a Discord server. It matches the Discord sign-in audience and needs no code.
+  - **"Ready to invite friends" checklist** (gate at the end of Phase 9; every item is shown, not assumed):
+    - [ ] A fresh-account run on the live host: invite → sign-in (email link, Google, Discord) → create a character → 10 turns → reload on a second device → the save is there.
+    - [ ] Allowance, creation cap and daily cap each seen triggering in a test account on the live host, each with its in-UI message.
+    - [ ] Backup restore rehearsed on the live database within the last 7 days.
+    - [ ] An error deliberately thrown in production, seen in the tracker with redaction intact.
+    - [ ] The uptime alert received by email after a deliberate stop.
+    - [ ] The Anthropic Console spend limit set and screenshotted into the evidence folder.
+    - [ ] The usage-policy check done, and the privacy notice shown at sign-up.
+    - [ ] Account deletion exercised end to end, with the 7-day purge verified on a test account (grace shortened in a test environment).
+    - [ ] Self-host image still passing `scripts/smoke-image.sh` 7/7.
+    - [ ] The Discord invite link working in the game.
 - **Testing:** the existing suite must stay green in self-host mode throughout. Hosted-mode tests run against a throwaway Postgres in CI (a service container), plus Stripe webhooks in test mode.
 
 ## Open Questions
