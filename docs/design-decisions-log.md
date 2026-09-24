@@ -220,7 +220,7 @@ The root cause was the wording, not the rendering (`WorldLog` already keeps para
 
 A Soul Etching or sub-ability paragraph (duty 4) may still be added on top of the word budget, because those moments are the game's payoff. The World Voice persona ("gravitas") is unchanged: this is about length and legibility, not tone. The JSON contract is untouched; only the description string inside the `narration` example changed.
 
-**Cache figure:** the edit sits inside `WORLD_SYSTEM_PROMPT`, so the cached prefix (last quoted as 15,523) has moved again. Re-derive it with `count_tokens` before quoting it. The shared-namespace property is unchanged.
+**Measured live the same day** (`.planning/experiments/2026-09-24-narration-length/`): the intro came in at 126 words, and the three turns at 106, 100 and 115, all within budget. **Cache figure:** the cached prefix is now **15,607** (intro-scene wrote it; every world-engine turn read it), which supersedes 15,523. The shared-namespace property is unchanged.
 
 If this proves too terse in play, raise the word range; don't restore "rich prose".
 
