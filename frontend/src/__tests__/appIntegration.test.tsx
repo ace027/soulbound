@@ -532,3 +532,58 @@ describe('App — character creation seeds narrative memory from the intro scene
     expect(persisted.gameState.skills.some((s) => s.name === 'The Labelled Drawer')).toBe(true);
   });
 });
+
+/**
+ * ── Return to title from character creation (2026-09-25, not in legacy) ─────
+ *
+ * Legacy had no way out of the race screen or the questionnaire, so a player
+ * with saves had to reload the page to load one. Going back abandons the new
+ * chronicle: the next "Begin" must start with no name, no race and no
+ * answers, on question 1.
+ */
+describe('App — returning to title from character creation', () => {
+  it('leaves the race screen for the title, where the saves are', async () => {
+    seedSave([]);
+    render(<App />);
+    fireEvent.click(await screen.findByText(/Begin/));
+    fireEvent.click(await screen.findByRole('button', { name: /Return to title/ }));
+    expect(await screen.findByText('Ryn')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument();
+  });
+
+  it('leaves the questionnaire and clears race, name and answers', async () => {
+    render(<App />);
+    fireEvent.click(await screen.findByText(/Begin/));
+    fireEvent.change(await screen.findByPlaceholderText('What are you called?'), {
+      target: { value: 'Yulen Marr' },
+    });
+    fireEvent.click(screen.getByText('Shadeveil'));
+    fireEvent.click(screen.getByRole('button', { name: /Enter the World Voice/i }));
+    fireEvent.change(await screen.findByPlaceholderText('Write freely...'), {
+      target: { value: 'first answer' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Continue/i }));
+    fireEvent.change(await screen.findByPlaceholderText('Write freely...'), {
+      target: { value: 'second answer' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Return to title/ }));
+    fireEvent.click(await screen.findByText(/Begin/));
+
+    // Race screen starts blank: no name, and Continue gated because no race is chosen.
+    const name = await screen.findByPlaceholderText('What are you called?');
+    expect(name).toHaveValue('');
+    fireEvent.change(name, { target: { value: 'Someone Else' } });
+    const submit = screen.getByRole('button', { name: /Enter the World Voice/i });
+    expect(submit).toBeDisabled();
+
+    // Questionnaire restarts at question 1 with no answer kept.
+    fireEvent.click(screen.getByText('Shadeveil'));
+    fireEvent.click(submit);
+    expect(await screen.findByText(/The World Voice Speaks — 1 \//)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Write freely...')).toHaveValue('');
+    fireEvent.change(screen.getByPlaceholderText('Write freely...'), { target: { value: 'y' } });
+    fireEvent.click(screen.getByRole('button', { name: /Continue/i }));
+    expect(screen.getByPlaceholderText('Write freely...')).toHaveValue('');
+  });
+});

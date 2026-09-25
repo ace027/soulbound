@@ -49,7 +49,8 @@ once, so prompt/parser drift becomes a compile error rather than a runtime surpr
 
 Self-host is frozen by construction, not convention: its pre-Phase-6 tests are unedited,
 `selfhostNoPg.test.ts` proves it never loads `pg`/Better Auth/Sentry, `selfhostHeaders.test.ts`
-proves it emits none of hosted's headers, and `App.tsx` is byte-identical to `7856b7d`. Hosted
+proves it emits none of hosted's headers, and `App.tsx` stayed byte-identical to `7856b7d` through
+Phase 6 (the freeze was lifted 2026-09-25 for the return-to-title fix). Hosted
 packages (`pg`, `better-auth`, `@sentry/node`) and the modules that pull them in (`db.ts`, `auth.ts`,
 `invites.ts`, `account.ts`) load by dynamic `import()` only when `MODE === 'hosted'`.
 
@@ -98,7 +99,7 @@ mode. A test asserts the first; CLAUDE.md's auth section settles the second.
 | `backend/src/scripts/*.ts` | backend-ops | **New.** `invite:create` and `tracker:test` operator scripts |
 | `backend/migrations/*.sql` (2) | database | `001` Better Auth schema (CLI `auth@1.7.6`), `002` `invites` + `account_deletions`. Append-only once deployed |
 | `frontend/src/main.tsx` | frontend-app | `<ModeGate><AccessGate><App/></AccessGate></ModeGate>` |
-| `frontend/src/App.tsx` (375) | frontend-app | 16 `useState` + 1 `useRef`; all handlers. **Byte-identical to `7856b7d`** |
+| `frontend/src/App.tsx` (375) | frontend-app | 16 `useState` + 1 `useRef`; all handlers. Byte-identical to `7856b7d` through Phase 6; since 2026-09-25 it also has `handleReturnToTitle` |
 | `frontend/src/components/ModeGate.tsx` (135) | frontend-components | **New.** Reads `Soulbound-Mode` from `/api/access`; hosted → `SignIn` or the game with `HostedAccountContext`; self-host → no extra DOM |
 | `frontend/src/components/SignIn.tsx` (380) | frontend-components | **New.** Magic link / Google / Discord; invite from `#invite=` (stripped before the first fetch); renders only known error codes |
 | `frontend/src/components/AccountPanel.tsx` (157) + `hostedAccount.tsx` (26) | frontend-components | **New.** Inline "Account" section at the end of the Soul Codex (sign-out, arm → Confirm/Cancel delete), reached via context so `App.tsx` stays untouched |

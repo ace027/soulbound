@@ -78,7 +78,7 @@ mappings:
     description: >-
       Four presentational components, ported verbatim and prop-driven, plus new-code gates:
       AccessGate (Phase 5, self-host passphrase), ModeGate and SignIn (Phase 6, hosted), and
-      AccountPanel reached through hostedAccount.tsx's context so App.tsx stays byte-identical.
+      AccountPanel reached through hostedAccount.tsx's context (keeps App.tsx free of hosted code).
       SoulCodexContents' only addition to the port is <HostedAccountSlot/>.
     preferred_agents: [engineering-frontend-developer]
 

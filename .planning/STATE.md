@@ -57,20 +57,11 @@
 2. **Retaining raw evidence pays immediately.** The screenshots committed to close one finding caught
    a wrong number in the very summary they were filed under, on their first use.
 
-### Noted issues — not yet actioned (developer said "note it, don't change anything yet")
-- **No way back to the title screen during character creation** (reported 2026-09-25, playtest).
-  After "Begin a new chronicle", neither the race screen nor the questionnaire offers a route back
-  to the title, so a player with saved characters can't return to load one without reloading the
-  page. Verified in source at `7e98d58`:
-  - `RaceScreen.tsx` has no back control, only "Continue";
-  - `QuestionnaireScreen.tsx`'s "← Back" renders only past question 1 and only steps `qIndex` back,
-    never to the race screen (legacy navigation, ported unimproved on purpose, see its docstring);
-  - `App.tsx` passes neither screen a way to `setPhase('title')` or `setPhase('race')`.
-  It happens whether or not saves exist; saves are just what make it matter.
-  **Before fixing:** the natural fix passes an `onBack` from `App.tsx`, which is frozen
-  byte-identical to `7856b7d` as the self-host freeze proof. So flag it first: either the freeze
-  is lifted deliberately for this, or the route back goes in without touching `App.tsx`. Also decide
-  whether going back keeps or clears the chosen race, name and questionnaire answers.
+### Resolved from playtest notes
+- **No way back to the title screen during character creation** (reported and fixed 2026-09-25).
+  Both creation screens now have "← Return to title", which clears race, name and answers. The
+  developer lifted the `App.tsx` freeze for it. See the design log → "Return to title from
+  character creation". Not yet merged to `main`; it rides with the next PR.
 
 ### Known environment limits
 `git push origin <tag>` fails here (`remote end hung up`) while branch pushes succeed — a tag-ref

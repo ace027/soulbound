@@ -164,6 +164,19 @@ export default function App() {
     autoSave(gameState, log, newId);
   }
 
+  // ── RETURN TO TITLE FROM CHARACTER CREATION (2026-09-25, not in legacy) ──
+  // Legacy had no way out of the race screen or the questionnaire, so a player
+  // with saves couldn't get back to load one without reloading the page. Going
+  // back abandons the new chronicle: race, name and answers are all cleared,
+  // so the next "New Chronicle" starts blank. Design log → "Return to title".
+  function handleReturnToTitle() {
+    setSelectedRace(null);
+    setCharName('');
+    setQIndex(0);
+    setAnswers({});
+    setPhase('title');
+  }
+
   // ── LOAD SAVE (legacy 838-856) ───────────────────────────────────────────
   function handleLoadSave(slotId: string) {
     setPhase('loading');
@@ -330,6 +343,7 @@ export default function App() {
         selectedRace={selectedRace}
         setSelectedRace={setSelectedRace}
         onContinue={() => setPhase('questionnaire')}
+        onReturnToTitle={handleReturnToTitle}
       />
     );
   }
@@ -342,6 +356,7 @@ export default function App() {
         answers={answers}
         setAnswers={setAnswers}
         onComplete={handleQuestionnaireComplete}
+        onReturnToTitle={handleReturnToTitle}
       />
     );
   }

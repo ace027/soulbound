@@ -18,6 +18,10 @@ import { sharedBg } from './sharedBg';
  * question, and the primary button is both disabled and guarded by an early
  * `if (!canAdvance) return;`. On the last question it calls the completion
  * handler with the accumulated answers rather than advancing.
+ *
+ * One addition not in legacy (2026-09-25): a "Return to title" control above
+ * the progress line, on every question, so a player can leave character
+ * creation to load a save. "← Back" still only steps between questions.
  */
 
 export interface QuestionnaireScreenProps {
@@ -28,6 +32,11 @@ export interface QuestionnaireScreenProps {
   setAnswers: Dispatch<SetStateAction<QuestionnaireAnswers>>;
   /** Legacy `handleQuestionnaireComplete(answers)`. */
   onComplete: (answers: QuestionnaireAnswers) => void;
+  /**
+   * Not in legacy (2026-09-25): back to the title screen, abandoning this new
+   * chronicle. App clears the race, name and answers.
+   */
+  onReturnToTitle: () => void;
 }
 
 export default function QuestionnaireScreen({
@@ -36,6 +45,7 @@ export default function QuestionnaireScreen({
   answers,
   setAnswers,
   onComplete,
+  onReturnToTitle,
 }: QuestionnaireScreenProps) {
   const q = QUESTIONS[qIndex];
   const currentAnswer = answers[q.id] || "";
@@ -43,6 +53,17 @@ export default function QuestionnaireScreen({
   return (
     <div style={{ ...sharedBg, padding: "32px 24px", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ maxWidth: 600, width: "100%" }}>
+        <button
+          type="button"
+          onClick={onReturnToTitle}
+          style={{
+            background: "none", border: "none", color: "#6a5a40", padding: 0, marginBottom: 20,
+            fontFamily: "'Cinzel', serif", fontSize: 11, letterSpacing: "0.12em",
+            textTransform: "uppercase", cursor: "pointer",
+          }}
+        >
+          ← Return to title
+        </button>
         <p style={{ fontFamily: "'Cinzel', serif", fontSize: 11, color: "#7a1f1f", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 4 }}>
           The World Voice Speaks — {qIndex + 1} / {QUESTIONS.length}
         </p>

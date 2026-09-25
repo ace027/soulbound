@@ -68,7 +68,11 @@ function TitleHarness(props: {
   );
 }
 
-function RaceHarness(props: { onSelect?: (race: Race) => void; onContinue?: () => void }) {
+function RaceHarness(props: {
+  onSelect?: (race: Race) => void;
+  onContinue?: () => void;
+  onReturnToTitle?: () => void;
+}) {
   const [charName, setCharName] = useState('');
   const [selectedRace, setSelectedRace] = useState<Race | null>(null);
   return (
@@ -81,11 +85,15 @@ function RaceHarness(props: { onSelect?: (race: Race) => void; onContinue?: () =
         props.onSelect?.(race);
       }}
       onContinue={props.onContinue ?? (() => {})}
+      onReturnToTitle={props.onReturnToTitle ?? (() => {})}
     />
   );
 }
 
-function QuestionnaireHarness(props: { onComplete: (answers: QuestionnaireAnswers) => void }) {
+function QuestionnaireHarness(props: {
+  onComplete: (answers: QuestionnaireAnswers) => void;
+  onReturnToTitle?: () => void;
+}) {
   const [qIndex, setQIndex] = useState(0);
   const [answers, setAnswers] = useState<QuestionnaireAnswers>({});
   return (
@@ -95,6 +103,7 @@ function QuestionnaireHarness(props: { onComplete: (answers: QuestionnaireAnswer
       answers={answers}
       setAnswers={setAnswers}
       onComplete={props.onComplete}
+      onReturnToTitle={props.onReturnToTitle ?? (() => {})}
     />
   );
 }
@@ -217,6 +226,18 @@ describe('RaceScreen', () => {
     fireEvent.click(submit);
     expect(onContinue).toHaveBeenCalledTimes(1);
   });
+
+  // Not in legacy (2026-09-25): the way out of character creation.
+  it('offers a return to the title screen, ungated', () => {
+    const onReturnToTitle = vi.fn();
+    const onContinue = vi.fn();
+    render(<RaceHarness onReturnToTitle={onReturnToTitle} onContinue={onContinue} />);
+    const back = screen.getByRole('button', { name: /Return to title/ });
+    expect(back).toBeEnabled();
+    fireEvent.click(back);
+    expect(onReturnToTitle).toHaveBeenCalledTimes(1);
+    expect(onContinue).not.toHaveBeenCalled();
+  });
 });
 
 // ─── Questionnaire ──────────────────────────────────────────────────────────
@@ -275,5 +296,23 @@ describe('QuestionnaireScreen', () => {
     expect(screen.getByText(`The World Voice Speaks — 1 / ${QUESTIONS.length}`)).toBeInTheDocument();
     // The answer typed before going back survives.
     expect(screen.getByPlaceholderText('Write freely...')).toHaveValue('x');
+  });
+
+  // Not in legacy (2026-09-25): the way out, on the first question too, where
+  // "← Back" is absent.
+  it('offers a return to the title screen on every question', () => {
+    const onReturnToTitle = vi.fn();
+    const onComplete = vi.fn();
+    render(<QuestionnaireHarness onComplete={onComplete} onReturnToTitle={onReturnToTitle} />);
+    QUESTIONS.forEach((_q, i) => {
+      expect(screen.getByRole('button', { name: /Return to title/ })).toBeEnabled();
+      if (i < QUESTIONS.length - 1) {
+        fireEvent.change(screen.getByPlaceholderText('Write freely...'), { target: { value: 'x' } });
+        fireEvent.click(screen.getByRole('button', { name: /Continue/ }));
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Return to title/ }));
+    expect(onReturnToTitle).toHaveBeenCalledTimes(1);
+    expect(onComplete).not.toHaveBeenCalled();
   });
 });
