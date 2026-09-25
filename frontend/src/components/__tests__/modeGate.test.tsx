@@ -438,6 +438,16 @@ describe('AccountPanel', () => {
     expect(screen.queryByTestId('game')).not.toBeInTheDocument();
   });
 
+  it('a failed sign-out stays put and says so', async () => {
+    vi.mocked(authClient.signOut).mockResolvedValueOnce('error');
+    await renderSignedIn();
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    expect(await screen.findByText(/Couldn.t sign out/)).toBeInTheDocument();
+    expect(authClient.signOut).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('game')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Email address')).not.toBeInTheDocument();
+  });
+
   it('arming focuses Confirm, and Cancel returns focus to Delete account', async () => {
     await renderSignedIn();
     fireEvent.click(screen.getByRole('button', { name: 'Delete account' }));
