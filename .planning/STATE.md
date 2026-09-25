@@ -61,7 +61,8 @@
 - **No way back to the title screen during character creation** (reported and fixed 2026-09-25).
   Both creation screens now have "← Return to title", which clears race, name and answers. The
   developer lifted the `App.tsx` freeze for it. See the design log → "Return to title from
-  character creation". Not yet merged to `main`; it rides with the next PR.
+  character creation". Not yet merged to `main`. **Developer decision 2026-09-25: it ships in
+  Phase 7's PR**, not on its own.
 
 ### Known environment limits
 `git push origin <tag>` fails here (`remote end hung up`) while branch pushes succeed — a tag-ref
