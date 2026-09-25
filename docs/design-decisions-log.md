@@ -321,11 +321,21 @@ A value-matching redactor can't catch per-request values (cookies, invite codes,
 **Deploy shape (`render.yaml`, every key checked against Render's reference and JSON Schema):**
 - **Build:** a Docker web service built from the last stage (`runtime`); Render has no target field.
 - **Branch:** pinned to `main`, deploying only after CI passes (`autoDeployTrigger: checksPass`).
-- **Migrations:** `preDeployCommand` runs `node backend/dist/migrate.js`, so a failed migration fails the deploy while the old version keeps serving.
+- **Migrations:** `preDeployCommand` runs `node /app/backend/dist/migrate.js`, so a failed migration fails the deploy while the old version keeps serving.
 - **Host allow-list:** `ALLOWED_HOSTS` is the service's own `RENDER_EXTERNAL_HOSTNAME`, because Render's health check sends that host.
 - **Database:** a paid Postgres (the free one expires after 30 days), with `ipAllowList: []`. Admin queries run from the service's shell.
 - **Secrets** are all `sync: false`. `BETTER_AUTH_SECRET` deliberately doesn't use `generateValue`: a new value would sign everyone out.
 - **Retention:** the managed Postgres server's own log can hold an email (a unique violation logs `Failing row contains …`). That log, Resend and Sentry keep data on their own schedules, listed in runbook step 14.
+
+### Review cycle 1 decisions (2026-09-25)
+- **Sessions roll through the browser only.** The server-side session gate reads with `disableRefresh`, so Better Auth's daily refresh happens on the browser's own `get-session` call, which is the only response that can carry the renewed cookie. Before this, the gate refreshed the row first, and the cookie kept its sign-in Max-Age: a hard 30-day expiry, not a rolling one.
+- **Google stays a trusted provider, with a verified-email check (developer's call).** A trusted provider skips Better Auth's `emailVerified` check when linking (`oauth2/link-account.mjs`), which let a Google account with an unverified address link into an existing player's account. The developer chose to keep `trustedProviders: ['google']` and add an `account.create.before` hook that refuses a Google account row unless its ID token says `email_verified: true`, over dropping Google's trusted status.
+- **An invite is bound to the address that was sent the link.** A magic-link sign-up is refused unless that address was sent the link under the same invite cookie. That closes the login-CSRF path where a victim's live invite cookie would be consumed for an attacker's address. The binding is in memory (300 s, single instance) and fails closed on restart.
+- **Invite send caps are per invite, not per cookie**, plus a 30-per-hour global ceiling on invite-path sends. Sends to existing accounts and to new addresses use separate per-email maps, so invite spam can't crowd out returning players.
+- **Expired `verification` rows are purged hourly.** Better Auth stores the typed email before our send gate runs, so without this, addresses that were never sent anything were kept indefinitely.
+- **Also:** OAuth tokens are encrypted at rest and IP tracking is off (nothing reads either); shutdown waits 110 s (`maxShutdownDelaySeconds: 120` on Render) so a deploy doesn't cut off a turn in progress; the pool times out connections after 5 s; `node-pg-migrate` is pinned exactly because the boot check imports a deep path.
+- **Accepted risk until Phase 7:** saves live in `localStorage` and aren't scoped to an account, so on a shared device the next player to sign in sees the previous player's saves. Server-side saves (Phase 7) remove this.
+- **Migrations follow "expand, then contract".** The pre-deploy step migrates while the old version is still serving, so a deploy never drops or renames a column that the running version still uses.
 
 ## Questionnaire Design
 Originally multiple-choice (5 options per question). Changed to fully open-ended free-text per the explicit reasoning that richer, longer answers produce a better-defined Unique Skill before the player ever enters the world. Each question has a `hint` line for guidance but no character limit. The Continue button is disabled until something is written, with a Back button to revise prior answers.
