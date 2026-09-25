@@ -20,10 +20,22 @@
 #  - refuses to run unless server.ts is committed and unchanged;
 #  - backs server.ts up with `cp` and restores it with `cp`, never git;
 #  - fails loudly if an edit did not apply (the file's sha256 must change),
-#    and checks the restore by hash, after every mutation and on any exit.
+#    and checks the restore by hash, after every mutation and on any exit;
+#  - Ctrl-C / SIGTERM restores and exits 130 at once, instead of letting the
+#    loop carry on to the next mutation.
+#
+# Soundness (review cycle 1, I3): a red suite proves nothing if it was red
+# anyway (no database, a broken test). So:
+#  - the UNMUTATED hosted suite runs first, and the script aborts ("baseline
+#    red", exit 4) unless it passes;
+#  - a mutation counts as caught only if the failure output names
+#    hostedOrder.test.ts (a `FAIL ... hostedOrder.test.ts` line). A suite
+#    that failed only elsewhere is reported as FAIL (not attributed).
 #
 # Needs TEST_DATABASE_URL (e.g. `export TEST_DATABASE_URL=$(scripts/test-db.sh)`).
 # Prints PASS/FAIL per mutation. Exit 0 only if every mutation was caught.
+# Exit codes: 0 all caught; 1 a mutation survived or wasn't attributed;
+# 2 bad setup; 3 restore failed; 4 baseline red; 130 interrupted.
 
 set -uo pipefail
 
@@ -56,7 +68,34 @@ restore() {
     exit 3
   fi
 }
-trap 'restore' EXIT INT TERM
+trap 'restore' EXIT
+trap 'echo "mutate-order: interrupted; $REL restored" >&2; restore; exit 130' INT TERM
+
+# Runs the hosted suite into $1 and returns its exit code. Runs in the
+# foreground, so a Ctrl-C reaches vitest too; bash runs the INT trap as soon
+# as the suite exits.
+run_suite() {
+  npm run test:hosted -w @soulbound/backend >"$1" 2>&1
+}
+
+# True if the suite's failure output names the order test file.
+names_order_test() {
+  grep -Eq 'FAIL +[^ ]*hostedOrder\.test\.ts' "$1"
+}
+
+# ─── Baseline: the unmutated suite must be green ────────────────────────
+BASE_LOG="$WORK/baseline.log"
+start=$(date +%s)
+run_suite "$BASE_LOG"
+rc=$?
+secs=$(( $(date +%s) - start ))
+summary="$(grep -E '^ +Tests +[0-9]' "$BASE_LOG" | tail -1 | sed 's/^ *//')"
+if [ "$rc" -ne 0 ]; then
+  echo "mutate-order: baseline red: the UNMUTATED hosted suite failed (rc=$rc, ${secs}s; ${summary:-no summary}). No mutation result would mean anything. Last lines:" >&2
+  tail -n 15 "$BASE_LOG" >&2
+  exit 4
+fi
+echo "BASE  unmutated suite green (${secs}s; ${summary:-no summary})"
 
 # Applies one scripted edit. Python does exact-line matching and exits
 # non-zero unless each anchor line occurs exactly once.
@@ -105,14 +144,18 @@ for m in a b c; do
   fi
   LOG="$WORK/mutation-$m.log"
   start=$(date +%s)
-  npm run test:hosted -w @soulbound/backend >"$LOG" 2>&1
+  run_suite "$LOG"
   rc=$?
   secs=$(( $(date +%s) - start ))
   restore
   summary="$(grep -E '^ +Tests +[0-9]' "$LOG" | tail -1 | sed 's/^ *//')"
   timeouts="$(grep -c 'timed out after 2000 ms' "$LOG" || true)"
-  if [ "$rc" -ne 0 ]; then
-    echo "PASS  ($m) ${NAMES[$m]}: suite failed as required (rc=$rc, ${secs}s; ${summary:-no summary}; 2 s timeouts: $timeouts)"
+  if [ "$rc" -ne 0 ] && names_order_test "$LOG"; then
+    echo "PASS  ($m) ${NAMES[$m]}: hostedOrder.test.ts failed as required (rc=$rc, ${secs}s; ${summary:-no summary}; 2 s timeouts: $timeouts)"
+  elif [ "$rc" -ne 0 ]; then
+    echo "FAIL  ($m) ${NAMES[$m]}: the suite failed, but not in hostedOrder.test.ts (rc=$rc; ${summary:-no summary}); log: $LOG"
+    survivors=$((survivors + 1))
+    KEEP_WORK=1
   else
     echo "FAIL  ($m) ${NAMES[$m]}: the suite PASSED with the mutation in place (${summary:-no summary})"
     survivors=$((survivors + 1))
@@ -121,7 +164,7 @@ done
 
 trap - EXIT INT TERM
 restore
-rm -rf "$WORK"
+if [ -z "${KEEP_WORK:-}" ]; then rm -rf "$WORK"; fi
 
 if [ -n "$(git status --porcelain -- "$REL")" ]; then
   echo "mutate-order: $REL differs from HEAD after restore" >&2
@@ -129,7 +172,7 @@ if [ -n "$(git status --porcelain -- "$REL")" ]; then
 fi
 
 if [ "$survivors" -ne 0 ]; then
-  echo "mutate-order: $survivors mutation(s) survived"
+  echo "mutate-order: $survivors mutation(s) survived or were not attributed to hostedOrder.test.ts"
   exit 1
 fi
 echo "mutate-order: all 3 mutations caught; $REL restored (sha256 $ORIG_HASH)"
