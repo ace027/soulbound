@@ -6,8 +6,9 @@
 #
 # Every key below was checked against Render's Blueprint reference
 # (https://render.com/docs/blueprint-spec) and its JSON Schema
-# (https://render.com/schema/render.yaml.json) on 2026-09-24, and this file
-# validates against that schema. Nothing here has been applied to a real
+# (https://render.com/schema/render.yaml.json) on 2026-09-24
+# (maxShutdownDelaySeconds on 2026-09-25), and this file validates against
+# that schema. Nothing here has been applied to a real
 # Render account yet: the runbook marks each live step UNTESTED until the
 # developer runs it and the agent's check passes.
 #
@@ -52,7 +53,17 @@ services:
     # Runs on a separate instance after the build and before the new version
     # goes live. A failed migration fails the deploy, and the previous deploy
     # keeps serving. migrate.js reads only DATABASE_URL (spec Key Decisions).
-    preDeployCommand: node backend/dist/migrate.js
+    # Absolute path: backend/Dockerfile sets WORKDIR /app, and migrate.js is
+    # copied to /app/backend/dist/migrate.js. Pre-deploy runs while the OLD
+    # version is still serving, so every migration must be expand-then-contract
+    # (runbook operating notes): never drop or rename a column in the same
+    # deploy that stops using it.
+    preDeployCommand: node /app/backend/dist/migrate.js
+    # How long Render waits after SIGTERM before killing the process (Render
+    # default 30 s, allowed 1-300). backend/src/server.ts drains for up to
+    # SHUTDOWN_TIMEOUT_MS = 110_000 ms (110 s) before exiting, so this must stay
+    # above that: 120 s gives the drain a 10 s margin. Change both together.
+    maxShutdownDelaySeconds: 120
     envVars:
       - key: SOULBOUND_MODE
         value: hosted
@@ -70,14 +81,17 @@ services:
       # The service's own onrender.com hostname (a documented self-reference to
       # Render's RENDER_EXTERNAL_HOSTNAME). A hostname-only entry matches any
       # port. After adding a custom domain, Render's health check sends THAT
-      # host instead: replace this with a plain value listing both.
+      # host instead: replace this entry HERE with a plain value listing both,
+      # and merge to main. Never edit it in the dashboard: the next Blueprint
+      # sync overwrites any dashboard change to a value/fromService variable.
       - key: ALLOWED_HOSTS
         fromService:
           name: soulbound
           type: web
           envVarKey: RENDER_EXTERNAL_HOSTNAME
       # One proxy hop to start. Runbook step 5 observes the real count with
-      # /api/debug/ip and corrects it.
+      # /api/debug/ip and corrects it HERE (edit, merge to main, let the sync
+      # apply it), never in the dashboard, which the next sync would undo.
       - key: TRUST_PROXY
         value: "1"
       # Set both to the service's https://<name>.onrender.com origin, exactly

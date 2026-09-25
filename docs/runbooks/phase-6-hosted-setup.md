@@ -26,6 +26,15 @@ the dashboard shows.
   (`autoDeployTrigger: checksPass`). So merge the Phase 6 branch into `main` before step 2.
 - Have a password manager open. Steps 1, 6, 7, 8 and 10 each produce a secret.
 
+> **WARNING: Never change a `render.yaml`-declared variable in the dashboard.**
+> Any variable `render.yaml` gives a `value:`, `fromService` or `fromDatabase` (today: `SOULBOUND_MODE`,
+> `NODE_ENV`, `DATABASE_URL`, `ALLOWED_HOSTS`, `TRUST_PROXY`) belongs to the file. A dashboard edit to
+> one of them looks like it worked, and then the next Blueprint sync silently puts the file's value back
+> (Render: "the next Blueprint sync _overwrites_ them"). To change one: edit `render.yaml`, merge to
+> `main`, and let the Blueprint sync apply it. If the Blueprint's page doesn't show the new sync, click
+> **Manual Sync** there. Only the `sync: false` variables (step 3), and variables `render.yaml` doesn't
+> mention at all (`DEBUG_PROXY_HOPS`, `USER_RATE_LIMIT_PER_MINUTE`), are edited in the dashboard.
+
 ---
 
 ## 1. Generate `BETTER_AUTH_SECRET`
@@ -98,7 +107,7 @@ Notes:
   If the form refuses blank values, it's not known yet whether it will; say so, and we'll handle it.
 - **Values `render.yaml` sets for you:** `SOULBOUND_MODE=hosted`, `NODE_ENV=production`,
   `TRUST_PROXY=1`, `DATABASE_URL` (from the database) and `ALLOWED_HOSTS` (the service's own
-  onrender.com hostname).
+  onrender.com hostname). Change these only in `render.yaml` (see the warning above), never here.
 - **Never set `NODE_ENV=test`.** It turns off Better Auth's own origin and callback checks.
 
 **Check:** Screenshot the Environment tab with **values hidden** (Render masks them by default) as
@@ -155,7 +164,12 @@ puts every player in one bucket, or lets a caller choose their own address.
    ```
    The probe answers `{"ip":…,"ips":[…],"xffHops":N}`. It echoes only your own request, and logs
    nothing.
-3. Set `TRUST_PROXY` to that **N**, and save. It stays at 1 if N is 1.
+3. If **N** is 1, leave `TRUST_PROXY` alone. Otherwise, **don't edit it in the dashboard** (the next
+   Blueprint sync would put 1 back; see the warning under "Before you start"). Tell the agent N; it
+   changes `TRUST_PROXY` in `render.yaml` to `"N"`, and you merge that to `main`. The Blueprint sync
+   applies it and redeploys. Wait for that deploy to go live, and confirm the Environment tab now shows
+   `TRUST_PROXY` = N. `DEBUG_PROXY_HOPS` isn't in `render.yaml`, so it survives the sync and the probe
+   stays on.
 4. Still with the flag on, try to spoof:
    ```bash
    curl -sS -H 'X-Forwarded-For: 203.0.113.9' https://<svc>.onrender.com/api/debug/ip
@@ -164,8 +178,9 @@ puts every player in one bucket, or lets a caller choose their own address.
 5. **Delete** `DEBUG_PROXY_HOPS` and save.
 
 **Check:** Paste the three outputs, with your IP replaced by `<me>`. The agent confirms:
-- `xffHops` equals the `TRUST_PROXY` you set;
-- the spoofed request still reports `<me>`.
+- `xffHops` equals `TRUST_PROXY` in `render.yaml` on `main` (`git show origin/main:render.yaml`), and
+  you've confirmed the Environment tab shows the same value after the sync;
+- the spoofed request (sent after that deploy went live) still reports `<me>`.
 
 Then it runs `scripts/verify-hosted.sh https://<svc>.onrender.com`. Check 7 must pass
 (`/api/debug/ip` → 401: the probe is gone). The agent records everything in
@@ -405,8 +420,20 @@ then the longest of the rows above.
 - **One instance.** `numInstances: 1` is deliberate: the per-email magic-link cap (3 per 15 minutes)
   lives in memory. The purge is safe with more instances (an advisory lock), but that cap isn't shared.
 - **Custom domain later.** After adding one, Render's health check sends the custom domain as `Host`.
-  So before you add it, set `ALLOWED_HOSTS` to a plain value listing both hosts, and update
-  `BETTER_AUTH_URL`, `FRONTEND_ORIGIN` and both OAuth redirect URIs.
+  So before you add it, change `ALLOWED_HOSTS` **in `render.yaml`** from the `fromService` entry to a
+  plain `value:` listing both hosts, merge to `main`, and let the Blueprint sync apply it (never in the
+  dashboard; see the warning under "Before you start"). Then run
+  `scripts/verify-hosted.sh https://<svc>.onrender.com`: check 1 (health 200) proves the onrender.com
+  host is still allowed. Also update `BETTER_AUTH_URL`, `FRONTEND_ORIGIN` (both `sync: false`, so in the
+  dashboard) and both OAuth redirect URIs.
+- **Migrations are expand, then contract.** The pre-deploy runs `migrate.js` while the **old** version
+  is still serving traffic, and a failed deploy leaves the old version running on the new schema. So a
+  migration must never break the version before it: never drop or rename a column (or table) in the
+  same deploy that stops using it. Add the new shape first, ship code that uses it, and drop the old
+  shape in a later deploy.
+- **Shutdown drain.** `maxShutdownDelaySeconds: 120` in `render.yaml` is tied to
+  `SHUTDOWN_TIMEOUT_MS` (110 s) in `backend/src/server.ts`. Change them together, and keep the Render
+  value above the drain.
 - **Rotating `BETTER_AUTH_SECRET` signs everyone out** and voids every pending invite cookie.
 - **`release.yml` is not part of this.** Render builds from the repository; nothing is published to
   GHCR.

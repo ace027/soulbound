@@ -96,6 +96,9 @@ mappings:
       and the hosted app refuses to boot with any pending.
     preferred_agents: [engineering-backend-architect, engineering-infrastructure-devops]
     # Append-only once deployed: never edit or renumber an applied migration; add a new file instead.
+    # Expand, then contract: the pre-deploy migrates while the OLD version is still serving, so never
+    # drop or rename a column (or table) in the same deploy that stops using it. Add the new shape,
+    # ship code that uses it, and drop the old shape in a later deploy.
     touch_with_care: true
 
   - path: docs/runbooks
