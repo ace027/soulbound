@@ -2,15 +2,16 @@
 # Consumed by /legion:plan when recommending agents, and by /legion:build when
 # constructing execution prompts.
 map_schema_version: 1
-generated_at: "2026-09-24"  # refreshed after Phase 5 + playtest fixes (commit 35ac809)
+generated_at: "2026-09-25"  # refreshed after Phase 6 hosted mode (commit 7e98d58, code = main 89219af)
 
 mappings:
   - path: shared/src
     domain: contract
     description: >-
       The World Voice JSON contract as Zod schemas plus derived JSON Schema, and the
-      game-state types both sides share, and the access-gate constants. Single source of truth for
-      CLAUDE.md constraint #4.
+      game-state types both sides share, and the gate constants for both modes (passphrase, and
+      hosted's SIGN_IN_REQUIRED / ORIGIN_REJECTED / INVITE_* codes, mode header, account path).
+      Single source of truth for CLAUDE.md constraint #4.
     preferred_agents: [engineering-backend-architect, orchestrator]
     touch_with_care: true
 
@@ -25,18 +26,37 @@ mappings:
     description: Three World Voice routes, one shared helper. Drift between them is this repo's historical failure mode.
     preferred_agents: [engineering-ai-engineer, engineering-backend-architect]
 
+  - path: backend/src/scripts
+    domain: backend-ops
+    description: Hosted operator scripts — invite:create (one invite code) and tracker:test (one Sentry canary).
+    preferred_agents: [engineering-infrastructure-devops]
+
+  - path: backend/src/__tests__/hosted
+    domain: backend-hosted
+    description: >-
+      DB-backed hosted tests (vitest.hosted.config.ts, real Postgres via TEST_DATABASE_URL). Not part
+      of `npm test`; run with scripts/test-db.sh + `npm run test:hosted`. assert-no-skips fails any skip.
+      hostedOrder.test.ts pins the 15-step middleware order with scripts/mutate-order.sh.
+    preferred_agents: [testing-qa-verification-specialist, engineering-security-engineer]
+    touch_with_care: true
+
   - path: backend/src
     domain: backend
     description: >-
-      Anthropic client, config (models, key, passphrase), Express app, access gate and rate
-      limiter, untrusted-text guard. Middleware order in buildApp() is the security model.
+      Anthropic client, config (models, key, passphrase, MODE, hosted secrets), Express app for both
+      modes, self-host access gate and rate limiter, untrusted-text guard. Hosted modules live here
+      too (domain backend-hosted): auth.ts (Better Auth), invites.ts, hostedGate.ts, account.ts, db.ts,
+      migrate.ts, errorTracker.ts — their packages load only by dynamic import in hosted mode.
+      Middleware order in buildApp() is the security model in both modes; self-host is frozen.
     preferred_agents: [engineering-backend-architect, engineering-security-engineer]
 
   - path: frontend/src/lib
     domain: frontend-io
     description: >-
-      Backend API client (Bearer header, checkAccess), localStorage saves and the stored
-      passphrase. Save key names are byte-identical by requirement (R11).
+      Backend API client (Bearer header, checkAccess, hosted getAccessState / redeemInvite /
+      deleteAccount), Better Auth client (authClient.ts), localStorage saves and the stored
+      passphrase. Save key names are byte-identical by requirement (R11); saves are not yet
+      account-scoped in hosted mode (Phase 7).
     preferred_agents: [engineering-frontend-developer]
 
   - path: frontend/src/game
@@ -56,8 +76,10 @@ mappings:
   - path: frontend/src/components
     domain: frontend-components
     description: >-
-      Four presentational components, ported verbatim and prop-driven, plus AccessGate (Phase 5,
-      new code), the one component that reaches storage and the API.
+      Four presentational components, ported verbatim and prop-driven, plus new-code gates:
+      AccessGate (Phase 5, self-host passphrase), ModeGate and SignIn (Phase 6, hosted), and
+      AccountPanel reached through hostedAccount.tsx's context so App.tsx stays byte-identical.
+      SoulCodexContents' only addition to the port is <HostedAccountSlot/>.
     preferred_agents: [engineering-frontend-developer]
 
   - path: frontend/src/data
@@ -68,23 +90,28 @@ mappings:
   - path: frontend/e2e
     domain: frontend-e2e
     description: >-
-      Playwright smoke test — the ONLY place in this repo with a real layout engine. Asserts
-      geometry (overflow, scrolling, action-bar position, no collapsed panel) that jsdom cannot see.
-      Also covers the passphrase form. Runs under `test:e2e`, not `npm test`, and CI does not run it. Zero API calls by
-      design: it seeds a localStorage save. Never run `npx playwright install` in the sandbox.
+      Playwright specs — the ONLY place in this repo with a real layout engine. smoke.spec.ts asserts
+      geometry (overflow, scrolling, action-bar position, no collapsed panel) and the passphrase form;
+      hosted.spec.ts covers ModeGate / SignIn / the Codex account section; pageFrame.spec.ts pins the
+      body-margin reset. Runs under `test:e2e`, not `npm test`; CI runs it in the `e2e` job. Zero
+      real API calls by design. Never run `npx playwright install` in the sandbox.
     preferred_agents: [engineering-frontend-developer]
 
   - path: .github/workflows
     domain: infrastructure
     description: >-
-      ci.yml (build, test, image smoke) and release.yml (dispatch-only GHCR publish, main only,
-      fail-closed overwrite and layer checks). The first publish has never run.
+      ci.yml (build-and-test incl. test:hosted on a postgres:16 service, smoke-image incl. the hosted
+      smoke, e2e) and release.yml (dispatch-only GHCR publish, main only, fail-closed overwrite and
+      layer checks). The first publish has never run; do not dispatch it before the repo move.
     preferred_agents: [engineering-infrastructure-devops, engineering-security-engineer]
     touch_with_care: true
 
   - path: scripts
     domain: infrastructure
-    description: smoke-image.sh — 7 checks against a built image; shared by CI and release.
+    description: >-
+      smoke-image.sh (7 checks against a built image; CI and release), test-db.sh (throwaway local
+      Postgres 16 for the hosted suite), verify-hosted.sh (checks a running hosted deployment; CI and
+      runbook), mutate-order.sh (proves each hosted middleware step is pinned).
     preferred_agents: [engineering-infrastructure-devops]
 
   - path: backend/migrations

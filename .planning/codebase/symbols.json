@@ -1,8 +1,8 @@
 {
   "map_schema_version": 1,
-  "generated_at": "2026-09-24",
-  "analyzed_commit": "35ac80904b435a4002ab6bba91735b6f7f7e27ad",
-  "symbol_count": 150,
+  "generated_at": "2026-09-25",
+  "analyzed_commit": "7e98d587a8ea1b1003fec46cd28b57540e02972e",
+  "symbol_count": 294,
   "symbols": {
     "ACCESS_CHECK_PATH": [
       "shared/src/accessGate.ts"
@@ -16,14 +16,32 @@
     "ACCESS_STORAGE_KEY": [
       "shared/src/accessGate.ts"
     ],
+    "ACCOUNT_PATH": [
+      "shared/src/accessGate.ts"
+    ],
     "ALLOWED_HOSTS": [
       "backend/src/config.ts"
+    ],
+    "AUTH_BASE_PATH": [
+      "backend/src/auth.ts"
+    ],
+    "AUTH_BODY_LIMIT_BYTES": [
+      "backend/src/server.ts"
     ],
     "AccessGate": [
       "frontend/src/components/AccessGate.tsx"
     ],
     "AccessGateProps": [
       "frontend/src/components/AccessGate.tsx"
+    ],
+    "AccessState": [
+      "frontend/src/lib/api.ts"
+    ],
+    "AccountPanel": [
+      "frontend/src/components/AccountPanel.tsx"
+    ],
+    "AccountPanelProps": [
+      "frontend/src/components/AccountPanel.tsx"
     ],
     "ActionBar": [
       "frontend/src/components/ActionBar.tsx"
@@ -46,8 +64,26 @@
     "ApplyWorldUpdateResult": [
       "frontend/src/game/applyWorldUpdate.ts"
     ],
+    "AuthClient": [
+      "frontend/src/lib/authClient.ts"
+    ],
+    "AuthDeps": [
+      "backend/src/auth.ts"
+    ],
+    "BILLING_WEBHOOK_PATH": [
+      "backend/src/hostedGate.ts"
+    ],
     "CONTRACT_FIELD_NAMES": [
       "shared/src/worldVoice.ts"
+    ],
+    "COOKIE_MAX_AGE_SECONDS": [
+      "backend/src/invites.ts"
+    ],
+    "COOKIE_NAME": [
+      "backend/src/invites.ts"
+    ],
+    "CROSS_DEVICE_TEXT": [
+      "frontend/src/components/SignIn.tsx"
     ],
     "CallWorldVoiceArgs": [
       "backend/src/anthropic.ts"
@@ -55,14 +91,116 @@
     "Character": [
       "shared/src/gameState.ts"
     ],
+    "CreatePoolOptions": [
+      "backend/src/db.ts"
+    ],
+    "DEBUG_IP_PATH": [
+      "backend/src/server.ts"
+    ],
+    "DELETE_WARNING_TEXT": [
+      "frontend/src/components/AccountPanel.tsx"
+    ],
+    "DELETION_GRACE_MS": [
+      "backend/src/account.ts"
+    ],
+    "DISABLED_PATHS": [
+      "backend/src/auth.ts"
+    ],
+    "DISCORD_CLIENT_ID": [
+      "backend/src/config.ts"
+    ],
+    "EMAIL_FROM": [
+      "backend/src/config.ts"
+    ],
+    "EMAIL_REQUIRED_MESSAGE": [
+      "backend/src/auth.ts"
+    ],
+    "EMAIL_UNVERIFIED_MESSAGE": [
+      "backend/src/auth.ts"
+    ],
     "EMPTY_NARRATIVE_MEMORY": [
       "frontend/src/game/narrativeMemory.ts"
+    ],
+    "EmailMessage": [
+      "backend/src/auth.ts"
+    ],
+    "ErrorContext": [
+      "backend/src/errorTracker.ts"
+    ],
+    "ErrorReporter": [
+      "backend/src/errorTracker.ts"
+    ],
+    "ErrorTrackerOptions": [
+      "backend/src/errorTracker.ts"
     ],
     "FRONTEND_ORIGIN": [
       "backend/src/config.ts"
     ],
+    "FromNodeHeaders": [
+      "backend/src/hostedGate.ts"
+    ],
+    "GENERIC_ERROR_TEXT": [
+      "frontend/src/components/SignIn.tsx"
+    ],
+    "GOOGLE_CLIENT_ID": [
+      "backend/src/config.ts"
+    ],
     "GameState": [
       "shared/src/gameState.ts"
+    ],
+    "GetSession": [
+      "backend/src/hostedGate.ts"
+    ],
+    "HOSTED_PUBLIC_URL": [
+      "backend/src/config.ts"
+    ],
+    "HOSTED_TESTS_DIR": [
+      "backend/vitest.config.ts"
+    ],
+    "HostedAccount": [
+      "frontend/src/components/hostedAccount.tsx"
+    ],
+    "HostedAccountContext": [
+      "frontend/src/components/hostedAccount.tsx"
+    ],
+    "HostedAccountSlot": [
+      "frontend/src/components/hostedAccount.tsx"
+    ],
+    "HostedAuth": [
+      "backend/src/auth.ts"
+    ],
+    "HostedBootOptions": [
+      "backend/src/server.ts"
+    ],
+    "HostedDeps": [
+      "backend/src/server.ts"
+    ],
+    "INVITE_CEILING_NOTICE": [
+      "backend/src/auth.ts"
+    ],
+    "INVITE_CODE_PATTERN": [
+      "shared/src/accessGate.ts"
+    ],
+    "INVITE_INVALID": [
+      "shared/src/accessGate.ts"
+    ],
+    "INVITE_INVALID_MESSAGE": [
+      "backend/src/auth.ts"
+    ],
+    "INVITE_INVALID_TEXT": [
+      "frontend/src/components/SignIn.tsx"
+    ],
+    "INVITE_PATH_SENDS_PER_HOUR": [
+      "backend/src/auth.ts"
+    ],
+    "INVITE_REDEEM_PATH": [
+      "shared/src/accessGate.ts"
+    ],
+    "INVITE_REQUIRED": [
+      "shared/src/accessGate.ts"
+    ],
+    "INVITE_REQUIRED_MESSAGE": [
+      "backend/src/auth.ts"
     ],
     "IntroSceneRequest": [
       "frontend/src/lib/api.ts"
@@ -73,6 +211,15 @@
     "IntroSceneRequestSchema": [
       "backend/src/routes/introScene.ts"
     ],
+    "InvitePayload": [
+      "backend/src/invites.ts"
+    ],
+    "InviteStore": [
+      "backend/src/auth.ts"
+    ],
+    "LINK_USED_TEXT": [
+      "frontend/src/components/SignIn.tsx"
+    ],
     "LoadingScreen": [
       "frontend/src/screens/LoadingScreen.tsx"
     ],
@@ -82,11 +229,26 @@
     "LogEntry": [
       "shared/src/gameState.ts"
     ],
+    "MAGIC_LINK_EXPIRES_IN_SECONDS": [
+      "backend/src/auth.ts"
+    ],
+    "MAGIC_LINK_SENDS_PER_WINDOW": [
+      "backend/src/auth.ts"
+    ],
+    "MAGIC_LINK_WINDOW_MS": [
+      "backend/src/auth.ts"
+    ],
     "MAX_LOG_SAVED": [
       "shared/src/gameState.ts"
     ],
     "MAX_NARRATIVE_NOTES": [
       "shared/src/gameState.ts"
+    ],
+    "MIGRATIONS_DIR": [
+      "backend/src/db.ts"
+    ],
+    "MIGRATIONS_TABLE": [
+      "backend/src/db.ts"
     ],
     "MIN_PASSPHRASE_LENGTH": [
       "shared/src/accessGate.ts"
@@ -94,8 +256,20 @@
     "MOBILE_BREAKPOINT": [
       "frontend/src/hooks/useIsMobile.ts"
     ],
+    "MODE": [
+      "backend/src/config.ts"
+    ],
     "MODELS": [
       "backend/src/config.ts"
+    ],
+    "MODE_HEADER": [
+      "shared/src/accessGate.ts"
+    ],
+    "ModeGate": [
+      "frontend/src/components/ModeGate.tsx"
+    ],
+    "ModeGateProps": [
+      "frontend/src/components/ModeGate.tsx"
     ],
     "NarrativeEntity": [
       "shared/src/worldVoice.ts"
@@ -118,8 +292,26 @@
     "NewSkillGrantedSchema": [
       "shared/src/worldVoice.ts"
     ],
+    "OAuthCredentials": [
+      "backend/src/auth.ts"
+    ],
+    "ORIGIN_REJECTED": [
+      "shared/src/accessGate.ts"
+    ],
+    "ORIGIN_REJECTED_MESSAGE": [
+      "backend/src/hostedGate.ts"
+    ],
     "PASSPHRASE_REQUIRED": [
       "shared/src/accessGate.ts"
+    ],
+    "PENDING_MIGRATIONS_MESSAGE": [
+      "backend/src/db.ts"
+    ],
+    "POOL_CONNECTION_TIMEOUT_MS": [
+      "backend/src/db.ts"
+    ],
+    "POOL_MAX_CONNECTIONS": [
+      "backend/src/db.ts"
     ],
     "PORT": [
       "backend/src/config.ts"
@@ -127,11 +319,35 @@
     "PRINTABLE_ASCII": [
       "frontend/src/lib/passphrase.ts"
     ],
+    "PURGE_FIRST_RUN_DELAY_MS": [
+      "backend/src/account.ts"
+    ],
+    "PURGE_INTERVAL_MS": [
+      "backend/src/account.ts"
+    ],
+    "PURGE_LOCK_KEY": [
+      "backend/src/account.ts"
+    ],
+    "PendingCheckOptions": [
+      "backend/src/db.ts"
+    ],
     "Phase": [
       "frontend/src/App.tsx"
     ],
+    "PurgeOptions": [
+      "backend/src/account.ts"
+    ],
+    "PurgeResult": [
+      "backend/src/account.ts"
+    ],
+    "PurgeScheduleOptions": [
+      "backend/src/account.ts"
+    ],
     "QUESTIONS": [
       "frontend/src/data/questions.ts"
+    ],
+    "Queryable": [
+      "backend/src/invites.ts"
     ],
     "Question": [
       "shared/src/gameState.ts"
@@ -151,6 +367,12 @@
     "RATE_LIMIT_PER_MINUTE": [
       "backend/src/config.ts"
     ],
+    "RECONCILE_SLACK_MINUTES": [
+      "backend/src/invites.ts"
+    ],
+    "RESERVATION_MINUTES": [
+      "backend/src/invites.ts"
+    ],
     "Race": [
       "shared/src/gameState.ts"
     ],
@@ -166,6 +388,12 @@
     "RateLimiterHandler": [
       "backend/src/accessGate.ts"
     ],
+    "Redactor": [
+      "backend/src/db.ts"
+    ],
+    "RunMigrationsOptions": [
+      "backend/src/migrate.ts"
+    ],
     "SAVE_INDEX_KEY": [
       "shared/src/gameState.ts"
     ],
@@ -175,6 +403,30 @@
     "SAVE_SCHEMA_VERSION": [
       "shared/src/gameState.ts"
     ],
+    "SENTRY_DSN": [
+      "backend/src/config.ts"
+    ],
+    "SESSION_EXPIRES_IN_SECONDS": [
+      "backend/src/auth.ts"
+    ],
+    "SESSION_REFRESH_MS": [
+      "frontend/src/components/ModeGate.tsx"
+    ],
+    "SESSION_UPDATE_AGE_SECONDS": [
+      "backend/src/auth.ts"
+    ],
+    "SETUP_FILES": [
+      "backend/vitest.config.ts"
+    ],
+    "SHUTDOWN_TIMEOUT_MS": [
+      "backend/src/server.ts"
+    ],
+    "SIGN_IN_REQUIRED": [
+      "shared/src/accessGate.ts"
+    ],
+    "SIGN_IN_REQUIRED_MESSAGE": [
+      "backend/src/hostedGate.ts"
+    ],
     "STATIC_DIR": [
       "backend/src/config.ts"
     ],
@@ -183,6 +435,24 @@
     ],
     "SaveSlot": [
       "shared/src/gameState.ts"
+    ],
+    "SendEmail": [
+      "backend/src/auth.ts"
+    ],
+    "SessionRevoker": [
+      "backend/src/account.ts"
+    ],
+    "SessionUser": [
+      "backend/src/hostedGate.ts"
+    ],
+    "SignIn": [
+      "frontend/src/components/SignIn.tsx"
+    ],
+    "SignInParams": [
+      "frontend/src/lib/authClient.ts"
+    ],
+    "SignInProps": [
+      "frontend/src/components/SignIn.tsx"
     ],
     "SimulationScreen": [
       "frontend/src/screens/SimulationScreen.tsx"
@@ -226,6 +496,9 @@
     "SoulRewriteEntry": [
       "shared/src/gameState.ts"
     ],
+    "SoulboundMode": [
+      "shared/src/accessGate.ts"
+    ],
     "StateUpdates": [
       "shared/src/worldVoice.ts"
     ],
@@ -250,11 +523,17 @@
     "TitleScreenProps": [
       "frontend/src/screens/TitleScreen.tsx"
     ],
+    "TrackerTransport": [
+      "backend/src/errorTracker.ts"
+    ],
     "UNIQUE_SKILL_JSON_SCHEMA": [
       "shared/src/worldVoice.ts"
     ],
     "UNTRUSTED_TAGS": [
       "backend/src/untrustedText.ts"
+    ],
+    "USER_RATE_LIMIT_PER_MINUTE": [
+      "backend/src/config.ts"
     ],
     "UniqueSkillDetermination": [
       "shared/src/worldVoice.ts"
@@ -328,13 +607,22 @@
     "WorldVoiceRoute": [
       "backend/src/anthropic.ts"
     ],
+    "allowedAuthPaths": [
+      "backend/src/auth.ts"
+    ],
     "applyWorldUpdate": [
       "frontend/src/game/applyWorldUpdate.ts"
+    ],
+    "assertNoPendingMigrations": [
+      "backend/src/db.ts"
     ],
     "assertWorldVoiceContract": [
       "shared/src/worldVoice.ts"
     ],
     "buildApp": [
+      "backend/src/server.ts"
+    ],
+    "buildHostedDeps": [
       "backend/src/server.ts"
     ],
     "buildSystemBlocks": [
@@ -346,26 +634,47 @@
     "callWorldVoice": [
       "backend/src/anthropic.ts"
     ],
+    "cancelAccountDeletion": [
+      "backend/src/account.ts"
+    ],
     "checkAccess": [
       "frontend/src/lib/api.ts"
     ],
     "checkPassphrase": [
       "backend/src/config.ts"
     ],
+    "clearInviteCookie": [
+      "backend/src/invites.ts"
+    ],
     "clearPassphrase": [
       "frontend/src/lib/passphrase.ts"
+    ],
+    "closePoolOnSigterm": [
+      "backend/src/server.ts"
+    ],
+    "consumeInvite": [
+      "backend/src/invites.ts"
     ],
     "createAccessGate": [
       "backend/src/accessGate.ts"
     ],
+    "createAuth": [
+      "backend/src/auth.ts"
+    ],
+    "createInvite": [
+      "backend/src/invites.ts"
+    ],
+    "createPool": [
+      "backend/src/db.ts"
+    ],
     "createRateLimiter": [
       "backend/src/accessGate.ts"
     ],
-    "defineConfig": [
-      "backend/vitest.config.ts",
-      "frontend/playwright.config.ts",
-      "frontend/vite.config.ts",
-      "frontend/vitest.config.ts"
+    "createResendSender": [
+      "backend/src/auth.ts"
+    ],
+    "deleteAccount": [
+      "frontend/src/lib/api.ts"
     ],
     "deleteSave": [
       "frontend/src/lib/saves.ts"
@@ -376,6 +685,12 @@
     "emitPassphraseRequired": [
       "frontend/src/lib/passphrase.ts"
     ],
+    "emitSignInRequired": [
+      "frontend/src/lib/api.ts"
+    ],
+    "exactWebhookPath": [
+      "backend/src/hostedGate.ts"
+    ],
     "extractContractFieldPaths": [
       "shared/src/worldVoice.ts"
     ],
@@ -385,14 +700,50 @@
     "fmtDate": [
       "frontend/src/lib/saves.ts"
     ],
+    "frameHeaders": [
+      "backend/src/hostedGate.ts"
+    ],
     "generateIntroScene": [
+      "frontend/src/lib/api.ts"
+    ],
+    "generateInviteCode": [
+      "backend/src/invites.ts"
+    ],
+    "getAccessState": [
       "frontend/src/lib/api.ts"
     ],
     "getAnthropicApiKey": [
       "backend/src/config.ts"
     ],
+    "getAuthClient": [
+      "frontend/src/lib/authClient.ts"
+    ],
+    "getHostedSecrets": [
+      "backend/src/config.ts"
+    ],
     "getPassphrase": [
       "frontend/src/lib/passphrase.ts"
+    ],
+    "googleEmailVerified": [
+      "backend/src/auth.ts"
+    ],
+    "hashCode": [
+      "backend/src/invites.ts"
+    ],
+    "initErrorTracker": [
+      "backend/src/errorTracker.ts"
+    ],
+    "inviteCookieKey": [
+      "backend/src/invites.ts"
+    ],
+    "inviteUsable": [
+      "backend/src/invites.ts"
+    ],
+    "ipKey": [
+      "backend/src/hostedGate.ts"
+    ],
+    "ipv6Slash64": [
+      "backend/src/hostedGate.ts"
     ],
     "isHostAllowed": [
       "backend/src/server.ts"
@@ -404,19 +755,58 @@
       "frontend/src/lib/saves.ts"
     ],
     "main": [
+      "backend/src/migrate.ts",
+      "backend/src/scripts/createInvite.ts",
       "backend/src/server.ts"
     ],
     "mergeNarrativeMemory": [
       "frontend/src/game/narrativeMemory.ts"
     ],
+    "messageForError": [
+      "frontend/src/components/SignIn.tsx"
+    ],
+    "modeHeader": [
+      "backend/src/hostedGate.ts"
+    ],
     "newSlotId": [
       "frontend/src/lib/saves.ts"
+    ],
+    "normalizeEmail": [
+      "backend/src/invites.ts"
     ],
     "onPassphraseRequired": [
       "frontend/src/lib/passphrase.ts"
     ],
+    "onSignInRequired": [
+      "frontend/src/lib/api.ts"
+    ],
+    "originCheck": [
+      "backend/src/hostedGate.ts"
+    ],
+    "parseArgs": [
+      "backend/src/scripts/createInvite.ts"
+    ],
+    "purgeDeletedAccounts": [
+      "backend/src/account.ts"
+    ],
+    "readInviteCookie": [
+      "backend/src/invites.ts"
+    ],
+    "reconcileInvites": [
+      "backend/src/invites.ts"
+    ],
     "redact": [
       "backend/src/config.ts"
+    ],
+    "redactError": [
+      "backend/src/db.ts"
+    ],
+    "redeemInvite": [
+      "backend/src/invites.ts",
+      "frontend/src/lib/api.ts"
+    ],
+    "refreshSession": [
+      "frontend/src/lib/authClient.ts"
     ],
     "renderIntroScenePrompt": [
       "backend/src/routes/introScene.ts"
@@ -427,16 +817,46 @@
     "renderWorldEnginePrompt": [
       "backend/src/routes/worldEngine.ts"
     ],
+    "requestAccountDeletion": [
+      "backend/src/account.ts"
+    ],
+    "reserveInvite": [
+      "backend/src/invites.ts"
+    ],
     "router": [
       "backend/src/routes/introScene.ts",
       "backend/src/routes/uniqueSkill.ts",
       "backend/src/routes/worldEngine.ts"
+    ],
+    "runMigrations": [
+      "backend/src/migrate.ts"
+    ],
+    "serializeInviteCookie": [
+      "backend/src/invites.ts"
+    ],
+    "sessionGate": [
+      "backend/src/hostedGate.ts"
     ],
     "setPassphrase": [
       "frontend/src/lib/passphrase.ts"
     ],
     "sharedBg": [
       "frontend/src/screens/sharedBg.ts"
+    ],
+    "signInWithEmail": [
+      "frontend/src/lib/authClient.ts"
+    ],
+    "signInWithProvider": [
+      "frontend/src/lib/authClient.ts"
+    ],
+    "signInviteCookie": [
+      "backend/src/invites.ts"
+    ],
+    "signOut": [
+      "frontend/src/lib/authClient.ts"
+    ],
+    "startPurgeSchedule": [
+      "backend/src/account.ts"
     ],
     "stripDelimiters": [
       "backend/src/untrustedText.ts"
@@ -450,8 +870,20 @@
     "stubGenerateIntroScene": [
       "frontend/src/lib/apiStub.ts"
     ],
+    "takeSignInParams": [
+      "frontend/src/lib/authClient.ts"
+    ],
+    "urlRedactor": [
+      "backend/src/db.ts"
+    ],
     "useIsMobile": [
       "frontend/src/hooks/useIsMobile.ts"
+    ],
+    "userLimiter": [
+      "backend/src/hostedGate.ts"
+    ],
+    "verifyInviteCookie": [
+      "backend/src/invites.ts"
     ],
     "wrapUntrusted": [
       "backend/src/untrustedText.ts"
