@@ -214,7 +214,7 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 | 3. Frontend Port | 10 | 10 | **Shipped** 2026-09-18 — review passed (2 cycles, 3-reviewer panel) · [PR #2](https://github.com/DeanItServices/soulbound/pull/2) (merged) |
 | 4. Parity & Verification | 6 | 6 | **Shipped** 2026-09-18 — review passed (3 cycles, 3-reviewer panel) · [PR #3](https://github.com/DeanItServices/soulbound/pull/3) |
 | 5. Docker Image Publishing | 6 | 6 | **Shipped** 2026-09-24 — review passed (3 cycles, 3-reviewer panel) · [PR #6](https://github.com/DeanItServices/soulbound/pull/6) (merged `86faa9f`) · GHCR publish UNTESTED until first dispatch |
-| 6. Hosted Mode & Accounts | 7 | 7 | **Review passed** 2026-09-25 (3 cycles, 3-reviewer panel) · live deploy checks await the developer (runbook) · spec `.planning/specs/06-hosted-mode-accounts-spec.md` |
+| 6. Hosted Mode & Accounts | 7 | 7 | **Shipped** 2026-09-25 — review passed (3 cycles, 3-reviewer panel) · [PR #7](https://github.com/DeanItServices/soulbound/pull/7) · live deploy checks await the developer (runbook) |
 | 7. Server Saves & Shared-World Seams | TBD | 0 | Pending |
 | 8. Metering & Allowance | TBD | 0 | Pending |
 | 9. Follow-ability, then Friends | TBD | 0 | Pending |
@@ -222,4 +222,4 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 | 11. Subscription Billing | TBD | 0 | Pending |
 | 12. Condition & Inventory | TBD | 0 | Pending (design pass first) |
 | 13. Launch Hardening & Conversion | TBD | 0 | Pending |
-| **Total** | **40 + TBD** | **40** | Phases 1-5 shipped; 6 review passed (live checks pending); 7-13 pending |
+| **Total** | **40 + TBD** | **40** | Phases 1-6 shipped (6: live checks pending); 7-13 pending |

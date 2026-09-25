@@ -72,3 +72,10 @@ summary: First ship attempt was aborted by the developer pending review of post-
   after the map refresh. The PR body names the post-review prompt changes and polish explicitly,
   with the evidence that covers them instead of the review panel.
 tags: docker-image-publishing, shipped, pr-6
+
+## Phase 6 — Shipped 2026-09-25
+task_type: ship
+agent: ship-pipeline
+result: success
+pr: https://github.com/DeanItServices/soulbound/pull/7
+verification: 6/6 gates passed (304 + 249 tests, hosted 182 0 skipped, e2e 14); live deploy checks pending developer
