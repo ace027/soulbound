@@ -7,7 +7,7 @@
 - [x] **Phase 3: Frontend Port** — components, screens, game logic, saves
 - [x] **Phase 4: Parity & Verification** — end-to-end playthrough, constraint audit, doc updates
 - [x] **Phase 5: Docker Image Publishing** — access gate, single image, GHCR release, self-host package
-- [ ] **Phase 6: Hosted Mode & Accounts** — mode switch, sign-in, invites, live hosted skeleton, ops baseline
+- [x] **Phase 6: Hosted Mode & Accounts** — mode switch, sign-in, invites, live hosted skeleton, ops baseline
 - [ ] **Phase 7: Server Saves & Shared-World Seams** — per-account saves, import, backups, turn logic in `shared/`, turn log
 - [ ] **Phase 8: Metering & Allowance** — usage ledger, 250-turn allowance, creation cap, daily spend cap
 - [ ] **Phase 9: Follow-ability, then Friends** — suggested actions, free recap, invite gate, invite friends free
@@ -214,7 +214,7 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 | 3. Frontend Port | 10 | 10 | **Shipped** 2026-09-18 — review passed (2 cycles, 3-reviewer panel) · [PR #2](https://github.com/DeanItServices/soulbound/pull/2) (merged) |
 | 4. Parity & Verification | 6 | 6 | **Shipped** 2026-09-18 — review passed (3 cycles, 3-reviewer panel) · [PR #3](https://github.com/DeanItServices/soulbound/pull/3) |
 | 5. Docker Image Publishing | 6 | 6 | **Shipped** 2026-09-24 — review passed (3 cycles, 3-reviewer panel) · [PR #6](https://github.com/DeanItServices/soulbound/pull/6) (merged `86faa9f`) · GHCR publish UNTESTED until first dispatch |
-| 6. Hosted Mode & Accounts | 7 | 7 | **Shipped** 2026-09-25 — review passed (3 cycles, 3-reviewer panel) · [PR #7](https://github.com/DeanItServices/soulbound/pull/7) · live deploy checks await the developer (runbook) |
+| 6. Hosted Mode & Accounts | 7 | 7 | **Shipped** 2026-09-25 — review passed (3 cycles, 3-reviewer panel) · [PR #7](https://github.com/DeanItServices/soulbound/pull/7) (merged `89219af`) · live deploy checks await the developer (runbook) |
 | 7. Server Saves & Shared-World Seams | TBD | 0 | Pending |
 | 8. Metering & Allowance | TBD | 0 | Pending |
 | 9. Follow-ability, then Friends | TBD | 0 | Pending |
