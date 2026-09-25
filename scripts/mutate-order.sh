@@ -69,7 +69,7 @@ restore() {
   fi
 }
 trap 'restore' EXIT
-trap 'echo "mutate-order: interrupted; $REL restored" >&2; restore; exit 130' INT TERM
+trap 'restore; echo "mutate-order: interrupted; $REL restored (sha256 $ORIG_HASH)" >&2; exit 130' INT TERM
 
 # Runs the hosted suite into $1 and returns its exit code. Runs in the
 # foreground, so a Ctrl-C reaches vitest too; bash runs the INT trap as soon
