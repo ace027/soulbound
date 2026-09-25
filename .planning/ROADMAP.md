@@ -130,6 +130,7 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
   - All 14 `MUTANT` annotations still pass.
   - The mutation spot-check is re-run.
 - **Data seams:** `world_id` on every save; entity IDs backfilled on old saves; a `turn_events` row per World Voice call.
+- **Before server saves go live:** login CSRF into an existing account (a GET magic-link verify) is closed, carried from the Phase 6 review (design log → "Review cycle 2 decisions").
 **Plans**: TBD
 
 ### Phase 8: Metering & Allowance

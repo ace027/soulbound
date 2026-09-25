@@ -417,7 +417,7 @@ then the longest of the rows above.
   when a foreign callback is refused. It carries no user data.
 - **Every error that reaches the error handler is reported to Sentry, 4xx included** (06-01, decision
   5). If the 4xx volume turns out noisy, filtering it is a later decision.
-- **One instance.** `numInstances: 1` is deliberate: the per-email magic-link cap (3 per 15 minutes)
+- **One instance.** `numInstances: 1` is deliberate: the per-email magic-link cap (3 per 15 minutes) The invite-to-email link bindings (review cycle 1) also live in memory, so a restart invalidates sign-in links that are still pending, and the player asks for a new one.
   lives in memory. The purge is safe with more instances (an advisory lock), but that cap isn't shared.
 - **Custom domain later.** After adding one, Render's health check sends the custom domain as `Host`.
   So before you add it, change `ALLOWED_HOSTS` **in `render.yaml`** from the `fromService` entry to a
