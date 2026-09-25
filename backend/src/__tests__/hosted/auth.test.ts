@@ -23,6 +23,7 @@ import {
   createResendSender,
   DISABLED_PATHS,
   EMAIL_REQUIRED_MESSAGE,
+  EMAIL_UNVERIFIED_MESSAGE,
   INVITE_CEILING_NOTICE,
   INVITE_PATH_SENDS_PER_HOUR,
   INVITE_REQUIRED_MESSAGE,
@@ -982,7 +983,10 @@ describe('hosted auth (06-03)', () => {
       const res = await googleIdTokenSignIn(h, { sub, email, email_verified: true });
       expect(res.status, res.body).toBe(200);
       expect(setCookies(res).some((c) => c.startsWith('__Secure-better-auth.session_token='))).toBe(true);
-      expect((await googleAccountRows(sub)).map((r) => r.userId)).toEqual([userId]);
+      const rows = await googleAccountRows(sub);
+      expect(rows.map((r) => r.userId)).toEqual([userId]);
+      // Item 8 on the ID-token path too: the verified token is checked, then not stored.
+      expect(rows[0]!.idToken).toBeNull();
     });
 
     it('F1: an unverified Google identity through the ID-token path cannot link, and no account row is written', async () => {
@@ -991,7 +995,10 @@ describe('hosted auth (06-03)', () => {
       const sub = `g-${randomUUID()}`;
       const res = await googleIdTokenSignIn(h, { sub, email, email_verified: false });
       expect(res.status, res.body).toBe(403);
-      expect((JSON.parse(res.body) as { code?: string }).code).toBe('EMAIL_NOT_VERIFIED');
+      const body = JSON.parse(res.body) as { code?: string; message?: string };
+      expect(body.code).toBe('EMAIL_NOT_VERIFIED');
+      // Better Auth has its own EMAIL_NOT_VERIFIED; the message proves our hook refused it.
+      expect(body.message).toBe(EMAIL_UNVERIFIED_MESSAGE);
       expect(setCookies(res).some((c) => c.startsWith('__Secure-better-auth.session_token='))).toBe(false);
       expect(await googleAccountRows(sub)).toEqual([]);
       expect(await usersWithEmail(email)).toEqual([userId]);
@@ -1002,7 +1009,10 @@ describe('hosted auth (06-03)', () => {
       await insertAccount(email);
       const sub = `g-${randomUUID()}`;
       const res = await googleIdTokenSignIn(h, { sub, email, email_verified: 'true' });
-      expect(res.status, res.body).not.toBe(200);
+      expect(res.status, res.body).toBe(403);
+      const body = JSON.parse(res.body) as { code?: string; message?: string };
+      expect(body.code).toBe('EMAIL_NOT_VERIFIED');
+      expect(body.message).toBe(EMAIL_UNVERIFIED_MESSAGE);
       expect(await googleAccountRows(sub)).toEqual([]);
     });
 
