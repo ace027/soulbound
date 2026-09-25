@@ -66,10 +66,33 @@ jobs:
   # runs before it ever pushes to GHCR: one definition of "the image works"
   # for both. Needs no secrets: the image is run with a bogus Anthropic key
   # and a throwaway passphrase, and makes zero calls to the real API.
+  #
+  # The same image then boots in HOSTED mode (review cycle 1, Infra S6): the
+  # migration runs exactly as render.yaml's preDeployCommand runs it, and
+  # scripts/verify-hosted.sh (the runbook's live check) runs against it.
   smoke-image:
     runs-on: ubuntu-latest
     needs: build-and-test
     timeout-minutes: 20
+    # Throwaway Postgres for the hosted smoke. The password is NOT a secret:
+    # it's a job-local container holding nothing. It's >= 16 characters only
+    # because hosted mode refuses a shorter DATABASE_URL password (the 06-04
+    # CI failure).
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: ci-hosted-smoke-throwaway-pw
+          POSTGRES_DB: soulbound_hosted_smoke
+        options: >-
+          --health-cmd "pg_isready -U postgres -d soulbound_hosted_smoke"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - '5432:5432'
+    env:
+      HOSTED_DATABASE_URL: postgres://postgres:ci-hosted-smoke-throwaway-pw@127.0.0.1:5432/soulbound_hosted_smoke
     steps:
       - uses: actions/checkout@v4
         with:
@@ -80,3 +103,82 @@ jobs:
 
       - name: Smoke test image
         run: scripts/smoke-image.sh soulbound:ci
+
+      # Exactly render.yaml's preDeployCommand (absolute path; WORKDIR /app),
+      # from the built image, under the same hardened flags as the smoke run.
+      - name: Hosted smoke - migrate (as Render's preDeployCommand)
+        run: |
+          set -o pipefail
+          docker run --rm --network host --read-only --cap-drop ALL \
+            --security-opt no-new-privileges \
+            -e DATABASE_URL="$HOSTED_DATABASE_URL" \
+            soulbound:ci node /app/backend/dist/migrate.js | tee /tmp/migrate.log
+          grep -q '^\[migrate\] done: 2 migration(s) applied' /tmp/migrate.log
+
+      # Fake secrets that meet the hosted length rules (BETTER_AUTH_SECRET
+      # >= 32, other secrets >= 16). NODE_ENV=development only because the
+      # origin is http://localhost; production requires https.
+      - name: Hosted smoke - boot and verify
+        run: |
+          docker run -d --name sb-hosted-smoke --network host --read-only \
+            --cap-drop ALL --security-opt no-new-privileges \
+            -e SOULBOUND_MODE=hosted -e NODE_ENV=development -e PORT=3001 \
+            -e TRUST_PROXY=1 -e ALLOWED_HOSTS=localhost:3001 \
+            -e DATABASE_URL="$HOSTED_DATABASE_URL" \
+            -e ANTHROPIC_API_KEY=sk-ant-ci-hosted-smoke-not-a-real-key \
+            -e BETTER_AUTH_SECRET=ci-hosted-smoke-fake-auth-secret-0123456789abcdef \
+            -e BETTER_AUTH_URL=http://localhost:3001 \
+            -e FRONTEND_ORIGIN=http://localhost:3001 \
+            -e RESEND_API_KEY=re_ci_hosted_smoke_not_a_real_key \
+            -e 'EMAIL_FROM=Soulbound <auth@localhost.invalid>' \
+            soulbound:ci
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/api/health || true)
+            [ "$code" = "200" ] && break
+            sleep 1
+          done
+          echo "health: $code"
+          [ "$code" = "200" ]
+          # /api/access with no cookie: 401 SIGN_IN_REQUIRED + Soulbound-Mode: hosted.
+          code=$(curl -s -D /tmp/access.h -o /tmp/access.b -w '%{http_code}' http://localhost:3001/api/access)
+          echo "access: $code"
+          [ "$code" = "401" ]
+          grep -q 'SIGN_IN_REQUIRED' /tmp/access.b
+          grep -qi '^soulbound-mode: hosted' /tmp/access.h
+          # The runbook's full anonymous check (7 checks, including the two above).
+          scripts/verify-hosted.sh http://localhost:3001
+
+      - name: Hosted smoke - container logs
+        if: always()
+        run: docker logs sb-hosted-smoke 2>&1 | tail -n 50 || true
+
+  # Real-browser tests (frontend/e2e: layout smoke + the hosted UI against
+  # stubbed routes). No backend and no Anthropic call: every /api/* request is
+  # answered by the spec, and an unstubbed one fails the test.
+  e2e:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # The Playwright version pinned in frontend/package.json picks the build.
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Build (all workspaces)
+        run: npm run build
+
+      - name: End-to-end tests
+        run: npm run test:e2e --workspace frontend
