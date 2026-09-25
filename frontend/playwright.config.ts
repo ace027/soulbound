@@ -21,8 +21,9 @@ import { defineConfig, devices } from '@playwright/test';
  * `test` stays `vitest run`: fast, jsdom-only, no browser dependency. This
  * suite runs under the separate `test:e2e` script so CI (.github/workflows/
  * ci.yml, which runs `npm test`) does not silently acquire a browser
- * download. See 04-03-SUMMARY.md — nothing runs `test:e2e` automatically
- * today, and that is stated rather than implied.
+ * download. Since Phase 6 review cycle 1, ci.yml runs `test:e2e` in its own
+ * `e2e` job, which installs Chromium explicitly (see 04-03-SUMMARY.md for the
+ * original, pre-CI decision).
  *
  * ── executablePath ───────────────────────────────────────────────────────
  * The agent sandbox ships a prebuilt Chromium that differs from the build

@@ -1,0 +1,37 @@
+# render.yaml against Render's published Blueprint JSON Schema (plan 06-07 task 1; re-run in review cycle 1)
+# First run 2026-09-24; re-run 2026-09-25 after adding maxShutdownDelaySeconds: 120 and the absolute
+# preDeployCommand. Schema: https://render.com/schema/render.yaml.json (linked from https://render.com/docs/blueprint-spec),
+# sha256 57aa0a1ff9c3b2d0fcb91b790b7b285aef6397adb0c92930e6e601054444cfe5 (unchanged since 2026-09-24), $schema draft 2020-12.
+# Validator: python jsonschema 4.26.0 (Draft202012Validator), PyYAML 6.0.1.
+# (A first WebFetch summary named https://json.schemastore.org/render.yaml; that URL answered 404. The docs page itself links the render.com URL above.)
+
+render.yaml: 0 validation error(s)
+  web service maxShutdownDelaySeconds = 120 ; preDeployCommand = node /app/backend/dist/migrate.js
+negative control, postgresMajorVersion "9": 2 error(s) (rejected)
+negative control, an invented dockerTarget key: 2 error(s) (rejected)
+negative control, web plan "starterx": 2 error(s) (rejected)
+negative control, database plan "free-forever": 2 error(s) (rejected)
+negative control, maxShutdownDelaySeconds 301: 2 error(s) (rejected)
+negative control, maxShutdownDelaySeconds 0: 2 error(s) (rejected)
+negative control, maxShutdownDelaySeconds "120" (string): 2 error(s) (rejected)
+
+Keys confirmed in the schema: serverService has runtime, dockerfilePath, dockerContext, branch,
+autoDeployTrigger, plan, region, numInstances, healthCheckPath, preDeployCommand, maxShutdownDelaySeconds,
+envVars; there is no Dockerfile target key. database has name, databaseName, user, plan, region,
+postgresMajorVersion (enum 10-18), ipAllowList (array). serverPlan enum includes 0.5c-512mb; postgresPlan
+includes 0.1c-256mb.
+
+maxShutdownDelaySeconds in the schema (/definitions/serverService/properties/maxShutdownDelaySeconds):
+  {"type": "integer", "minimum": 1, "maximum": 300, "description": "The maximum time (in seconds) that
+  Render waits for your application to exit gracefully after sending a SIGTERM signal."}
+Blueprint spec (render.com/docs/blueprint-spec): "Web services, private services, and background workers
+only." ... "must be an integer between 1 and 300, inclusive", default 30.
+120 > SHUTDOWN_TIMEOUT_MS = 110_000 ms in backend/src/server.ts (a 10 s margin).
+
+Blueprint sync vs dashboard edits (render.com/docs/infrastructure-as-code): "If any such changes conflict
+with Blueprint-defined configuration, the next Blueprint sync _overwrites_ them." And (blueprint-spec):
+on an existing Blueprint, "Render _ignores_ any environment variables with `sync: false`."
+
+preDeployCommand path: backend/Dockerfile's api stage (and runtime, FROM api) sets WORKDIR /app and
+copies the builder's /app/backend/dist to ./backend/dist, so migrate.js is at /app/backend/dist/migrate.js.
+The docs don't state the pre-deploy working directory, hence the absolute path.

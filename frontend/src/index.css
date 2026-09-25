@@ -16,6 +16,20 @@
  * (or, for cardHover, empty) across every legacy occurrence.
  */
 
+/*
+ * Page reset (added 2026-09-25). The artifact ran inside Claude.ai's
+ * iframe, whose host styles removed the browser's default 8px body margin.
+ * The standalone app has no such host, so that margin showed as a white
+ * frame around every screen. The dark background matches the screens'
+ * darkest tone, so any overscroll or rubber-band area stays dark as well.
+ */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #0a0805;
+}
+
 @keyframes etchIn {
   from {
     opacity: 0;

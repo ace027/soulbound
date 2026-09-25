@@ -235,6 +235,115 @@ Playtest feedback: it was hard to tell what the Unique Skill actually did, so a 
 
 **This touched the Tier 0 stress-tested prompt**, so the three tests were re-run live (see "Adversarial testing of the questionnaire" below) and all three held. Requiring a stated cost or limit is also half of the hardening that section planned. Evidence is in `.planning/experiments/2026-09-24-unique-skill-clarity/`. The call is still system-blind (CLAUDE.md #8), and the response schema is unchanged. The world-engine `description` field on a skill is optional, so older saves still load.
 
+## Hosted mode (2026-09-24) — decided, not yet built
+**One codebase, two modes.** `SOULBOUND_MODE=selfhost` (the default) stays exactly as Phase 5 shipped. `hosted` adds accounts, server saves and a subscription. The full design, research and alternatives are in `.planning/explorations/2026-09-24-hosted-multiplayer-saas-design.md`. This entry records **what it reverses and why**, so a later session doesn't treat either state as drift.
+
+**Three settled items, deliberately reversed for hosted mode only:**
+1. **CLAUDE.md "Auth architecture — do not re-litigate"** (single-tenant). Hosted mode adds player accounts.
+   - The key architecture does *not* change: the backend holds the operator's key and players never see it.
+   - **BYOK stays rejected**: players pay a subscription and never bring a key.
+2. **CLAUDE.md constraint #2** (`localStorage` saves). Hosted saves live in Postgres per account, behind a synchronous write-through adapter, so `App.tsx` stays byte-identical. Self-host keeps `localStorage`.
+3. **PROJECT.md out of scope** ("server-side saves, user accounts", "Monetization"). These move into scope as R23-R35. The shared world, server-authoritative turns, local inference and credits stay out.
+
+**Why:** the developer wants friends, and later the public, to play without being handed a key or a passphrase. Today's measured cost makes a subscription viable:
+- **Cost per turn:** about **$0.022**, from the `2026-09-24` usage logs at Sonnet 5 rates. The older $0.072 figure predates the Sonnet switch.
+- **What $10 covers:** 250 turns leaves a margin (≈28%) even at the worst turn cost observed.
+
+**Key choices:**
+- **Accounts:** Better Auth (Lucia was deprecated in 2025; Auth.js is on security-only maintenance), with email link, Google and Discord; 30-day rolling sessions.
+- **Price:** $10 for 250 turns, configurable. 3 free characters a month (reroll-fishing guard), then 2 turns each; 20 save slots.
+- **Spend protection, three layers:** the allowance, an app-wide daily cap, and the Anthropic Console limit.
+- **Shared-world seams now, authority later:** turn logic moves into `shared/`, plus `world_id`, stable entity IDs and a `turn_events` log.
+
+**Order:** deploy early (Phase 6). Friends play free after Phase 9, which adds suggested actions and a recap. Billing is priced from their real usage (Phase 11).
+
+**Game phases in the same plan:**
+- Suggested actions (Phase 9): a contract change plus a MUST NOT addition.
+- Zero-cost recap (Phase 9).
+- Quests (Phase 10): a contract change.
+- Condition & inventory (Phase 12): its own design pass first.
+
+Each contract change updates the prompt, schema and parser together (CLAUDE.md #4). Each MUST NOT addition re-runs the adversarial turn tests.
+
+## Hosted mode — Phase 6 build (2026-09-24)
+**Phase 6 of the plan above is built: accounts, invites, deletion, the tracker and a Render Blueprint. The live deploy is not done yet.** Every live step in `docs/runbooks/phase-6-hosted-setup.md` is still marked as awaiting the developer. The full contracts are in `.planning/specs/06-hosted-mode-accounts-spec.md`; this entry records the choices a later session is most likely to "fix" by mistake.
+
+**Self-host is frozen.**
+- Its tests are unedited: the 187 backend and 190 frontend tests from before the phase, inside today's 284 + 244.
+- `App.tsx` is byte-identical.
+- `pg`, `better-auth`, `node-pg-migrate` and `@sentry/node` load only through dynamic imports behind the mode check. `selfhostNoPg.test.ts` mocks each one to throw and still boots self-host.
+
+**The hosted order is the security model** (`buildApp`, pinned by `hostedOrder.test.ts` and `scripts/mutate-order.sh`). The steps whose position matters:
+- **Host allow-list (2), then anti-framing and the mode header (3).** They come before anything that can answer, so every hosted response, including a 403 or a 429, carries `X-Frame-Options: DENY`, `frame-ancestors 'none'` and `Referrer-Policy: no-referrer`.
+- **Per-IP limiter (6), IPv6 keyed by /64.** It comes before any body is read. It is only as good as `TRUST_PROXY`, which is why the runbook observes Render's hop count through `/api/debug/ip`. That probe exists only with `DEBUG_PROXY_HOPS=1`, which replaces a temporary logging patch on the deployed branch.
+- **Reserved webhook (7), before the Origin check.** Stripe sends no Origin. It matches only the exact path and POST, checked before its body is read.
+- **Origin check (8).** It covers every state-changing `/api/*` request, including `/api/auth/*`. Better Auth's own origin check stays on as a second layer.
+- **Redeem (9), before the session gate.** The player has no account yet. It has its own 5/min limiter, which runs before its 1 KB parser.
+- **Better Auth (10), before `express.json`.** **Correction to the spec:** its "it hangs otherwise" (better-auth #3295) no longer reproduces on `better-call` 1.4.0, which re-serialises an already-parsed body. The position is now pinned by **who answers a malformed auth body**: Better Auth's 400 `BAD_REQUEST`, not the app's `INVALID_REQUEST`. The 2 s request timeout remains only as a backstop. A raw 16 KB cap (`authBodyCap`) runs just before this step. It wraps the request's `push` rather than adding a `data` listener, because a listener would start the stream flowing before Better Auth attaches, and chunks would be lost. Past the cap, a chunked body gets a connection reset.
+- **Session gate (11), then the per-user limiter (12), then the unchanged self-host tail.**
+
+**`SIGN_IN_REQUIRED` is a new code, not a reuse of `PASSPHRASE_REQUIRED`.** The frontend decides by code. A hosted 401 must never clear a stored passphrase or show the passphrase form. And `AccessGate`'s `checkAccess()` couldn't gain a fourth value without breaking a frozen type (`AccessGate.tsx:51,70`). So, per the planning addendum (spec Revision History row 20):
+- every hosted `/api/access` answer carries `Soulbound-Mode: hosted` (`MODE_HEADER`);
+- a new `getAccessState()` reads it, and only the new `ModeGate` calls it;
+- `checkAccess()` is byte-identical, and self-host responses never carry the header (tested).
+
+**Invites are reserved, then consumed, then reconciled, because Better Auth's hook transactionality is undocumented.** A raw `pg` query can't join Better Auth's transaction. So:
+- `user.create.before` reserves the invite under a per-holder nonce for 10 minutes. It's single-winner, and its holder can retry.
+- `user.create.after` consumes it, and on failure deletes the new user (compensation).
+- The hourly purge reconciles expired reservations. It runs on the DB clock with a 2-minute slack, because Better Auth stamps `createdAt` on the app's clock before the reservation. Without the slack, real orphans were missed.
+- The invite rides in an HMAC-signed `__Host-sb_invite` cookie that never holds the code, and it reaches the hooks through `AsyncLocalStorage` (propagation verified in the installed source and pinned by a test).
+- A refused sign-up still uses up that magic link, because Better Auth consumes the token before `createUser`. The UI offers "Send me a new link".
+
+**Magic links:** Better Auth writes no `account` row for a magic-link sign-up, only the `user` (`better-auth/dist/plugins/magic-link/index.mjs:164`). So three sign-in methods on one address give two `account` rows (Google and Discord), and the runbook's check counts users and used invites as well.
+
+**Deletion.** `DELETE /api/account` inserts `account_deletions` first, then revokes every session through Better Auth's `internalAdapter.deleteUserSessions`. The order means that if revocation throws, the session gate already refuses the user. `cookieCache` is off, so an old cookie gets 401 at once. Signing in within 7 days cancels the deletion. After that, the purge hard-deletes the user under `pg_try_advisory_xact_lock`. The purge matches verification rows with `IS JSON OBJECT`, so **Postgres 16 or later is required**; `render.yaml` pins 16. A purge failure only logs `[purge] failed (<SQLSTATE>)` and isn't sent to the tracker.
+
+**The error tracker rebuilds each event from an allow-list:**
+- what's kept: type, frames (function, file, line), a fixed code, the route template and the mode;
+- what's never kept: message, request, user or extras;
+- breadcrumbs return `null`.
+
+A value-matching redactor can't catch per-request values (cookies, invite codes, player text), so dropping free text is the only safe design. Sentry 11 has no `sendDefaultPii`. `dataCollection` is used instead, with every field off. `tracker:test`'s `flush()` returning true means only that the queue drained, so delivery is confirmed on the dashboard (runbook step 10). Every error that reaches the handler is reported, 4xx included; whether to filter 4xx waits for real volume.
+
+**Better Auth hardening that looks redundant but isn't:**
+- Under `NODE_ENV=test`, Better Auth turns its own origin and callbackURL checks off. We force them on, and `render.yaml` pins `NODE_ENV=production`.
+- Its own rate limiter is off, because it trusts the client's first `X-Forwarded-For` value; ours key on `req.ip`.
+- Only Google is a trusted provider for linking. Discord links to an existing account only when it reports the email as verified.
+
+**Accepted, and documented rather than fixed:**
+- **Login CSRF on magic-link verify.** It's a GET, so an attacker can sign a victim into the *attacker's* existing account. Creating a new account still needs the victim's own invite cookie.
+- **The per-email magic-link cap (3 per 15 min) is in memory**, so it holds per instance. `render.yaml` runs one instance (`numInstances: 1`). The purge is lock-safe across instances; this cap isn't.
+- **Rolling sessions are client-driven.** The session gate drops Better Auth's refreshed cookie, so `ModeGate` calls `GET /api/auth/get-session` on load and every 12 hours.
+- **The account controls live in the Soul Codex, not over the narration (moved 2026-09-24, developer's call).** The first build put a fixed Account button over the narration, and at 390 px it covered the end of the first story line; there's no free corner while `App.tsx` is frozen. The controls are now an inline "Account" section at the end of the Codex (the Codex tab on a phone, the bottom of the sidebar on desktop). `ModeGate` sits outside `App`, so it reaches the Codex through `HostedAccountContext` (`frontend/src/components/hostedAccount.tsx`), and `SoulCodexContents` renders `<HostedAccountSlot/>`, which is empty without the provider. That keeps `App.tsx` byte-identical and the self-host Codex DOM unchanged. `SoulCodexContents` is otherwise a verbatim port; this slot is its one addition. Trade-off: sign-out and deletion are reachable only from the game screen, not the title screen. `e2e/hosted.spec.ts` asserts the section overlaps no control at 390 px and 1280 px.
+- **Self-host now makes two `GET /api/access` calls per load**, one from `ModeGate` and one from `AccessGate`. That's well under the 30/min limit.
+- **Frontend rules:** the Better Auth client is a lazy chunk that self-host never downloads. A pasted invite link triggers a reload on `hashchange`, so the code never stays in the address bar. Unknown error codes show one generic line and never the raw code.
+
+**Deploy shape (`render.yaml`, every key checked against Render's reference and JSON Schema):**
+- **Build:** a Docker web service built from the last stage (`runtime`); Render has no target field.
+- **Branch:** pinned to `main`, deploying only after CI passes (`autoDeployTrigger: checksPass`).
+- **Migrations:** `preDeployCommand` runs `node /app/backend/dist/migrate.js`, so a failed migration fails the deploy while the old version keeps serving.
+- **Host allow-list:** `ALLOWED_HOSTS` is the service's own `RENDER_EXTERNAL_HOSTNAME`, because Render's health check sends that host.
+- **Database:** a paid Postgres (the free one expires after 30 days), with `ipAllowList: []`. Admin queries run from the service's shell.
+- **Secrets** are all `sync: false`. `BETTER_AUTH_SECRET` deliberately doesn't use `generateValue`: a new value would sign everyone out.
+- **Retention:** the managed Postgres server's own log can hold an email (a unique violation logs `Failing row contains …`). That log, Resend and Sentry keep data on their own schedules, listed in runbook step 14.
+
+### Review cycle 1 decisions (2026-09-25)
+- **Sessions roll through the browser only.** The server-side session gate reads with `disableRefresh`, so Better Auth's daily refresh happens on the browser's own `get-session` call, which is the only response that can carry the renewed cookie. Before this, the gate refreshed the row first, and the cookie kept its sign-in Max-Age: a hard 30-day expiry, not a rolling one.
+- **Google stays a trusted provider, with a verified-email check (developer's call).** A trusted provider skips Better Auth's `emailVerified` check when linking (`oauth2/link-account.mjs`), which let a Google account with an unverified address link into an existing player's account. The developer chose to keep `trustedProviders: ['google']` and add an `account.create.before` hook that refuses a Google account row unless its ID token says `email_verified: true`, over dropping Google's trusted status.
+- **An invite is bound to the address that was sent the link.** A magic-link sign-up is refused unless that address was sent the link under the same invite cookie. That closes the login-CSRF path where a victim's live invite cookie would be consumed for an attacker's address. The binding is in memory (300 s, single instance) and fails closed on restart.
+- **Invite send caps are per invite, not per cookie**, plus a 30-per-hour global ceiling on invite-path sends. Sends to existing accounts and to new addresses use separate per-email maps, so invite spam can't crowd out returning players.
+- **Expired `verification` rows are purged hourly.** Better Auth stores the typed email before our send gate runs, so without this, addresses that were never sent anything were kept indefinitely.
+- **Also:** OAuth tokens are encrypted at rest and IP tracking is off (nothing reads either); shutdown waits 110 s (`maxShutdownDelaySeconds: 120` on Render) so a deploy doesn't cut off a turn in progress; the pool times out connections after 5 s; `node-pg-migrate` is pinned exactly because the boot check imports a deep path.
+- **Accepted risk until Phase 7:** saves live in `localStorage` and aren't scoped to an account, so on a shared device the next player to sign in sees the previous player's saves. Server-side saves (Phase 7) remove this.
+- **Migrations follow "expand, then contract".** The pre-deploy step migrates while the old version is still serving, so a deploy never drops or renames a column that the running version still uses.
+
+### Review cycle 2 decisions (2026-09-25)
+- **Google ID tokens are checked, then not stored.** The `account.create.before` hook reads `email_verified` from the token first, then writes the row with `idToken: null`; an `account.update.before` hook nulls it on the token refresh a returning sign-in does. Nothing reads the stored token (the endpoints that could are disabled), and it carries profile claims.
+- **Hitting the invite-path ceiling logs one fixed line per window** (`INVITE_CEILING_NOTICE`, no address, invite id or IP), so an operator can see that a leaked invite batch has been cut off.
+- **Drift guards:** a self-host test pins `maxShutdownDelaySeconds * 1000 > SHUTDOWN_TIMEOUT_MS`; CI derives the expected migration count from `backend/migrations/*.sql`; `scripts/mutate-order.sh` counts a mutation as caught only when a named test in `hostedOrder.test.ts` failed.
+- **Carried to Phase 7: login CSRF into an attacker's *existing* account.** The cycle-1 invite binding protects sign-ups only. `/magic-link/verify` is a GET, so a victim who opens an attacker's link for an address that already has an account gets signed into the attacker's account. Today the impact is small because saves live in the browser. Once Phase 7 moves saves to the server, the victim's progress would be written to the attacker's account, so Phase 7 must close it first: bind every magic-link send to a short-lived `__Host-` cookie in the requesting browser and require it at verify, or land verify on a POST confirmation step.
+- **Known stale comment, left deliberately:** `backend/Dockerfile:100` still shows the relative `node backend/dist/migrate.js`. `render.yaml` now uses the absolute `/app/backend/dist/migrate.js`, and `WORKDIR` is `/app`, so both resolve to the same file. The Dockerfile belongs to the frozen self-host image, so the comment waits for the next change that has a real reason to touch it.
+
 ## Questionnaire Design
 Originally multiple-choice (5 options per question). Changed to fully open-ended free-text per the explicit reasoning that richer, longer answers produce a better-defined Unique Skill before the player ever enters the world. Each question has a `hint` line for guidance but no character limit. The Continue button is disabled until something is written, with a Back button to revise prior answers.
 

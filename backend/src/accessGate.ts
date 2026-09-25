@@ -105,8 +105,14 @@ export function createRateLimiter(opts: {
   now: () => number;
   /** Override for tests; defaults to `MAX_TRACKED_KEYS`. */
   maxTrackedKeys?: number;
+  /**
+   * The bucket key for a request. Hosted mode only (hostedGate.ts: IPv6 by
+   * /64, or the signed-in user's id). Absent, the key is exactly what it has
+   * always been: `req.ip`, or the shared `'unknown'` bucket.
+   */
+  keyFor?: (req: Request, res: Response) => string;
 }): RateLimiterHandler {
-  const { perMinute, now, maxTrackedKeys = MAX_TRACKED_KEYS } = opts;
+  const { perMinute, now, maxTrackedKeys = MAX_TRACKED_KEYS, keyFor } = opts;
   const buckets = new Map<string, Bucket>();
   let lastSweep = now();
 
@@ -127,7 +133,7 @@ export function createRateLimiter(opts: {
     // A request with no resolvable IP shares one fixed bucket, so an absent
     // `req.ip` fails TOWARD throttling (everyone with no IP shares a budget),
     // never toward bypass (spec's Rate-limit key decision).
-    let key = req.ip ?? 'unknown';
+    let key = keyFor === undefined ? (req.ip ?? 'unknown') : keyFor(req, res);
     if (!buckets.has(key) && buckets.size >= maxTrackedKeys) {
       // The cap is full and this key has never been seen: give it the
       // shared overflow bucket rather than growing the map further. See the
