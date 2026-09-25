@@ -13,7 +13,7 @@
  */
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { randomBytes, randomUUID } from 'node:crypto';
+import { generateKeyPairSync, randomBytes, randomUUID, sign } from 'node:crypto';
 import express from 'express';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { INVITE_INVALID, INVITE_REQUIRED } from '@soulbound/shared';
@@ -23,6 +23,7 @@ import {
   createResendSender,
   DISABLED_PATHS,
   EMAIL_REQUIRED_MESSAGE,
+  INVITE_CEILING_NOTICE,
   INVITE_PATH_SENDS_PER_HOUR,
   INVITE_REQUIRED_MESSAGE,
   SESSION_EXPIRES_IN_SECONDS,
@@ -266,11 +267,68 @@ async function googleSignIn(
 }
 
 async function googleAccountRows(sub: string) {
-  const { rows } = await db.pool.query<{ userId: string; accessToken: string | null }>(
-    `SELECT "userId", "accessToken" FROM account WHERE "providerId" = 'google' AND "accountId" = $1`,
+  const { rows } = await db.pool.query<{ userId: string; accessToken: string | null; idToken: string | null }>(
+    `SELECT "userId", "accessToken", "idToken" FROM account WHERE "providerId" = 'google' AND "accountId" = $1`,
     [sub],
   );
   return rows;
+}
+
+/**
+ * A signing key standing in for Google's, and a real RS256 ID token signed
+ * with it. The client-submitted ID-token path (`POST /sign-in/social` with
+ * `idToken`) verifies the signature against Google's JWKS
+ * (`@better-auth/core` `oauth2/verify-id-token.mjs:48`, keys fetched from
+ * `https://www.googleapis.com/oauth2/v3/certs`, `social-providers/google.mjs:145`),
+ * so the test serves this key's JWK at that URL through a `fetch` stub.
+ */
+const FAKE_GOOGLE_KEY = (() => {
+  const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const kid = 'fake-google-kid-review-cycle-2';
+  return { privateKey, kid, jwk: { ...publicKey.export({ format: 'jwk' }), kid, alg: 'RS256', use: 'sig' } };
+})();
+
+function signedGoogleIdToken(claims: Record<string, unknown>): string {
+  const part = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const iat = Math.floor(Date.now() / 1000);
+  const input = `${part({ alg: 'RS256', typ: 'JWT', kid: FAKE_GOOGLE_KEY.kid })}.${part({
+    iss: 'https://accounts.google.com',
+    aud: FAKE_GOOGLE.clientId,
+    iat,
+    exp: iat + 3600,
+    name: 'G',
+    ...claims,
+  })}`;
+  return `${input}.${sign('sha256', Buffer.from(input), FAKE_GOOGLE_KEY.privateKey).toString('base64url')}`;
+}
+
+/** Google's ID-token sign-in (no redirect), with only Google's JWKS endpoint stubbed. */
+async function googleIdTokenSignIn(
+  h: Harness,
+  claims: { sub: string; email: string; email_verified: unknown },
+): Promise<Result> {
+  const realFetch = globalThis.fetch;
+  const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    if (url.startsWith('https://www.googleapis.com/oauth2/v3/certs')) {
+      return new Response(JSON.stringify({ keys: [FAKE_GOOGLE_KEY.jwk] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (url.startsWith(`http://127.0.0.1:`)) return realFetch(input, init);
+    throw new Error(`unexpected fetch in test: ${url}`);
+  });
+  try {
+    return await request(h.port, {
+      method: 'POST',
+      path: '/api/auth/sign-in/social',
+      json: { provider: 'google', callbackURL: '/', idToken: { token: signedGoogleIdToken(claims) } },
+      headers: { origin: PUBLIC_URL },
+    });
+  } finally {
+    spy.mockRestore();
+  }
 }
 
 describe('hosted auth (06-03)', () => {
@@ -913,6 +971,113 @@ describe('hosted auth (06-03)', () => {
       expect(rows).toHaveLength(1);
       // Better Auth writes '' (or NULL) when tracking is off; never the address.
       expect(rows[0]!.ipAddress ?? '').toBe('');
+    });
+  });
+
+  describe('review cycle 2', () => {
+    it('F1: the ID-token path is really driven: a verified Google token links and signs in', async () => {
+      const email = uniqueEmail('g-idtoken-verified');
+      const userId = await insertAccount(email);
+      const sub = `g-${randomUUID()}`;
+      const res = await googleIdTokenSignIn(h, { sub, email, email_verified: true });
+      expect(res.status, res.body).toBe(200);
+      expect(setCookies(res).some((c) => c.startsWith('__Secure-better-auth.session_token='))).toBe(true);
+      expect((await googleAccountRows(sub)).map((r) => r.userId)).toEqual([userId]);
+    });
+
+    it('F1: an unverified Google identity through the ID-token path cannot link, and no account row is written', async () => {
+      const email = uniqueEmail('g-idtoken-unverified');
+      const userId = await insertAccount(email);
+      const sub = `g-${randomUUID()}`;
+      const res = await googleIdTokenSignIn(h, { sub, email, email_verified: false });
+      expect(res.status, res.body).toBe(403);
+      expect((JSON.parse(res.body) as { code?: string }).code).toBe('EMAIL_NOT_VERIFIED');
+      expect(setCookies(res).some((c) => c.startsWith('__Secure-better-auth.session_token='))).toBe(false);
+      expect(await googleAccountRows(sub)).toEqual([]);
+      expect(await usersWithEmail(email)).toEqual([userId]);
+    });
+
+    it('F1: the string "true" is not a verified email on the ID-token path either', async () => {
+      const email = uniqueEmail('g-idtoken-string');
+      await insertAccount(email);
+      const sub = `g-${randomUUID()}`;
+      const res = await googleIdTokenSignIn(h, { sub, email, email_verified: 'true' });
+      expect(res.status, res.body).not.toBe(200);
+      expect(await googleAccountRows(sub)).toEqual([]);
+    });
+
+    it('F3: a full link-binding map sends nothing (maxTrackedKeys 1, two new addresses)', async () => {
+      const small = await startHarness({ limits: { maxTrackedKeys: 1, inviteSendsPerHour: 100_000 } });
+      try {
+        const { cookie } = await newInviteCookie();
+        const first = uniqueEmail('bind-full-1');
+        const second = uniqueEmail('bind-full-2');
+        expect((await sendLink(small, first, { cookie })).status).toBe(200);
+        expect((await sendLink(small, second, { cookie })).status).toBe(200);
+        // The second address got past perInvite, perNewEmail (the overflow
+        // bucket) and the ceiling; only the full binding map stopped it.
+        expect(small.sent.map((m) => m.to)).toEqual([first]);
+        expect(small.a.__sendLimiterSizes().linkBindings).toBe(1);
+      } finally {
+        await small.close();
+      }
+    });
+
+    it('S7 (suggestion 7): the invite-path ceiling logs one fixed line per window, with no personal data', async () => {
+      let clock = Date.now();
+      const tiny = await startHarness({ limits: { inviteSendsPerHour: 1 }, now: () => clock });
+      const warn = vi.spyOn(console, 'warn');
+      try {
+        const cookieNow = async () => {
+          const { code } = await createInvite(db.pool);
+          return (await redeemInvite(db.pool, code, { key, now: () => clock }))!.setCookie.split(';')[0]!;
+        };
+        const notices = () => warn.mock.calls.filter((args) => args[0] === INVITE_CEILING_NOTICE).length;
+        const first = await cookieNow();
+        for (let i = 0; i < 3; i += 1) await sendLink(tiny, uniqueEmail(`ceil-log-${i}`), { cookie: first });
+        expect(tiny.sent).toHaveLength(1);
+        expect(notices()).toBe(1); // two refusals, one line
+        // The next window: one more send allowed, then one more line.
+        clock += 61 * 60_000;
+        const second = await cookieNow();
+        for (let i = 0; i < 2; i += 1) await sendLink(tiny, uniqueEmail(`ceil-log2-${i}`), { cookie: second });
+        expect(tiny.sent).toHaveLength(2);
+        expect(notices()).toBe(2);
+        expect(INVITE_CEILING_NOTICE).not.toMatch(/@|\d{1,3}\.\d{1,3}\.|[0-9a-f]{8}-/i);
+      } finally {
+        warn.mockRestore();
+        await tiny.close();
+      }
+    });
+
+    it('S8 (suggestion 8): a Google ID token is checked but never stored, on link or on a later sign-in', async () => {
+      const email = uniqueEmail('g-no-idtoken');
+      await insertAccount(email);
+      const sub = `g-${randomUUID()}`;
+      // Link (account.create.before), through the redirect callback.
+      expect((await googleSignIn(h, { sub, email, email_verified: true })).status).toBe(302);
+      let rows = await googleAccountRows(sub);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.idToken).toBeNull();
+      // A returning sign-in rewrites the row's tokens (account.update.before).
+      const again = await googleSignIn(h, { sub, email, email_verified: true });
+      expect(again.status).toBe(302);
+      expect(setCookies(again).some((c) => c.startsWith('__Secure-better-auth.session_token='))).toBe(true);
+      rows = await googleAccountRows(sub);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.idToken).toBeNull();
+      expect(rows[0]!.accessToken).toBeTruthy();
+    });
+
+    it('S8 (suggestion 8): a first-time Google sign-up (the new-user createAccount branch) stores no ID token', async () => {
+      const { cookie } = await newInviteCookie();
+      const email = uniqueEmail('g-first-no-idtoken');
+      const sub = `g-${randomUUID()}`;
+      const res = await googleSignIn(h, { sub, email, email_verified: true }, cookie);
+      expect(res.headers.location).toBe('/');
+      const rows = await googleAccountRows(sub);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.idToken).toBeNull();
     });
   });
 

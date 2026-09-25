@@ -114,6 +114,13 @@ export const MAGIC_LINK_WINDOW_MS = 15 * 60_000;
  * above real use; it bounds what a leaked batch of invites can send.
  */
 export const INVITE_PATH_SENDS_PER_HOUR = 30;
+/**
+ * Logged once per ceiling window, the first time the ceiling refuses a send
+ * (review cycle 2, security suggestion 7). Fixed text: no address, invite id
+ * or IP, so it can go to any log sink.
+ */
+export const INVITE_CEILING_NOTICE =
+  '[auth] invite-path send ceiling reached; further invite sends dropped this hour';
 /** How long a magic link works (Better Auth's default, stated explicitly: the link bindings use it too). */
 export const MAGIC_LINK_EXPIRES_IN_SECONDS = 300;
 /** The magic-link verify route, as Better Auth's router reports it (`ctx.path`, basePath stripped). */
@@ -208,6 +215,8 @@ function createSendLimiter(opts: { max: number; windowMs: number; now: () => num
       bucket.count += 1;
       return true;
     },
+    /** When `key`'s current window started (undefined if it isn't tracked). */
+    windowStartOf: (key: string): number | undefined => buckets.get(key)?.windowStart,
     size: () => buckets.size,
   };
 }
@@ -330,6 +339,8 @@ export async function createAuth(deps: AuthDeps) {
     maxKeys,
   });
   const linkBindings = createLinkBindings({ ttlMs: MAGIC_LINK_EXPIRES_IN_SECONDS * 1000, now, maxKeys });
+  /** The ceiling window INVITE_CEILING_NOTICE was last logged for. */
+  let ceilingNoticeWindow: number | undefined;
   const db: Queryable = pool;
   const redact = deps.redact ?? ((input: string) => input);
 
@@ -416,7 +427,14 @@ export async function createAuth(deps: AuthDeps) {
             // throttling.
             if (!perInvite.take(invite.inviteId)) return;
             if (!perNewEmail.take(key)) return;
-            if (!invitePathCeiling.take('all')) return;
+            if (!invitePathCeiling.take('all')) {
+              const window = invitePathCeiling.windowStartOf('all');
+              if (window !== ceilingNoticeWindow) {
+                ceilingNoticeWindow = window;
+                console.warn(INVITE_CEILING_NOTICE);
+              }
+              return;
+            }
             // Bind this invite cookie to the address the link goes to (S5).
             if (!linkBindings.record(invite, key)) return;
           }
@@ -491,10 +509,27 @@ export async function createAuth(deps: AuthDeps) {
           // Throwing here rolls the link back; the callback redirects with
           // `error=EMAIL_NOT_VERIFIED`. Other providers are untrusted, so
           // Better Auth already requires a verified email for them.
+          //
+          // The ID token is read above, then not stored (review cycle 2,
+          // security suggestion 8): nothing reads it back (the endpoints that
+          // could are in DISABLED_PATHS), and it carries the player's
+          // profile claims. A before hook's `{ data }` is merged over the row
+          // before the insert (better-auth `db/with-hooks.mjs:19-22`).
           before: async (account) => {
             if (account.providerId === 'google' && !googleEmailVerified(account.idToken)) {
               throw new APIError('FORBIDDEN', { code: 'EMAIL_NOT_VERIFIED', message: EMAIL_UNVERIFIED_MESSAGE });
             }
+            return { data: { ...account, idToken: null } };
+          },
+        },
+        update: {
+          // A returning OAuth sign-in rewrites the linked row with the fresh
+          // tokens, ID token included (`oauth2/link-account.mjs:208-225`,
+          // through `internalAdapter.updateAccount`). Strip it there too; the
+          // merge is `db/with-hooks.mjs:56-59`. Only when the update carries
+          // one, so other updates are left exactly as Better Auth made them.
+          before: async (account) => {
+            if ('idToken' in account) return { data: { ...account, idToken: null } };
           },
         },
       },

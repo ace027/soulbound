@@ -113,7 +113,11 @@ jobs:
             --security-opt no-new-privileges \
             -e DATABASE_URL="$HOSTED_DATABASE_URL" \
             soulbound:ci node /app/backend/dist/migrate.js | tee /tmp/migrate.log
-          grep -q '^\[migrate\] done: 2 migration(s) applied' /tmp/migrate.log
+          # Every migration in the repo must apply on the empty database; the
+          # count is derived, so a new migration file never breaks this step.
+          expected=$(ls backend/migrations/*.sql | wc -l)
+          [ "$expected" -gt 0 ]
+          grep -q "^\[migrate\] done: ${expected} migration(s) applied" /tmp/migrate.log
 
       # Fake secrets that meet the hosted length rules (BETTER_AUTH_SECRET
       # >= 32, other secrets >= 16). NODE_ENV=development only because the

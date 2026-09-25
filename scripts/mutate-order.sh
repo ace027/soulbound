@@ -28,9 +28,12 @@
 # anyway (no database, a broken test). So:
 #  - the UNMUTATED hosted suite runs first, and the script aborts ("baseline
 #    red", exit 4) unless it passes;
-#  - a mutation counts as caught only if the failure output names
-#    hostedOrder.test.ts (a `FAIL ... hostedOrder.test.ts` line). A suite
-#    that failed only elsewhere is reported as FAIL (not attributed).
+#  - a mutation counts as caught only if a NAMED TEST in hostedOrder.test.ts
+#    failed (a `FAIL ... hostedOrder.test.ts > ...` line) AND the summary line
+#    reports more than 0 failed tests. The file-level
+#    `FAIL ... hostedOrder.test.ts [ ... ]` line vitest prints when the file
+#    could not run at all (the database down, a setup error) does not count
+#    (review cycle 2, F4). Anything else is reported as FAIL (not attributed).
 #
 # Needs TEST_DATABASE_URL (e.g. `export TEST_DATABASE_URL=$(scripts/test-db.sh)`).
 # Prints PASS/FAIL per mutation. Exit 0 only if every mutation was caught.
@@ -78,9 +81,14 @@ run_suite() {
   npm run test:hosted -w @soulbound/backend >"$1" 2>&1
 }
 
-# True if the suite's failure output names the order test file.
+# True only if a named test in the order test file failed, and the summary
+# line counts at least one failed test. A file-level failure (vitest's
+# `FAIL <file> [ <file> ]`, printed when the file never ran) is not enough.
 names_order_test() {
-  grep -Eq 'FAIL +[^ ]*hostedOrder\.test\.ts' "$1"
+  grep -Eq 'FAIL +[^ ]*hostedOrder\.test\.ts +>' "$1" || return 1
+  local failed
+  failed="$(grep -E '^ +Tests +[0-9]' "$1" | tail -1 | grep -Eo '[0-9]+ failed' | grep -Eo '^[0-9]+' || true)"
+  [ -n "$failed" ] && [ "$failed" -gt 0 ]
 }
 
 # ─── Baseline: the unmutated suite must be green ────────────────────────
@@ -153,7 +161,7 @@ for m in a b c; do
   if [ "$rc" -ne 0 ] && names_order_test "$LOG"; then
     echo "PASS  ($m) ${NAMES[$m]}: hostedOrder.test.ts failed as required (rc=$rc, ${secs}s; ${summary:-no summary}; 2 s timeouts: $timeouts)"
   elif [ "$rc" -ne 0 ]; then
-    echo "FAIL  ($m) ${NAMES[$m]}: the suite failed, but not in hostedOrder.test.ts (rc=$rc; ${summary:-no summary}); log: $LOG"
+    echo "FAIL  ($m) ${NAMES[$m]}: the suite failed, but no named test in hostedOrder.test.ts did (rc=$rc; ${summary:-no summary}); log: $LOG"
     survivors=$((survivors + 1))
     KEEP_WORK=1
   else

@@ -337,6 +337,11 @@ A value-matching redactor can't catch per-request values (cookies, invite codes,
 - **Accepted risk until Phase 7:** saves live in `localStorage` and aren't scoped to an account, so on a shared device the next player to sign in sees the previous player's saves. Server-side saves (Phase 7) remove this.
 - **Migrations follow "expand, then contract".** The pre-deploy step migrates while the old version is still serving, so a deploy never drops or renames a column that the running version still uses.
 
+### Review cycle 2 decisions (2026-09-25)
+- **Google ID tokens are checked, then not stored.** The `account.create.before` hook reads `email_verified` from the token first, then writes the row with `idToken: null`; an `account.update.before` hook nulls it on the token refresh a returning sign-in does. Nothing reads the stored token (the endpoints that could are disabled), and it carries profile claims.
+- **Hitting the invite-path ceiling logs one fixed line per window** (`INVITE_CEILING_NOTICE`, no address, invite id or IP), so an operator can see that a leaked invite batch has been cut off.
+- **Drift guards:** a self-host test pins `maxShutdownDelaySeconds * 1000 > SHUTDOWN_TIMEOUT_MS`; CI derives the expected migration count from `backend/migrations/*.sql`; `scripts/mutate-order.sh` counts a mutation as caught only when a named test in `hostedOrder.test.ts` failed.
+
 ## Questionnaire Design
 Originally multiple-choice (5 options per question). Changed to fully open-ended free-text per the explicit reasoning that richer, longer answers produce a better-defined Unique Skill before the player ever enters the world. Each question has a `hint` line for guidance but no character limit. The Continue button is disabled until something is written, with a Back button to revise prior answers.
 

@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   MIGRATIONS_DIR,
   PENDING_MIGRATIONS_MESSAGE,
+  POOL_MAX_CONNECTIONS,
   assertNoPendingMigrations,
   createPool,
   urlRedactor,
@@ -216,10 +217,32 @@ describe('DB errors are redacted (R25d)', () => {
 });
 
 describe('pool limits (review cycle 1, Infra S5)', () => {
-  it('the pool is capped at 10 connections, with a 5 s connect timeout', async () => {
-    const pool = await createPool('postgres://soulbound:fake-password-pool-limits-0000@127.0.0.1:1/nowhere');
+  // `pg`'s own default `max` is also 10, so reading `pool.options.max` back
+  // cannot tell our setting from pg's (review cycle 2, F2). These check the
+  // options object createPool passes to `pg.Pool`, and that an override wins.
+  const LIMITS_URL = 'postgres://soulbound:fake-password-pool-limits-0000@127.0.0.1:1/nowhere';
+
+  it('passes max 10 and a 5 s connect timeout to pg.Pool explicitly', async () => {
+    const { default: pg } = await import('pg');
+    const spy = vi.spyOn(pg, 'Pool');
+    const pool = await createPool(LIMITS_URL);
     try {
-      expect(pool.options.max).toBe(10);
+      expect(spy).toHaveBeenCalledTimes(1);
+      const passed = spy.mock.calls[0]![0]!;
+      expect(POOL_MAX_CONNECTIONS).toBe(10);
+      expect(passed).toHaveProperty('max', POOL_MAX_CONNECTIONS);
+      expect(passed).toHaveProperty('connectionTimeoutMillis', 5000);
+      expect(pool.options.connectionTimeoutMillis).toBe(5000);
+    } finally {
+      spy.mockRestore();
+      await pool.end();
+    }
+  });
+
+  it('an options.pool.max override is respected', async () => {
+    const pool = await createPool(LIMITS_URL, { pool: { max: 3 } });
+    try {
+      expect(pool.options.max).toBe(3);
       expect(pool.options.connectionTimeoutMillis).toBe(5000);
     } finally {
       await pool.end();
