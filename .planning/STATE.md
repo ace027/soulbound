@@ -48,7 +48,7 @@
   After merge: dispatch `release.yml` once (GitHub → Actions → Release → Run workflow) — the GHCR
   publish is the one UNTESTED step. ⚠️ `SOULBOUND_PASSPHRASE` is now **required at boot** — add it to
   `.env` (12+ printable ASCII characters).
-- **Branch**: `claude/legion-status-uxlaqo` was restarted from `origin/main` (`89219af`) after PR #7 merged; any further work needs a NEW pull request.
+- **Branch** (developer decision 2026-09-26): **`main` is the default branch; all work happens on `dev`**, which ships to `main` by pull request. `dev` was cut from `65f6ca1` and carries the 6 post-PR-#7 commits (retro, map refresh, return-to-title fix). Don't create per-session `claude/*` branches. The old `claude/legion-status-uxlaqo` (same head as `dev`) and `claude/admiring-wright-hfmugk` (`5048e5e`, a superseded STATE.md edit) are obsolete. This environment can't delete remote branches (the git proxy rejects ref deletes), so the developer removes them on GitHub.
 
 ### Two things to carry into any next phase
 1. **A fix is a claim, and carries the same derivation burden as a finding.** All three review cycles
