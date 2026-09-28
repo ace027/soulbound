@@ -65,11 +65,11 @@ The published image runs the whole game from one container on one port: the back
 built frontend itself, so there is no second service and no proxy to configure.
 
 **The first image is published by a manual release after merge — see [First
-release](#first-release) below.** Until then, `ghcr.io/deanitservices/soulbound` does not exist
+release](#first-release) below.** Until then, `ghcr.io/ace027/soulbound` does not exist
 yet. Build it locally instead:
 
 ```bash
-DOCKER_BUILDKIT=1 docker build -f backend/Dockerfile -t ghcr.io/deanitservices/soulbound:local .
+DOCKER_BUILDKIT=1 docker build -f backend/Dockerfile -t ghcr.io/ace027/soulbound:local .
 ```
 
 then set `SOULBOUND_VERSION=local` in your `.env` (or `SOULBOUND_VERSION=local docker compose ...`)
@@ -112,7 +112,7 @@ docker run -d --name soulbound -p 127.0.0.1:8080:3001 \
   -e ANTHROPIC_API_KEY="$SOULBOUND_ANTHROPIC_KEY" \
   -e SOULBOUND_PASSPHRASE \
   -e ALLOWED_HOSTS=localhost:8080,127.0.0.1:8080,localhost:3001 \
-  ghcr.io/deanitservices/soulbound:latest
+  ghcr.io/ace027/soulbound:latest
 ```
 
 Set `ALLOWED_HOSTS` to match the host names and port browsers use — leave out `localhost:8080`
