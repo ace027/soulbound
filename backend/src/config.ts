@@ -815,13 +815,14 @@ export const ALLOWED_HOSTS: readonly string[] = readAllowedHosts();
  *
  * History: all-Sonnet, then Opus on the two system-block routes, now Sonnet on
  * the pair with Opus on uniqueSkill — the developer's deliberate call each
- * time, made with the prior reversal in view. Do not "correct" it back to an
+ * time, made with the prior reversal in view. On 2026-09-29 both moved to the
+ * 5.5 generation with the split unchanged (a version bump, not a reversal). Do not "correct" it back to an
  * earlier arrangement; see docs/design-decisions-log.md.
  */
 export const MODELS = {
-  uniqueSkill: 'claude-opus-5',
-  worldEngine: 'claude-sonnet-5',
-  introScene: 'claude-sonnet-5',
+  uniqueSkill: 'claude-opus-5-5',
+  worldEngine: 'claude-sonnet-5-5',
+  introScene: 'claude-sonnet-5-5',
 } as const;
 
 /**

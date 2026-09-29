@@ -101,7 +101,7 @@ function getClient(apiKey: string): Anthropic {
  * TTL buys nothing. The 1-hour TTL is bought for the GAPS — a player who steps
  * away mid-session.
  *
- * The trade, measured against this prefix (15,523 tokens on Sonnet 5 input at
+ * The trade, measured against this prefix (15,523 tokens on Sonnet 5.5 input at
  * \$2/MTok): a 1-hour write costs 2x input (\$0.0621) versus 1.25x for the
  * 5-minute write (\$0.0388) — \$0.0233 more up front. But under the 5-minute
  * TTL every pause longer than five minutes forces a fresh write instead of a
@@ -471,7 +471,7 @@ export interface CallWorldVoiceArgs<Schema extends z.ZodType> {
  * drift this module was built to prevent, just moved from the system-prompt
  * layer to the `output_config` layer.
  *
- * The pair is currently Sonnet 5; it has also been Opus 5. WHICH model they
+ * The pair is currently Sonnet 5.5; it has also been Opus 5 and Sonnet 5. WHICH model they
  * share is a cost/quality choice. THAT they share one is the invariant.
  * `uniqueSkill` sits outside this entirely — no system blocks, no cache.
  */
@@ -492,7 +492,7 @@ export async function callWorldVoice<Schema extends z.ZodType>({
     model,
     max_tokens: MAX_TOKENS,
     // No assistant-role message here: assistant prefill returns 400 on
-    // Sonnet 5 and Opus 5. Every call is a single user turn.
+    // Sonnet 5.5 and Opus 5.5. Every call is a single user turn.
     messages: [{ role: 'user' as const, content }],
     output_config: {
       format,

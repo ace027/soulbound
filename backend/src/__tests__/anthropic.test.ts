@@ -197,10 +197,10 @@ describe('callWorldVoice request construction', () => {
   });
 
   async function callAndCapture(useSystem: boolean, schema: z.ZodType, payload: unknown) {
-    createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5', payload));
+    createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5-5', payload));
     await callWorldVoice({
       route: 'uniqueSkill' as WorldVoiceRoute,
-      model: 'claude-sonnet-5',
+      model: 'claude-sonnet-5-5',
       content: 'test content',
       useSystem,
       schema,
@@ -316,16 +316,16 @@ describe('callWorldVoice request construction', () => {
   });
 
   it('passes model through verbatim', async () => {
-    createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5', { answer: 'x' }));
+    createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5-5', { answer: 'x' }));
     await callWorldVoice({
       route: 'worldEngine',
-      model: 'claude-opus-5',
+      model: 'claude-opus-5-5',
       content: 'hi',
       useSystem: false,
       schema: TestSchema,
     });
     const request = createSpy.mock.calls[0]![0] as Record<string, unknown>;
-    expect(request.model).toBe('claude-opus-5');
+    expect(request.model).toBe('claude-opus-5-5');
   });
 });
 
@@ -354,10 +354,10 @@ describe('callWorldVoice usage logging', () => {
   });
 
   async function callWith(overrides: Partial<Message>): Promise<void> {
-    createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5', { answer: 'x' }, overrides));
+    createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5-5', { answer: 'x' }, overrides));
     await callWorldVoice({
       route: 'worldEngine',
-      model: 'claude-opus-5',
+      model: 'claude-opus-5-5',
       content: 'hi',
       useSystem: false,
       schema: TestSchema,
@@ -390,7 +390,7 @@ describe('callWorldVoice usage logging', () => {
     const { tag, body } = loggedLine(consoleLogSpy);
     expect(tag).toBe('[anthropic:usage]');
     expect(body.route).toBe('worldEngine');
-    expect(body.model).toBe('claude-opus-5');
+    expect(body.model).toBe('claude-opus-5-5');
     expect(body.input_tokens).toBe(812);
     expect(body.output_tokens).toBe(431);
     expect(body.cache_creation_input_tokens).toBe(15_132);
@@ -458,7 +458,7 @@ describe('callWorldVoice error mapping', () => {
     try {
       await callWorldVoice({
         route: 'uniqueSkill',
-        model: 'claude-sonnet-5',
+        model: 'claude-sonnet-5-5',
         content: 'hi',
         useSystem: false,
         schema: TestSchema,
@@ -558,7 +558,7 @@ describe('callWorldVoice error mapping', () => {
     // `zodOutputFormat(...).parse()` throwing an AnthropicError, mapped by
     // callWorldVoice's real catch path — a genuine end-to-end proof, not a
     // synthetic case that only tests the switch statement.
-    createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5', { wrong_field: true }));
+    createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5-5', { wrong_field: true }));
     const err = await captureThrown();
     expect(err.code).toBe('INVALID_RESPONSE_SHAPE');
     expect(err.statusCode).toBe(502);
@@ -609,7 +609,7 @@ describe('callWorldVoice error mapping', () => {
     createSpy.mockRejectedValueOnce(new InternalServerError(500, { type: 'api_error' }, 'x', undefined, 'api_error'));
     const upstreamErr = await captureThrown();
 
-    createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5', { nope: true }));
+    createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5-5', { nope: true }));
     const shapeErr = await captureThrown();
 
     createSpy.mockRejectedValueOnce(new Error('unexpected'));

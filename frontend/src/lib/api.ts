@@ -318,7 +318,7 @@ export interface IntroSceneRequest {
 }
 
 /**
- * Soul-reading from the questionnaire. Backend: Opus 5, no system blocks
+ * Soul-reading from the questionnaire. Backend: Opus 5.5, no system blocks
  * (CLAUDE.md #8 — deliberately system-blind).
  *
  * `answers` arrives as the questionnaire's `Record<string, string>`; the five
@@ -347,7 +347,7 @@ export async function determineUniqueSkill(characterData: {
 }
 
 /**
- * One turn of the live world. Backend: Sonnet 5, WORLD_SYSTEM_PROMPT + cached
+ * One turn of the live world. Backend: Sonnet 5.5, WORLD_SYSTEM_PROMPT + cached
  * WORLD_LORE.
  *
  * `gameState` ships whole (including `actionHistory`, which grows unbounded
@@ -364,7 +364,7 @@ export async function callWorldEngine(
 }
 
 /**
- * The opening scene. Backend: Sonnet 5, same two system blocks as the world
+ * The opening scene. Backend: Sonnet 5.5, same two system blocks as the world
  * engine — this call is what warms the shared prompt cache.
  */
 export async function generateIntroScene(

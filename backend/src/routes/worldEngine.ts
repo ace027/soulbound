@@ -5,7 +5,7 @@
  * Uses `buildSystemBlocks()` via `callWorldVoice`'s `useSystem: true` path —
  * WORLD_SYSTEM_PROMPT + WORLD_LORE, byte-identical to what
  * routes/introScene.ts sends, so the two share one prompt-cache namespace on
- * Opus 5 (see anthropic.ts's cache-namespace note). Neither route builds a
+ * Sonnet 5.5 (see anthropic.ts's cache-namespace note). Neither route builds a
  * request of its own; both go through `callWorldVoice`.
  *
  * User-content assembly ported verbatim from legacy/souldbound-world.jsx

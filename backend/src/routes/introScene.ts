@@ -4,7 +4,7 @@
  * Uses `buildSystemBlocks()` via `callWorldVoice`'s `useSystem: true` path —
  * WORLD_SYSTEM_PROMPT + WORLD_LORE, byte-identical to what
  * routes/worldEngine.ts sends, so the two share one prompt-cache namespace on
- * Opus 5 (see anthropic.ts's cache-namespace note). This route runs once per
+ * Sonnet 5.5 (see anthropic.ts's cache-namespace note). This route runs once per
  * playthrough and is what warms that cache for the World Engine loop that
  * follows — the exact bug this plan exists to prevent
  * (`generateIntroScene` once concatenated the system prompt into the user

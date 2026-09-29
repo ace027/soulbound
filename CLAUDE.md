@@ -48,8 +48,8 @@ Before making any change:
 
 ## Model & API pattern
 - **Models are split — this is deliberate, and the split is load-bearing.**
-  - `claude-opus-5` on unique-skill determination (`/api/unique-skill`), at `effort: 'medium'`
-  - `claude-sonnet-5` on the world engine loop AND intro scene generation, both at `effort: 'high'`
+  - `claude-opus-5-5` on unique-skill determination (`/api/unique-skill`), at `effort: 'medium'`
+  - `claude-sonnet-5-5` on the world engine loop AND intro scene generation, both at `effort: 'high'`
   Defined in one place, `backend/src/config.ts`'s `MODELS` — never as a literal at a call site.
   **World-engine and intro-scene MUST stay on the same model as each other** — they are the
   only two routes that send system blocks, so they share one cache namespace. Prompt caches are
@@ -78,6 +78,8 @@ Before making any change:
   unique-skill (2026-09-18) — the developer's call each time, made with the prior reversal in view.
   Do not "correct" it back to an earlier arrangement. The rationale for each move is in
   `docs/design-decisions-log.md`.
+  On 2026-09-29 both moved to the 5.5 generation with the split unchanged — a version bump, not a
+  reversal.
 - `WORLD_SYSTEM_PROMPT` and `WORLD_LORE` are both static per playthrough (and across playthroughs) and are sent as separate `system` blocks via a shared `buildSystemBlocks()` helper, with `cache_control: { type: "ephemeral" }` on the `WORLD_LORE` block, so their token cost is paid once via prompt caching rather than on every call.
 - Verify caching is actually engaging (`cache_creation_input_tokens` / `cache_read_input_tokens` in the API response) once this is running in a real environment with visibility into raw responses — this was previously hard to verify from inside an artifact.
 

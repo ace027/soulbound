@@ -281,7 +281,7 @@ describe('World Voice routes (mocked SDK boundary)', () => {
   });
 
   it('never touches the network: fetch is untouched by the mocked happy-path calls below', async () => {
-    createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5', validUniqueSkillPayload));
+    createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5-5', validUniqueSkillPayload));
     const res = await httpRequest(port, {
       method: 'POST',
       path: '/api/unique-skill',
@@ -292,8 +292,8 @@ describe('World Voice routes (mocked SDK boundary)', () => {
   });
 
   describe('POST /api/unique-skill', () => {
-    it('calls claude-opus-5 with the unique-skill schema and no system key', async () => {
-      createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5', validUniqueSkillPayload));
+    it('calls claude-opus-5-5 with the unique-skill schema and no system key', async () => {
+      createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5-5', validUniqueSkillPayload));
       const res = await httpRequest(port, {
         method: 'POST',
         path: '/api/unique-skill',
@@ -318,8 +318,8 @@ describe('World Voice routes (mocked SDK boundary)', () => {
   });
 
   describe('POST /api/world-engine', () => {
-    it('calls claude-sonnet-5 with the World Voice schema and system blocks present', async () => {
-      createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5', validWorldVoicePayload));
+    it('calls claude-sonnet-5-5 with the World Voice schema and system blocks present', async () => {
+      createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5-5', validWorldVoicePayload));
       const res = await httpRequest(port, {
         method: 'POST',
         path: '/api/world-engine',
@@ -342,8 +342,8 @@ describe('World Voice routes (mocked SDK boundary)', () => {
   });
 
   describe('POST /api/intro-scene', () => {
-    it('calls claude-sonnet-5 with the World Voice schema and system blocks present', async () => {
-      createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5', validWorldVoicePayload));
+    it('calls claude-sonnet-5-5 with the World Voice schema and system blocks present', async () => {
+      createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5-5', validWorldVoicePayload));
       const res = await httpRequest(port, {
         method: 'POST',
         path: '/api/intro-scene',
@@ -360,7 +360,7 @@ describe('World Voice routes (mocked SDK boundary)', () => {
   });
 
   it('the two Opus routes (world-engine, intro-scene) send byte-identical system blocks AND byte-identical output_config', async () => {
-    createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5', validWorldVoicePayload));
+    createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5-5', validWorldVoicePayload));
     await httpRequest(port, {
       method: 'POST',
       path: '/api/world-engine',
@@ -368,7 +368,7 @@ describe('World Voice routes (mocked SDK boundary)', () => {
     });
     const worldEngineRequest = createSpy.mock.calls[0]![0] as Record<string, unknown>;
 
-    createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5', validWorldVoicePayload));
+    createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5-5', validWorldVoicePayload));
     await httpRequest(port, {
       method: 'POST',
       path: '/api/intro-scene',
@@ -1014,7 +1014,7 @@ describe('World Voice routes (mocked SDK boundary)', () => {
   });
 
   it('a mocked response that violates the schema fails loudly (502, INVALID_RESPONSE_SHAPE), never passed through', async () => {
-    createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5', { totally_wrong_shape: true }));
+    createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5-5', { totally_wrong_shape: true }));
     const res = await httpRequest(port, {
       method: 'POST',
       path: '/api/unique-skill',
@@ -1036,10 +1036,10 @@ describe('World Voice routes (mocked SDK boundary)', () => {
 
     it.each(routeFiles)('%s reads its model from MODELS, never a hardcoded literal', (file) => {
       const source = readFileSync(path.join(routesDir, file), 'utf8');
-      expect(source).not.toContain("'claude-sonnet-5'");
-      expect(source).not.toContain("'claude-opus-5'");
-      expect(source).not.toContain('"claude-sonnet-5"');
-      expect(source).not.toContain('"claude-opus-5"');
+      expect(source).not.toContain("'claude-sonnet-5-5'");
+      expect(source).not.toContain("'claude-opus-5-5'");
+      expect(source).not.toContain('"claude-sonnet-5-5"');
+      expect(source).not.toContain('"claude-opus-5-5"');
       expect(source).toMatch(/MODELS\.\w+/);
     });
   });

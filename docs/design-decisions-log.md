@@ -350,6 +350,17 @@ Legacy had no way out of the race screen or the questionnaire: once a player tap
 
 **The `App.tsx` freeze is lifted for this, by the developer's decision.** Phases 5 and 6 kept `App.tsx` byte-identical to `7856b7d` to prove self-host behaviour hadn't changed. This is a deliberate self-host change, so the file now differs by one handler and two props. The new baseline is this change's commit. The freeze was a proof device for those phases, not a rule about the file, so a future phase that wants the same proof should name its own baseline. `creationScreens.test.tsx` gained one optional prop on each harness plus two tests. Nothing existing was changed or removed there, and the four resets are mutation-checked in `appIntegration.test.tsx`.
 
+## Models moved to the 5.5 generation (2026-09-29)
+**`uniqueSkill` is now `claude-opus-5-5`; `worldEngine` and `introScene` are now `claude-sonnet-5-5`.** This was the developer's call. It is a version bump, not a reversal: the split is unchanged (Opus on the soul-read, Sonnet on the two system-block routes), the effort values are unchanged (`medium` / `high` / `high`), and the pair invariant still holds, pinned by `config.test.ts`. The IDs still live only in `config.ts`'s `MODELS`.
+
+**Cost.** Opus 5.5 is cheaper than Opus 5 ($4 / $20 per MTok against $5 / $25). Sonnet 5.5 costs the same as Sonnet 5 ($2 / $10). Both tokenizers are unchanged from their predecessors, so the cached prefix size is unchanged by the move. The caches themselves are model-scoped, so the first 5.5 session pays one fresh write.
+
+**What to watch.**
+- **Sonnet 5.5 recalibrated its effort levels.** `high` on Sonnet 5.5 is not the same spend as `high` on Sonnet 5, so narration length and per-turn cost may shift even though the prompt and the effort value didn't. That needs a by-feel playtest, and a check of the `[anthropic:usage]` lines against the Narration length budget above. Adjust effort only after that, as its own change.
+- **The balance rules were validated on the 5 generation.** The MUST NOT list and the Tier 0 adversarial tests (see "Adversarial testing of the questionnaire" below) were last run against Opus 5 / Sonnet 5. Resilience there is partly a property of the model, so re-running them live on 5.5 is recommended. It was not done in this change.
+
+**Deferred: refusal fallbacks.** Both 5.5 models can end a turn with `stop_reason: "refusal"`, and the API offers a server-side fallback for that. Adding it is a separate change, by the developer's decision.
+
 ## Questionnaire Design
 Originally multiple-choice (5 options per question). Changed to fully open-ended free-text per the explicit reasoning that richer, longer answers produce a better-defined Unique Skill before the player ever enters the world. Each question has a `hint` line for guidance but no character limit. The Continue button is disabled until something is written, with a Back button to revise prior answers.
 
