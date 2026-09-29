@@ -40,7 +40,8 @@
   limiter before `express.json`; `Authorization: Bearer`), chosen from three read-only proposals.
   Spec: `.planning/specs/05-docker-image-publishing-spec.md`. ROADMAP now lists Phase 5 (0/6).
 - **Developer decisions 2026-09-24:**
-  - **First release is deliberately on hold** until the repo moves from `DeanItServices` to the developer's personal GitHub. Don't dispatch `release.yml` before then.
+  - ✅ **First release DONE 2026-09-29**: [PR #8](https://github.com/ace027/soulbound/pull/8) merged as `a1a756f`; `release.yml` run #1 ([36524563460](https://github.com/ace027/soulbound/actions/runs/36524563460)) green on `main` — overwrite check, amd64 smoke, amd64+arm64 push and the pushed-layers check all passed. Closes Phase 5's one UNTESTED item. ⚠️ The GHCR package is **private** (GitHub's default for a new package): an anonymous pull token is refused with 401 while a public control image gets one. `compose.selfhost.yml` and the README assume an anonymous pull, so the developer must set the package public (Package settings → Change visibility) for self-hosters.
+  - ~~First release on hold until the repo moved from `DeanItServices`~~ — the move to `ace027/soulbound` happened.
     - `release.yml` derives the image name from the repo owner, so it follows the move automatically.
     - After the move, update the hardcoded `ghcr.io/deanitservices/soulbound` in `compose.selfhost.yml:41` and `README.md` (lines 68, 72, 115). Leave the historical mention in `docs/design-decisions-log.md` as it is.
   - **Key rotation is deferred by the developer**, who will rotate before friends are invited. It's tracked as a Phase 9 invite-gate item, so don't raise it again before then.
@@ -93,7 +94,7 @@ on :3001 and `vite` on :5173, with Playwright driving the pre-installed Chromium
 ```
 
 ## Ship record
-- **PR #8** — https://github.com/ace027/soulbound/pull/8 — **OPEN** 2026-09-29, `dev` → `main` (first PR on `ace027/soulbound`)
+- **PR #8** — https://github.com/ace027/soulbound/pull/8 — **MERGED** 2026-09-29 as `a1a756f`, `dev` → `main` (first PR on `ace027/soulbound`)
   Post-Phase 6 work, not a phase: return-to-title fix (`96a0a45`, the only app-code commit), GHCR path → `ghcr.io/ace027/soulbound` (`21aa1e0`), Phase 6 retro, map refresh, branch notes. 9 commits, 17 files, +1,089/−275. Gate: build clean, 304 + 253 tests local, CI `build-and-test` green on `21aa1e0` (hosted on Postgres); the title fix had no review panel (tests + design-log entry only). After merge: dispatch `release.yml` once.
 
 - **PR #7** — https://github.com/DeanItServices/soulbound/pull/7 — **MERGED** 2026-09-25 as `89219af` (head `80d6ca2`, merge commit; CI 6/6 green on the head)
