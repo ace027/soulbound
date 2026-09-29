@@ -337,3 +337,70 @@ Also:
 - Tests: 237 → 254, plus 5 e2e · Cost: ~$0.31 actual vs ~$0.25 budgeted (one harness bug, attributed)
 
 ---
+
+## Phase 6: Hosted Mode & Accounts — 2026-09-25
+
+### Key Findings
+**Prior action items (Phase 4 AI-1..7): 5 of 7 held.** AI-3/4/5/6/7 held. AI-1 mostly held
+(red→green per fix; cycle 2 still found 3 untested edges in cycle-1 guards; cycle 3 caught 11/11).
+AI-2 was broken by the orchestrator's own record edits: a runbook sentence split, a stale 244 count,
+and a stale ROADMAP pointer, all caught by reviewers.
+
+**What went well**
+- Two critique rounds caught design defects before code: spec 6 blockers, plans 3 blockers. They
+  included the nonce-only reconciliation that could mark the wrong invite (both critics found it
+  independently), mutation restores that would wipe uncommitted work, and case-insensitive routes
+  bypassing the Origin check. None needed a code rework.
+- Verifying the installed library source as each plan's first task caught 4 wrong spec claims:
+  Sentry 11 has no `sendDefaultPii`; Better Auth #3295 no longer hangs; a magic-link sign-up writes
+  no `account` row; Better Auth disables its origin checks under `NODE_ENV=test`.
+- 7 serial waves with zero contamination. The orchestrator independently re-verified every wave, and
+  the counts matched 7/7.
+- Review had 0 blockers in any cycle, and cycle 3 was all PASS. CI gained the e2e job and a hosted
+  image smoke test. $0 Anthropic spend.
+
+**What didn't work**
+- A fix handed from one plan to another was reasoned about, never tested across both. 06-04 found the
+  server-side session gate drops the renewed cookie; 06-06 added a browser refresh. Nothing tested the
+  two together, and the gate consumed the daily refresh first, so the "30-day rolling" session never
+  rolled. Security caught it in review cycle 1 (S1).
+- Visual defects were seen and normalised. The Account button covering story text was recorded
+  honestly in screenshots, then accepted. The 8px white page frame, present since Phase 3, was
+  noticed by two agents and dismissed as "how the existing game looks". The developer found both.
+- Review cycle 1 still found 4 security warnings the critiques missed (session refresh, Google
+  trusted-provider linking skipping email verification, per-cookie invite caps, verification-row
+  retention). Each came from an assumed library default.
+- `mutate-order.sh` counted a database outage as a caught mutation until cycle 2.
+- The project-wide first-pass review rate is 0/6.
+
+**Patterns to keep:** critique both spec and plans, with binding `<critique_revisions>` blocks · a
+library-source check as the first task · a guard-audit table at phase start · serial tree-mutating
+agents with independent per-wave verification · red→green evidence per fix · a panel review with
+read-only reviewers in parallel and the mutating QA reviewer alone · asking the developer about
+spec-pinned choices (the Google trust decision).
+
+**Patterns to drop:** accepting "that's how it already looks" for visuals · treating a cross-plan
+handoff as fixed without a spanning test · orchestrator record edits during review without
+re-reading the rendered diff.
+
+### Action Items
+
+| # | Action | Priority | Evidence |
+|---|---|---|---|
+| 1 | **A fix handed between plans gets a test that spans both plans**, owned by the plan that completes it | High | S1: the session never rolled despite 06-04 plus 06-06 |
+| 2 | **Report visual defects to the developer, including pre-existing ones.** Build agents may not normalise them | High | Account button over narration; white 8px frame since Phase 3 |
+| 3 | **Library claims in a spec stay "unverified" until checked in installed source.** Spec critique explicitly checks library defaults (trusted providers, session refresh, test-mode switches) | High | 4 wrong library claims; 4 security warnings from assumed defaults |
+| 4 | The orchestrator re-reads the rendered diff of its own record edits before committing (AI-2 applied to itself) | Medium | Split runbook sentence; stale 244; stale ROADMAP pointer |
+| 5 | Every mutation harness has an unmutated baseline and failure attribution from day one | Medium | `mutate-order.sh` false PASS on a DB outage until cycle 2 |
+| 6 | New UI elements ship with a placement e2e (no overlap, no page frame) | Medium | `pageFrame.spec.ts` and the overlap checks came after the fact |
+| 7 | Phase 7 closes login CSRF into an existing account before server saves go live | High | Security review cycle 2, finding 3; ROADMAP Phase 7 criterion |
+
+### Metrics
+- Plans: 7/7 (7 serial waves) · Review: PASSED, 3 cycles, 0 blockers, 14 warnings fixed, ~19 suggestions applied or recorded · Escalations: 0
+- First-pass review rate, project-wide: **0/6** (2, 3, 2, 3, 3, 3 cycles)
+- Pre-build critique: spec 6 blockers, plans 3 blockers, all applied before code
+- Agents: Senior Developer, Infrastructure & DevOps, Backend Architect, Frontend Developer, Security Engineer, QA Verification
+- Tests: backend 187 → 304 · frontend 190 → 249 · hosted 0 → 182 (0 skipped) · e2e 6 → 16
+- Ship: PR #7 merged `89219af`; 61 commits, 109 files, +18,305/−104 · Anthropic spend: $0
+
+---

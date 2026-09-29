@@ -1,7 +1,7 @@
 # Project State
 
 ## Current Position
-- **Phase**: 6 of 13 — **shipped as [PR #7](https://github.com/DeanItServices/soulbound/pull/7) (2026-09-25; pre-ship gate 6/6); review PASSED (3 cycles); live deploy checks pending the developer.** Everything verifiable without the developer's accounts is done; the 14-step runbook (`docs/runbooks/phase-6-hosted-setup.md`) is UNTESTED until the developer runs it (merge to `main` first — the Blueprint deploys `main`). Tests: 304 backend + 249 frontend, hosted 182 (0 skipped), e2e 14 (in CI), smoke 7/7, mutate-order 3/3. Spec rows 1-23. Review record: `.planning/phases/06-hosted-mode-accounts/06-REVIEW.md`.
+- **Phase**: 6 of 13 — **shipped and merged: [PR #7](https://github.com/DeanItServices/soulbound/pull/7) merged 2026-09-25 as `89219af` (pre-ship gate 6/6; includes the white page-frame fix `80d6ca2`); review PASSED (3 cycles); live deploy checks pending the developer.** Everything verifiable without the developer's accounts is done; the 14-step runbook (`docs/runbooks/phase-6-hosted-setup.md`) is UNTESTED until the developer runs it (merge to `main` first — the Blueprint deploys `main`). Tests: 304 backend + 249 frontend, hosted 182 (0 skipped), e2e 14 (in CI), smoke 7/7, mutate-order 3/3. Spec rows 1-23. Review record: `.planning/phases/06-hosted-mode-accounts/06-REVIEW.md`.
 - **Phase 6 results**: 06-01 ✅ `61382ec`, `a541df5`, `730421b` — mode switch, hosted secrets, generalised `redact`, allow-list tracker (hosted-only); backend 187 → 248 (+61 new, 0 edited), frontend 190; 8/8 mutations caught (orchestrator re-ran the suite: 248 + 190)
   06-02 ✅ `3e018dd`, `bb8fbd4`, `6aaa203` — pg pool, node-pg-migrate (001 from `auth@1.7.6` CLI, 002 with `reserved_email`), `test:hosted` (fails unset / on skips), CI+release Postgres service, image carries migrations; backend 248 → 258, hosted 11/11 0 skipped, smoke 7/7, 6/6 mutations; CI green run 36051126070. Handoff: 06-04 wires the boot-time pending-migration exit (orchestrator re-verified 258 + 190, hosted 11/11)
   06-03 ✅ `8ee0b4b`, `235eb11`, `84d52c0` — Better Auth 1.7.6 (ALS PROPAGATES, verified in source + negative control), invites (HMAC/HKDF `__Host-` cookie, nonce reservation + `reserved_email` reconcile), send gating, 25 `disabledPaths` + path allow-list, `npm audit` 0; backend 258 → 268, hosted 11 → 61 (0 skipped), 7 mutations; CI green run 36054191300. Warnings carried: Better Auth disables its own origin/callback checks under `NODE_ENV=test` (forced on + asserted); refused sign-up burns the magic link (06-06: offer a new link); DB logs can hold emails (06-07 runbook) (orchestrator re-verified 268 + 190, hosted 61/61)
@@ -44,13 +44,11 @@
     - `release.yml` derives the image name from the repo owner, so it follows the move automatically.
     - After the move, update the hardcoded `ghcr.io/deanitservices/soulbound` in `compose.selfhost.yml:41` and `README.md` (lines 68, 72, 115). Leave the historical mention in `docs/design-decisions-log.md` as it is.
   - **Key rotation is deferred by the developer**, who will rotate before friends are invited. It's tracked as a Phase 9 invite-gate item, so don't raise it again before then.
-- **Next Action**: Developer: review and merge [PR #7](https://github.com/DeanItServices/soulbound/pull/7), then work through `docs/runbooks/phase-6-hosted-setup.md` (the Blueprint deploys `main`); the agent verifies each step as it's reported. In parallel, `/legion:plan 7` can start (Phase 7 must first close the carried login-CSRF item).
+- **Next Action**: Developer: work through `docs/runbooks/phase-6-hosted-setup.md` — `main` now carries `render.yaml`, so the Render Blueprint can be created (step 2); the agent verifies each step as it's reported. In parallel, `/legion:plan 7` (Phase 7 must first close the carried login-CSRF item).
   After merge: dispatch `release.yml` once (GitHub → Actions → Release → Run workflow) — the GHCR
   publish is the one UNTESTED step. ⚠️ `SOULBOUND_PASSPHRASE` is now **required at boot** — add it to
   `.env` (12+ printable ASCII characters).
-- **Branch**: work continues on `claude/legion-status-uxlaqo`, which descends from `origin/main`
-  (`f70aa31`) and carries this session's commits. It needs a NEW pull request; #5 is merged and
-  cannot track it.
+- **Branch** (developer decision 2026-09-26): **`main` is the default branch; all work happens on `dev`**, which ships to `main` by pull request. `dev` was cut from `65f6ca1` and carries the 6 post-PR-#7 commits (retro, map refresh, return-to-title fix). Don't create per-session `claude/*` branches. The old `claude/legion-status-uxlaqo` (same head as `dev`) and `claude/admiring-wright-hfmugk` (`5048e5e`, a superseded STATE.md edit) were deleted by the developer on GitHub (verified 2026-09-26: the remote has only `main` and `dev`). This environment can't delete remote branches — the git proxy rejects ref deletes — so future branch removals go to the developer.
 
 ### Two things to carry into any next phase
 1. **A fix is a claim, and carries the same derivation burden as a finding.** All three review cycles
@@ -58,6 +56,14 @@
    because findings were derived while fixes were reasoned about.
 2. **Retaining raw evidence pays immediately.** The screenshots committed to close one finding caught
    a wrong number in the very summary they were filed under, on their first use.
+
+### Resolved from playtest notes
+- **No way back to the title screen during character creation** (reported and fixed 2026-09-25).
+  Both creation screens now have "← Return to title", which clears race, name and answers. The
+  developer lifted the `App.tsx` freeze for it. See the design log → "Return to title from
+  character creation". ~~Developer decision 2026-09-25: it ships in Phase 7's PR~~ — **reversed by
+  the developer 2026-09-29**: it ships now in [PR #8](https://github.com/ace027/soulbound/pull/8)
+  (`dev` → `main`) with the GHCR path change, so the first release can run from `main`.
 
 ### Known environment limits
 `git push origin <tag>` fails here (`remote end hung up`) while branch pushes succeed — a tag-ref
@@ -87,7 +93,10 @@ on :3001 and `vite` on :5173, with Playwright driving the pre-installed Chromium
 ```
 
 ## Ship record
-- **PR #7** — https://github.com/DeanItServices/soulbound/pull/7 (base `main`, head `claude/legion-status-uxlaqo`)
+- **PR #8** — https://github.com/ace027/soulbound/pull/8 — **OPEN** 2026-09-29, `dev` → `main` (first PR on `ace027/soulbound`)
+  Post-Phase 6 work, not a phase: return-to-title fix (`96a0a45`, the only app-code commit), GHCR path → `ghcr.io/ace027/soulbound` (`21aa1e0`), Phase 6 retro, map refresh, branch notes. 9 commits, 17 files, +1,089/−275. Gate: build clean, 304 + 253 tests local, CI `build-and-test` green on `21aa1e0` (hosted on Postgres); the title fix had no review panel (tests + design-log entry only). After merge: dispatch `release.yml` once.
+
+- **PR #7** — https://github.com/DeanItServices/soulbound/pull/7 — **MERGED** 2026-09-25 as `89219af` (head `80d6ca2`, merge commit; CI 6/6 green on the head)
   Phase 6 — 59 commits, 106 files, +18,228/−104. Pre-ship gate **6/6**: 7/7 summaries, review PASSED (3 cycles), no blocker escalations, 304 + 249 tests, hosted 182 (0 skipped), e2e 14, clean tree. Descends from PR #6's merge (`86faa9f`); not rebased. Live deploy checks remain with the developer.
 
 - **PR #3** — https://github.com/DeanItServices/soulbound/pull/3 (base `main`, head `claude/admiring-wright-hfmugk`)

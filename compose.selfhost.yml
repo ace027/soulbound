@@ -38,7 +38,7 @@
 
 services:
   soulbound:
-    image: ghcr.io/deanitservices/soulbound:${SOULBOUND_VERSION:-latest}
+    image: ghcr.io/ace027/soulbound:${SOULBOUND_VERSION:-latest}
     environment:
       # Listed explicitly (no env_file) so nothing unexpected from .env leaks
       # into the container.

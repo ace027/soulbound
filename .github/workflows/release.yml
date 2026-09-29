@@ -125,8 +125,8 @@ jobs:
             console.log(`All workspace versions agree: ${versions[0][1]}`);
           '
 
-      # GHCR image names must be lowercase; the repo owner
-      # (DeanItServices) is not. Derived here rather than hardcoded so a
+      # GHCR image names must be lowercase; a repo owner name may contain
+      # capitals (e.g. DeanItServices). Derived here rather than hardcoded so a
       # future repo transfer or fork doesn't silently publish to the wrong
       # (or an inaccessible) namespace.
       - name: Derive IMAGE and VERSION

@@ -13,6 +13,9 @@ import { sharedBg } from './sharedBg';
  * from src/data rather than read from module scope, and the four closed-over
  * bindings become props — the state lives in App.tsx.
  *
+ * One addition not in legacy (2026-09-25): a "Return to title" control above
+ * the heading, so a player can leave character creation to load a save.
+ *
  * The 9-race grid leaves an uneven final row in this 2-column layout. That is
  * a known cosmetic issue and explicitly out of scope for the port.
  */
@@ -24,6 +27,11 @@ export interface RaceScreenProps {
   setSelectedRace: (race: Race) => void;
   /** Legacy `setPhase("questionnaire")`, behind the same inline guard. */
   onContinue: () => void;
+  /**
+   * Not in legacy (2026-09-25): back to the title screen, abandoning this new
+   * chronicle. App clears the race, name and answers.
+   */
+  onReturnToTitle: () => void;
 }
 
 export default function RaceScreen({
@@ -32,10 +40,22 @@ export default function RaceScreen({
   selectedRace,
   setSelectedRace,
   onContinue,
+  onReturnToTitle,
 }: RaceScreenProps) {
   return (
     <div style={{ ...sharedBg, padding: "32px 24px" }}>
       <div style={{ maxWidth: 620, margin: "0 auto" }}>
+        <button
+          type="button"
+          onClick={onReturnToTitle}
+          style={{
+            background: "none", border: "none", color: "#6a5a40", padding: 0, marginBottom: 20,
+            fontFamily: "'Cinzel', serif", fontSize: 11, letterSpacing: "0.12em",
+            textTransform: "uppercase", cursor: "pointer",
+          }}
+        >
+          ← Return to title
+        </button>
         <p style={{ fontFamily: "'Cinzel', serif", fontSize: 11, letterSpacing: "0.2em", color: "#7a1f1f", textTransform: "uppercase", marginBottom: 8 }}>Vaeltharion</p>
         <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: 28, fontWeight: 700, color: "#d4a843", margin: "0 0 8px", lineHeight: 1.2 }}>The Soulbound Chronicles</h1>
         <p style={{ fontSize: 15, color: "#8a7a60", marginBottom: 32, lineHeight: 1.6, fontStyle: "italic" }}>In this world, power is not learned — it is remembered by the soul. Choose your blood, and the World Voice will read what lies beneath.</p>
