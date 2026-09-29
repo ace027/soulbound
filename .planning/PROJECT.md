@@ -25,7 +25,7 @@ Initially the developer and their playtester. Then self-hosting deployers who su
 **Backend / World Voice**
 - **R4** — Three routes mirroring the artifact's call functions (`/api/unique-skill`, `/api/world-engine`, `/api/intro-scene`) via the official `@anthropic-ai/sdk`, with real status checking and typed error handling
 - **R5** — Structured outputs (`output_config.format`) on all three routes, schema generated from `shared/`
-- **R6** — Model split, centralized in one config module. Revised 2026-09-29: `claude-sonnet-5-5` on all three routes — unique-skill at `effort: medium`, world-engine and intro-scene at `effort: high` (all-Sonnet for cost, the developer's call). The invariant is that world-engine and intro-scene share a model — they share a cache namespace — not which model that is
+- **R6** — Model split, centralized in one config module. Revised 2026-09-29: `claude-opus-5-5` on unique-skill (`effort: medium`); `claude-sonnet-5-5` on world-engine and intro-scene (`effort: high`). The invariant is that world-engine and intro-scene share a model — they share a cache namespace — not which model that is
 - **R7** — Prompt caching preserved (`buildSystemBlocks()`, `cache_control: ephemeral` on `WORLD_LORE`); per-call usage logging to finally verify cache engagement
 
 **Frontend**

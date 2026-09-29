@@ -48,7 +48,7 @@ Before making any change:
 
 ## Model & API pattern
 - **Models are split — this is deliberate, and the split is load-bearing.**
-  - `claude-sonnet-5-5` on unique-skill determination (`/api/unique-skill`), at `effort: 'medium'`
+  - `claude-opus-5-5` on unique-skill determination (`/api/unique-skill`), at `effort: 'medium'`
   - `claude-sonnet-5-5` on the world engine loop AND intro scene generation, both at `effort: 'high'`
   Defined in one place, `backend/src/config.ts`'s `MODELS` — never as a literal at a call site.
   **World-engine and intro-scene MUST stay on the same model as each other** — they are the
@@ -71,7 +71,7 @@ Before making any change:
   The property, not the number, is what this constraint protects.
   `determineUniqueSkill` is independent of that pair: it sends no system blocks at all, so it has
   no cached prefix and nothing to share with anything (see #8). Its model and effort move freely.
-  It runs Sonnet 5.5 at `medium` — one short soul-read from five questionnaire answers, not
+  It runs Opus 5 at `medium` — one short soul-read from five questionnaire answers, not
   rule-adherence over a 15k-token prompt.
   ⚠️ **This arrangement has reversed twice, each time deliberately.** It began all-Sonnet, moved to
   Opus on the two system-block routes (2026-09-17), and moved to Sonnet on that pair with Opus on
@@ -79,9 +79,7 @@ Before making any change:
   Do not "correct" it back to an earlier arrangement. The rationale for each move is in
   `docs/design-decisions-log.md`.
   On 2026-09-29 both moved to the 5.5 generation with the split unchanged — a version bump, not a
-  reversal. Later the same day the developer moved unique-skill to Sonnet 5.5 too, for cost: every
-  route now runs `claude-sonnet-5-5`. That is a third deliberate reversal (back to all-Sonnet),
-  flagged before it was made. The pair invariant above is unchanged.
+  reversal.
 - `WORLD_SYSTEM_PROMPT` and `WORLD_LORE` are both static per playthrough (and across playthroughs) and are sent as separate `system` blocks via a shared `buildSystemBlocks()` helper, with `cache_control: { type: "ephemeral" }` on the `WORLD_LORE` block, so their token cost is paid once via prompt caching rather than on every call.
 - Verify caching is actually engaging (`cache_creation_input_tokens` / `cache_read_input_tokens` in the API response) once this is running in a real environment with visibility into raw responses — this was previously hard to verify from inside an artifact.
 

@@ -492,7 +492,7 @@ export async function callWorldVoice<Schema extends z.ZodType>({
     model,
     max_tokens: MAX_TOKENS,
     // No assistant-role message here: assistant prefill returns 400 on
-    // Sonnet 5.5 (and on Opus). Every call is a single user turn.
+    // Sonnet 5.5 and Opus 5.5. Every call is a single user turn.
     messages: [{ role: 'user' as const, content }],
     output_config: {
       format,

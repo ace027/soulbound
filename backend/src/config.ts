@@ -813,15 +813,14 @@ export const ALLOWED_HOSTS: readonly string[] = readAllowedHosts();
  * (CLAUDE.md #8), so it has no cached prefix and nothing to share with
  * anything. Its model and effort move freely without touching the pair.
  *
- * History: all-Sonnet, then Opus on the two system-block routes, then Sonnet on
- * the pair with Opus on uniqueSkill, then both moved to the 5.5 generation
- * (2026-09-29), and now all-Sonnet 5.5 (2026-09-29, for cost) — the
- * developer's deliberate call each time, made with the prior reversal in view.
- * Do not "correct" it back to an earlier arrangement; see
- * docs/design-decisions-log.md.
+ * History: all-Sonnet, then Opus on the two system-block routes, now Sonnet on
+ * the pair with Opus on uniqueSkill — the developer's deliberate call each
+ * time, made with the prior reversal in view. On 2026-09-29 both moved to the
+ * 5.5 generation with the split unchanged (a version bump, not a reversal). Do not "correct" it back to an
+ * earlier arrangement; see docs/design-decisions-log.md.
  */
 export const MODELS = {
-  uniqueSkill: 'claude-sonnet-5-5',
+  uniqueSkill: 'claude-opus-5-5',
   worldEngine: 'claude-sonnet-5-5',
   introScene: 'claude-sonnet-5-5',
 } as const;

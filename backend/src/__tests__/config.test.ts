@@ -362,7 +362,7 @@ describe('MODELS', () => {
   it('names exactly the three call sites, with no date-suffixed model IDs', async () => {
     const { MODELS } = await import('../config.js');
     expect(MODELS).toEqual({
-      uniqueSkill: 'claude-sonnet-5-5',
+      uniqueSkill: 'claude-opus-5-5',
       worldEngine: 'claude-sonnet-5-5',
       introScene: 'claude-sonnet-5-5',
     });

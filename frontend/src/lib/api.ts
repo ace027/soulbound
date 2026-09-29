@@ -318,7 +318,7 @@ export interface IntroSceneRequest {
 }
 
 /**
- * Soul-reading from the questionnaire. Backend: Sonnet 5.5, no system blocks
+ * Soul-reading from the questionnaire. Backend: Opus 5.5, no system blocks
  * (CLAUDE.md #8 — deliberately system-blind).
  *
  * `answers` arrives as the questionnaire's `Record<string, string>`; the five
