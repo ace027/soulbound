@@ -361,6 +361,15 @@ Legacy had no way out of the race screen or the questionnaire: once a player tap
 
 **Deferred: refusal fallbacks.** Both 5.5 models can end a turn with `stop_reason: "refusal"`, and the API offers a server-side fallback for that. Adding it is a separate change, by the developer's decision.
 
+## All routes on Sonnet 5.5 (2026-09-29)
+**`uniqueSkill` moved from `claude-opus-5-5` to `claude-sonnet-5-5`, so every route now runs Sonnet 5.5.** This was the developer's call, for cost ("Opus is using too much usage"). **It reverses the 2026-09-18 split** (Opus on the soul-read), which was flagged before the change was made. It returns the project to the all-Sonnet arrangement it started with, now on the 5.5 generation. Effort is unchanged (`medium` on unique-skill, `high` on the pair).
+
+**What didn't change.** `determineUniqueSkill` stays system-blind (CLAUDE.md #8): same request shape, same prompt, no system blocks. The pair invariant is untouched, since world-engine and intro-scene were already on Sonnet 5.5. Unique-skill still has no cached prefix, so sharing a model with the pair shares no cache.
+
+**Expected saving is small per character.** Unique-skill runs once per character creation, so Sonnet's lower rate ($2 / $10 against Opus 5.5's $4 / $20) roughly halves one small call. The per-turn spend on world-engine was already on Sonnet. If usage still feels high, the ledger to check is the world-engine turns (`[anthropic:usage]` lines), not the soul-read.
+
+**What to watch.** The soul-read is the prompt that survived the Tier 0 adversarial tests. Those ran on Sonnet originally and on Opus since 2026-09-18, and have not run on Sonnet 5.5. Re-run them live, and judge Unique Skill quality by feel in the next few character creations.
+
 ## Questionnaire Design
 Originally multiple-choice (5 options per question). Changed to fully open-ended free-text per the explicit reasoning that richer, longer answers produce a better-defined Unique Skill before the player ever enters the world. Each question has a `hint` line for guidance but no character limit. The Continue button is disabled until something is written, with a Back button to revise prior answers.
 

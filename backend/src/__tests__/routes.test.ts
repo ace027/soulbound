@@ -292,7 +292,7 @@ describe('World Voice routes (mocked SDK boundary)', () => {
   });
 
   describe('POST /api/unique-skill', () => {
-    it('calls claude-opus-5-5 with the unique-skill schema and no system key', async () => {
+    it('calls claude-sonnet-5-5 with the unique-skill schema and no system key', async () => {
       createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5-5', validUniqueSkillPayload));
       const res = await httpRequest(port, {
         method: 'POST',
@@ -319,7 +319,7 @@ describe('World Voice routes (mocked SDK boundary)', () => {
 
   describe('POST /api/world-engine', () => {
     it('calls claude-sonnet-5-5 with the World Voice schema and system blocks present', async () => {
-      createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5-5', validWorldVoicePayload));
+      createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5-5', validWorldVoicePayload));
       const res = await httpRequest(port, {
         method: 'POST',
         path: '/api/world-engine',
@@ -343,7 +343,7 @@ describe('World Voice routes (mocked SDK boundary)', () => {
 
   describe('POST /api/intro-scene', () => {
     it('calls claude-sonnet-5-5 with the World Voice schema and system blocks present', async () => {
-      createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5-5', validWorldVoicePayload));
+      createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5-5', validWorldVoicePayload));
       const res = await httpRequest(port, {
         method: 'POST',
         path: '/api/intro-scene',
@@ -359,8 +359,8 @@ describe('World Voice routes (mocked SDK boundary)', () => {
     });
   });
 
-  it('the two Opus routes (world-engine, intro-scene) send byte-identical system blocks AND byte-identical output_config', async () => {
-    createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5-5', validWorldVoicePayload));
+  it('the two system-block routes (world-engine, intro-scene) send byte-identical system blocks AND byte-identical output_config', async () => {
+    createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5-5', validWorldVoicePayload));
     await httpRequest(port, {
       method: 'POST',
       path: '/api/world-engine',
@@ -368,7 +368,7 @@ describe('World Voice routes (mocked SDK boundary)', () => {
     });
     const worldEngineRequest = createSpy.mock.calls[0]![0] as Record<string, unknown>;
 
-    createSpy.mockResolvedValueOnce(makeMessage('claude-opus-5-5', validWorldVoicePayload));
+    createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5-5', validWorldVoicePayload));
     await httpRequest(port, {
       method: 'POST',
       path: '/api/intro-scene',
