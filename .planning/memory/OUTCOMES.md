@@ -79,3 +79,13 @@ agent: ship-pipeline
 result: success
 pr: https://github.com/DeanItServices/soulbound/pull/7
 verification: 6/6 gates passed (304 + 249 tests, hosted 182 0 skipped, e2e 14); live deploy checks pending developer
+
+## Post-Phase 6 (dev → main) — PR opened 2026-09-29
+task_type: ship
+agent: ship-pipeline
+result: success
+pr: https://github.com/ace027/soulbound/pull/8
+verification: build clean; 304 + 253 tests local; CI build-and-test (incl. hosted) green on 21aa1e0; smoke/e2e pending at PR time
+summary: Not a phase ship. Title fix shipped ahead of Phase 7 on the developer's call (reversing
+  the 2026-09-25 decision) so the GHCR path change reaches main and the first release can run.
+tags: post-phase-6, pr-8, ghcr, dev-branch

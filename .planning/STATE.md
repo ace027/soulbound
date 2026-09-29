@@ -61,8 +61,9 @@
 - **No way back to the title screen during character creation** (reported and fixed 2026-09-25).
   Both creation screens now have "← Return to title", which clears race, name and answers. The
   developer lifted the `App.tsx` freeze for it. See the design log → "Return to title from
-  character creation". Not yet merged to `main`. **Developer decision 2026-09-25: it ships in
-  Phase 7's PR**, not on its own.
+  character creation". ~~Developer decision 2026-09-25: it ships in Phase 7's PR~~ — **reversed by
+  the developer 2026-09-29**: it ships now in [PR #8](https://github.com/ace027/soulbound/pull/8)
+  (`dev` → `main`) with the GHCR path change, so the first release can run from `main`.
 
 ### Known environment limits
 `git push origin <tag>` fails here (`remote end hung up`) while branch pushes succeed — a tag-ref
@@ -92,6 +93,9 @@ on :3001 and `vite` on :5173, with Playwright driving the pre-installed Chromium
 ```
 
 ## Ship record
+- **PR #8** — https://github.com/ace027/soulbound/pull/8 — **OPEN** 2026-09-29, `dev` → `main` (first PR on `ace027/soulbound`)
+  Post-Phase 6 work, not a phase: return-to-title fix (`96a0a45`, the only app-code commit), GHCR path → `ghcr.io/ace027/soulbound` (`21aa1e0`), Phase 6 retro, map refresh, branch notes. 9 commits, 17 files, +1,089/−275. Gate: build clean, 304 + 253 tests local, CI `build-and-test` green on `21aa1e0` (hosted on Postgres); the title fix had no review panel (tests + design-log entry only). After merge: dispatch `release.yml` once.
+
 - **PR #7** — https://github.com/DeanItServices/soulbound/pull/7 — **MERGED** 2026-09-25 as `89219af` (head `80d6ca2`, merge commit; CI 6/6 green on the head)
   Phase 6 — 59 commits, 106 files, +18,228/−104. Pre-ship gate **6/6**: 7/7 summaries, review PASSED (3 cycles), no blocker escalations, 304 + 249 tests, hosted 182 (0 skipped), e2e 14, clean tree. Descends from PR #6's merge (`86faa9f`); not rebased. Live deploy checks remain with the developer.
 
