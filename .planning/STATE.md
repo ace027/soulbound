@@ -1,6 +1,7 @@
 # Project State
 
 ## Current Position
+- **Phase 14 (Prologue Prototype) planned 2026-10-01** — 6 plans in 6 serial waves under `.planning/phases/14-prologue-prototype/` (`14-CONTEXT.md`, `14-01`..`14-06-PLAN.md`); runs before Phase 7 by developer decision. Not yet critiqued or built. Base commit for byte-identity checks: `216f550`. Live spend only in 14-05 (cap $0.50, needs a key). The safety-gate reading, the three playtest sessions and the canon decision are the developer's.
 - **Phase**: 6 of 13 — **shipped and merged: [PR #7](https://github.com/DeanItServices/soulbound/pull/7) merged 2026-09-25 as `89219af` (pre-ship gate 6/6; includes the white page-frame fix `80d6ca2`); review PASSED (3 cycles); live deploy checks pending the developer.** Everything verifiable without the developer's accounts is done; the 14-step runbook (`docs/runbooks/phase-6-hosted-setup.md`) is UNTESTED until the developer runs it (merge to `main` first — the Blueprint deploys `main`). Tests: 304 backend + 249 frontend, hosted 182 (0 skipped), e2e 14 (in CI), smoke 7/7, mutate-order 3/3. Spec rows 1-23. Review record: `.planning/phases/06-hosted-mode-accounts/06-REVIEW.md`.
 - **Phase 6 results**: 06-01 ✅ `61382ec`, `a541df5`, `730421b` — mode switch, hosted secrets, generalised `redact`, allow-list tracker (hosted-only); backend 187 → 248 (+61 new, 0 edited), frontend 190; 8/8 mutations caught (orchestrator re-ran the suite: 248 + 190)
   06-02 ✅ `3e018dd`, `bb8fbd4`, `6aaa203` — pg pool, node-pg-migrate (001 from `auth@1.7.6` CLI, 002 with `reserved_email`), `test:hosted` (fails unset / on skips), CI+release Postgres service, image carries migrations; backend 248 → 258, hosted 11/11 0 skipped, smoke 7/7, 6/6 mutations; CI green run 36051126070. Handoff: 06-04 wires the boot-time pending-migration exit (orchestrator re-verified 258 + 190, hosted 11/11)
@@ -45,7 +46,7 @@
     - `release.yml` derives the image name from the repo owner, so it follows the move automatically.
     - After the move, update the hardcoded `ghcr.io/deanitservices/soulbound` in `compose.selfhost.yml:41` and `README.md` (lines 68, 72, 115). Leave the historical mention in `docs/design-decisions-log.md` as it is.
   - **Key rotation is deferred by the developer**, who will rotate before friends are invited. It's tracked as a Phase 9 invite-gate item, so don't raise it again before then.
-- **Next Action**: Developer: work through `docs/runbooks/phase-6-hosted-setup.md` — `main` now carries `render.yaml`, so the Render Blueprint can be created (step 2); the agent verifies each step as it's reported. In parallel, `/legion:plan 7` (Phase 7 must first close the carried login-CSRF item).
+- **Next Action**: Run `/legion:build 14` (Phase 14 prologue side-track, before Phase 7) — or critique the plans first. Separately, developer: work through `docs/runbooks/phase-6-hosted-setup.md` — `main` now carries `render.yaml`, so the Render Blueprint can be created (step 2); the agent verifies each step as it's reported. In parallel, `/legion:plan 7` (Phase 7 must first close the carried login-CSRF item).
   After merge: dispatch `release.yml` once (GitHub → Actions → Release → Run workflow) — the GHCR
   publish is the one UNTESTED step. ⚠️ `SOULBOUND_PASSPHRASE` is now **required at boot** — add it to
   `.env` (12+ printable ASCII characters).
