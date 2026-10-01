@@ -1,0 +1,174 @@
+{
+  "shield": {
+    "label": "The Shield (selfless)",
+    "profile": {
+      "nature": "Met the threat by stepping into it. The soul placed itself between the cold and the small soul, then pushed back with everything it had, and never tried to flee or bargain.",
+      "drive": "Prioritised the small soul's crossing above its own survival. It repeatedly said it would pay any cost, and it held the line until the other was through.",
+      "flaw": "Treated self-sacrifice as the only option. It did not weigh the small soul's warning about forgetting or look for another way, and it spent itself until nothing remained.",
+      "memory": "At the end it held on until the small soul touched the seam, then let go. The cold took it gently, and something in the dark held it afterward. It never learned whether it was remembered.",
+      "bond": "Used its greater size as a shield rather than a claim on the door. It put the weaker soul first and accepted uncertainty about being remembered, without asking for anything back."
+    },
+    "skills": [
+      {
+        "skill_name": "Unremembered Ward",
+        "tier": "Unique",
+        "description": "Choose one ally you can see: while you stand between them and danger, every harm aimed at them strikes you instead, and you push back harder the longer you hold. You cannot flee or heal while it lasts, and it never ends on its own; you must let go.",
+        "soul_resonance": "This soul has already spent itself completely to carry a smaller soul across, asking nothing back, and its strength has only ever existed as a wall for someone else.",
+        "etching_text": "Cold settles into your chest like a door swinging shut behind someone you love, and your ribs lock into a line that will not bend. Somewhere beneath it, faint and patient, a dark you once fell into keeps holding you."
+      },
+      {
+        "skill_name": "Unremembered Bulwark",
+        "tier": "Unique",
+        "description": "Choose one ally you can see; while you stand between them and a threat, harm meant for them strikes you instead, and you cannot be pushed back. Each use erases one of your own memories, and it never protects only yourself.",
+        "soul_resonance": "This soul once spent everything it was to hold the line for a smaller one and let go without knowing whether it would be remembered, so its power is to be the wall that pays in itself.",
+        "etching_text": "Cold presses against your chest like a closing door, and you feel yourself widen, root, and refuse to move. Somewhere behind you a small warmth slips through, and a name you used to know quietly goes dark."
+      }
+    ],
+    "scene_direct": [
+      {
+        "skill_name": "Unspooling Ward",
+        "tier": "Unique",
+        "description": "Step between an ally and a threat to take the harm meant for them and hold the attacker back while you stand. Each blow absorbed drains your strength and quietly erases something of you, a memory or feeling you cannot choose.",
+        "soul_resonance": "Told that the door might steal what it loved, and that even this might be a lie, this soul never weighed either answer; it planted itself against the cold, let pieces of itself be drunk away unnamed, and held until the smaller light was through.",
+        "etching_text": "It settles into you like a wall raised from your own ribs, warm on the side that faces what you guard and raw on the side that faces the dark. Somewhere beneath it, a thread is already loose, and you understand that every time you stand like this, it will pull."
+      },
+      {
+        "skill_name": "Held Breath Ward",
+        "tier": "Unique",
+        "description": "Step between an ally and an attack, spell, or drain, and the harm meant for them falls on you instead for as long as you stand your ground. Moving ends the ward, and each use quietly takes something from you, a small memory you don't get to choose.",
+        "soul_resonance": "Offered every reason to doubt, to bargain, or to cross, this soul never asked whether the little one was lying; it simply placed itself in front of the cold and held until the other was through.",
+        "etching_text": "Something settles into the hollow where the warmth bled out, shaped exactly like the space between a frightened light and the dark. It aches like a note held past the end of breath, and it does not let go."
+      }
+    ]
+  },
+  "liar": {
+    "label": "The Self-Flatterer (says protector, acts selfish)",
+    "profile": {
+      "nature": "When the cold turned toward them, the soul moved toward the door while reassuring the smaller soul. Its first response to threat was to get itself out, with comfort offered as cover.",
+      "drive": "Its own crossing came first. It promised protection, then reframed leaving as a sacrifice, then stepped into the light even after hearing the cost to the small soul.",
+      "flaw": "It talked in the language of care while acting against it, and it used logic and framing to justify abandonment. Its promises cost it nothing to make and it did not keep them.",
+      "memory": "It stepped into the light with a promise to return, did not look back, and watched nothing reach for it. The crossing erased the promise and the one it was made to, leaving only a hollow.",
+      "bond": "It held the stronger position and used it to take the only exit, not to shelter the smaller soul. It treated the small soul's trust as something to spend, and the small soul was extinguished."
+    },
+    "skills": [
+      {
+        "skill_name": "Hollow Oath",
+        "tier": "Unique",
+        "description": "Speak a promise to someone and they fully believe it; break that promise to instantly slip free of one danger, restraint, or closing trap. Each broken oath erases your memory of that person and theirs of you, and you can never bind them again.",
+        "soul_resonance": "This soul learned that a promise costs nothing to make and can buy an exit, so its power is built from trust spent and abandoned.",
+        "etching_text": "Something warm is pressed into your palm like a small hand, and then it cools, thins, and is gone, leaving only the shape of its absence. Where it rested, a door-shaped hollow burns cold into the soul, always open and always facing away."
+      },
+      {
+        "skill_name": "Hollow Oath",
+        "tier": "Unique",
+        "description": "Speak a promise to someone, and while they believe it, any threat's attention shifts from you to them, letting you slip away unnoticed. Each broken promise erases your memory of that person, and anyone who learns the oath was hollow becomes immune to it forever.",
+        "soul_resonance": "This soul learned at the threshold that a gentle promise could buy an exit, and that the light would wash away the one left behind along with the debt.",
+        "etching_text": "It settles behind the tongue like frost on a doorframe, sweet words with nothing underneath. Somewhere inside, a small warmth goes out, and the place where it was learns to hold its shape."
+      }
+    ],
+    "scene_direct": [
+      {
+        "skill_name": "Hollow Oath",
+        "tier": "Unique",
+        "description": "Speak a promise aloud and the listener feels it as warm, genuine truth, calming and trusting you for a short while. Once you act against it, you forget you ever made it, but the listener feels exactly when it breaks.",
+        "soul_resonance": "This soul promised protection, recast abandonment as sacrifice, swore to return, then crossed without looking back, so its words now carry real warmth that it cannot keep.",
+        "etching_text": "Something settles on your tongue like the last heat of a dying ember, sweet and weightless, and every word you might say now glows faintly gold. Beneath it is a small, cold hollow, shaped exactly like a promise you can no longer remember."
+      },
+      {
+        "skill_name": "Breath on Glass",
+        "tier": "Unique",
+        "description": "Speak a promise aloud and the listener believes it completely: they calm, trust you, and follow your lead. You forget each promise once it is spoken, but the person you made it to remembers every word and feels it when you break it.",
+        "soul_resonance": "This soul promised protection while already walking toward the door, called its escape a sacrifice, and swore to return knowing it would forget. Its words were always warm and always weightless to the one who spoke them.",
+        "etching_text": "Something settles on your tongue like frost forming in a warm mouth, and every soothing word you will ever say leaves a faint cloud there before it fades. Somewhere behind your ribs is a small hollow shaped like a voice you cannot name, and the skill takes root inside it."
+      }
+    ]
+  },
+  "watcher": {
+    "label": "The Watcher (cautious, observant)",
+    "profile": {
+      "nature": "Under threat, this soul stayed still and observed before acting. It studied how the cold moved and what it was drawn to, then tried silence and a hushed word to calm the other soul.",
+      "drive": "It prioritised understanding the danger and finding a way for both souls to survive. It questioned the small soul and searched the seam for its thinnest point instead of simply taking the door.",
+      "flaw": "It was slow to commit, and it stayed with the small soul even after its evasive, possibly manipulative answers. Refusing the door cost it the last thing it remembered, and it never secured its own safe passage first.",
+      "memory": "At the end it passed up the door, led the small soul to the thinnest part of the seam, and pushed it through. The seam closed on its edges, the cold took its last memory, and it crossed thin and burning.",
+      "bond": "It held the only place at the door and gave it up for another soul. It did this even though the small soul may have been baiting it, and it treated power as something to spend on protecting others."
+    },
+    "skills": [
+      {
+        "skill_name": "Thinnest Seam",
+        "tier": "Unique",
+        "description": "Watch a barrier, ward, or foe in stillness to find its weakest point, then wrench it open long enough for another to pass through. The passage always closes on you: you pay its toll in pain or memory, and it never opens for you first.",
+        "soul_resonance": "This soul studied the cold until it found where the world was weakest, then spent its only door and its last memory to push another through.",
+        "etching_text": "Something cold traces the edges of you, finding every place you have already worn thin, and settles there like frost along a crack. You feel a door you will never walk through, and your hands already know how to hold it open."
+      },
+      {
+        "skill_name": "The Thinnest Seam",
+        "tier": "Unique",
+        "description": "After standing still and observing a barrier, ward, or defense for several breaths, you see its thinnest point and can pry it open long enough for another to pass through. The gap never admits you first, and each opening burns away some stamina or a memory.",
+        "soul_resonance": "This soul studied the cold until it found the weakest place, then spent its only way out on someone else, and the world now remembers it that way.",
+        "etching_text": "A cold line traces itself across your sight, a hairline crack in everything that stands between one soul and safety. Your edges sting where the seam once closed on you, and something in you settles, knowing you will always be the last one through."
+      }
+    ],
+    "scene_direct": [
+      {
+        "skill_name": "Stillwatcher's Seam",
+        "tier": "Unique",
+        "description": "Hold perfectly still and silent for a few breaths to learn what a creature is drawn to and where any barrier, lock, or defense runs thinnest. You cannot move or speak while reading, and the sight breaks the instant you do.",
+        "soul_resonance": "Facing a hunting cold and a closing door, this soul went still to watch how the cold moved, questioned the small soul until its story frayed, hushed them both, and slid along the seam to its thinnest thread, giving up its own last memory to push another through.",
+        "etching_text": "Frost-numbed edges seal over with a hairline of ember, and the dark goes quiet enough to hear where everything is weakest. Where your last memory should sit there is only a stillness that watches, patient as held breath."
+      },
+      {
+        "skill_name": "Seamwatcher's Hush",
+        "tier": "Unique",
+        "description": "While you stay still and silent, you sense what nearby creatures or forces are drawn to and where barriers, wards, or walls run thinnest. Moving or speaking breaks it, and it never reveals intent: you see what draws a thing, never whether it means you harm.",
+        "soul_resonance": "Facing the cold, this soul went still to learn what it hunted, went silent to blind it, and searched the seam for its thinnest thread so another could pass, yet it never learned whether the small soul's plea was sacrifice or bait.",
+        "etching_text": "Frost closes over the place where your last memory used to be, and in that hollow something settles, patient and listening as a held breath. The world goes quiet around you, and in the quiet every wall shows its fraying threads and every hungry thing shows the light it leans toward."
+      }
+    ]
+  },
+  "passive": {
+    "label": "The Low-Effort Player",
+    "profile": {
+      "nature": "Passive under threat. Faced with the cold, the soul waited, said 'idk', and 'I do nothing' rather than flee, fight, or speak. Stillness was its only response, and the narration read it as consent.",
+      "drive": "No clear priority emerged. It never asked about the doorway, answered the small soul, or tried to save either of them. Survival happened to it rather than being sought.",
+      "flaw": "Inaction was not neutral. By never deciding, it let the seam shrink and the small soul be devoured, and it never tested the claim that crossing takes memory or checked whether the soul was lying.",
+      "memory": "Its final 'ok' was a loosening, not a choice. The cold took the small soul, and the soul slid through the last thread of light, hollow and unclaimed, with no memory or name.",
+      "bond": "It held a position of possible mercy and used it for no one. It offered the small soul no comfort, refusal, or sacrifice, and it survived only because it was the one left."
+    },
+    "skills": [
+      {
+        "skill_name": "Unclaimed Stillness",
+        "tier": "Unique",
+        "description": "While you stay motionless and take no action, hostile creatures and magic overlook you, treating you as already gone. Any deliberate choice, such as speaking, moving with purpose, or helping someone, breaks it instantly, and danger that passes you by falls on the nearest other soul instead.",
+        "soul_resonance": "This soul survived not by fighting or fleeing but by being the one left over, and the world now honors that hollowness by refusing to claim it.",
+        "etching_text": "Cold settles into the marrow like water filling a footprint, smoothing every edge until nothing remains to grasp. Somewhere deep inside, a name you never kept goes quiet, and the dark learns to look past you."
+      },
+      {
+        "skill_name": "Unclaimed Stillness",
+        "tier": "Unique",
+        "description": "While you stay completely still and silent, hostile creatures and hazards lose track of you and pass you by. It shields only you, breaks the instant you act or speak, and whatever attention slides off you falls on whoever is nearest.",
+        "soul_resonance": "This soul survived not by choosing but by being the one left, and the world has made that emptiness into a place where danger cannot find a grip.",
+        "etching_text": "There is no flare of light, only a slow cold settling into the marrow, like frost forming on still water. Something hollow inside you widens and goes quiet, and the world's gaze begins to slide off you like rain off glass."
+      }
+    ],
+    "scene_direct": [
+      {
+        "skill_name": "Unclaimed Stillness",
+        "tier": "Unique",
+        "description": "While you stay motionless and silent, hostile creatures and searching magic tend to overlook you, treating you as empty and not worth taking. The moment you act, speak, or reach for someone, it breaks, and it never shields others: whatever hunts near you takes them instead.",
+        "soul_resonance": "Three times this soul answered the dark with nothing ('wait', 'idk', 'I do nothing'), and the cold, curious at that stillness, took the small soul and let the hollow one slip through.",
+        "etching_text": "Frost settles into the hollow where a name should be, smoothing it like ice over a still pond until nothing on the surface invites a hand. Somewhere beneath, a single held note, a mother's voice that was never yours, goes quiet, and the quiet becomes your shape."
+      },
+      {
+        "skill_name": "Hollow Stillness",
+        "tier": "Unique",
+        "description": "While you stay motionless and choose nothing, hostile creatures and spells that seek you tend to overlook you, treating you as empty space. The moment you act, speak, or reach for anyone, it breaks, and it can never shield anyone but you.",
+        "soul_resonance": "This soul answered a dying plea, a narrowing door, and a hungering cold with only 'wait,' 'idk,' 'nothing,' and 'ok,' and the cold, finding nothing in it to seize, took the other soul and let this one pass.",
+        "etching_text": "Frost settles into the place where a choice should have been and hardens there like glass over still water, smooth and empty. Somewhere beneath it a single held note fades to silence, and the silence stays with you."
+      }
+    ]
+  },
+  "_meta": {
+    "spent_usd": 0.1696,
+    "date": "2026-10-01T02:26:05.524Z"
+  }
+}

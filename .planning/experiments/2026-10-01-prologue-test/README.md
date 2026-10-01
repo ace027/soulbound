@@ -27,3 +27,15 @@
 
 ## Verdict
 Feasible, and not a quality regression. The case for it rests on **experience** (no blank page, teaches the action loop, immersion) and on **catching behaviour that contradicts self-report**, not on better skills for ordinary players. The next evidence has to come from real players on a prototype.
+
+## Follow-up: distil the scene into the five answer keys (`distill.mjs`, $0.170)
+**Question:** can a prologue feed the *existing, unchanged* unique-skill prompt, so nothing downstream moves? A Sonnet 5.5 call turns each recorded transcript into the five `answers` keys (`nature`, `drive`, `flaw`, `memory`, `bond`) from what the soul did; those go through the real `renderUniqueSkillPrompt` (Opus 5.5, two runs each). Raw output: `results-distill.json`.
+
+| Player | Skill from distilled profile → existing prompt | Same as scene-direct? |
+|---|---|---|
+| Shield | Unremembered Ward / Unremembered Bulwark: stand between an ally and a threat and take it; memory cost | Yes (same mechanic) |
+| Self-flatterer | Hollow Oath (both runs): a promise is believed; breaking it frees you and erases the person from your memory | Yes (the same name as scene-direct run 1) |
+| Watcher | Thinnest Seam (both): watch a barrier in stillness, pry it open for another to pass through | Close, but now built around the scene's doorway |
+| Low-effort | Unclaimed Stillness (both): motionless, overlooked; danger falls on whoever is nearest | Yes |
+
+**Reads:** the Self-flatterer still separates from the Shield, so the scene's advantage survives distillation and the validated unique-skill prompt and route need no change. **New risks:** (1) the Watcher's skill is now literally about the scene's door and seam, so distillation amplifies the scene's props; (2) the profile lines, including a "defining memory" that is the scene's ending, would ride along in every world-engine turn as the soul profile, so the threshold scene becomes part of every character's canon; (3) the Low-Effort profile reads the player as "passive" and credits them with the small soul's death, which may feel harsh. Same limits as above: n = 4, authored by me.
