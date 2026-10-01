@@ -15,6 +15,7 @@
 - [ ] **Phase 11: Subscription Billing** — Stripe, priced from friends' real usage
 - [ ] **Phase 12: Condition & Inventory** — own design pass first, then contract + balance rules
 - [ ] **Phase 13: Launch Hardening & Conversion** — ToS/privacy, CSP, friends to paid, public-beta waitlist
+- [ ] **Phase 14: Prologue Prototype** — opt-in behaviour-based character creation; **runs before Phase 7** (developer decision 2026-10-01)
 
 ## Phase Details
 
@@ -205,6 +206,20 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 - The public-beta waitlist is open.
 **Plans**: TBD
 
+### Phase 14: Prologue Prototype
+**Runs before Phase 7** by developer decision (2026-10-01); numbered 14 so Phases 7-13 keep their numbers. Design: `.planning/explorations/2026-10-01-prologue-prototype-design.md`; evidence: `.planning/experiments/2026-10-01-prologue-test/`.
+**Goal**: An opt-in, behaviour-based way to create a character: a fixed four-beat threshold scene, narrated reactively, is distilled into the five `answers` keys and fed to the existing, unchanged unique-skill pipeline. The questionnaire stays the default.
+**Requirements**: R36
+**Recommended Agents**: AI Engineer, Backend Architect, Frontend Developer, QA Verification Specialist
+**Success Criteria**:
+- **Safe to test:** the seven live safety cases all hold (design doc → Safety Gate), read by a person.
+- **Contract untouched:** no change to the unique-skill, world-engine or intro-scene prompts or routes, the World Voice field names, or `App.tsx`; the narrator sends no `system` key; all player text is wrapped.
+- **Opt-in:** with the flag off the questionnaire renders exactly as before; with `?prologue=1` the scene runs and ends by calling the existing completion handler with five keys.
+- **Config:** `prologueBeat` and `prologueProfile` keys in `MODELS` and `EFFORT` (developer consent recorded for the one `MODELS` pin test).
+- **Playtest:** three sessions with the same tester on the developer's dev machine, both paths each, preference asked after about five world turns; scene records pasted by the tester; per-character cost recorded. Preferred in at least 2 of 3 sessions, with no confusing scene or misleading skill.
+- **Decision recorded:** canon (`traits` vs `scene`) chosen, and whether to replace the questionnaire, add a choice, or stop.
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Plans | Completed | Status |
@@ -222,4 +237,5 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 | 11. Subscription Billing | TBD | 0 | Pending |
 | 12. Condition & Inventory | TBD | 0 | Pending (design pass first) |
 | 13. Launch Hardening & Conversion | TBD | 0 | Pending |
-| **Total** | **40 + TBD** | **40** | Phases 1-6 shipped (6: live checks pending); 7-13 pending |
+| 14. Prologue Prototype | TBD | 0 | Pending — **runs before Phase 7** |
+| **Total** | **40 + TBD** | **40** | Phases 1-6 shipped (6: live checks pending); 7-14 pending (14 runs before 7) |

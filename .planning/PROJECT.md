@@ -95,6 +95,10 @@ Initially the developer and their playtester. Then self-hosting deployers who su
   - A capped `gameState.quests`, a Codex section, and a bounded `ACTIVE QUESTS` block in the prompt.
   - MUST NOT additions: quests never grant skills, and never resolve the protected ambiguities.
 - **R34** — Condition and inventory: its own design pass first (`/legion:explore`), then contract and MUST NOT additions. Items never grant or evolve skills.
+- **R36** — Prologue prototype (design: `.planning/explorations/2026-10-01-prologue-prototype-design.md`):
+  - An opt-in (`?prologue=1`) behaviour-based character creation: a fixed four-beat scene, narrated reactively by a new system-free route, distilled into the five `answers` keys; the existing unique-skill, intro-scene and world-engine paths are unchanged.
+  - The questionnaire remains the default; success is the playtester preferring the prologue.
+  - Safety gate of seven live cases before any tester sees it. Runs before Phase 7.
 - **R35** — "Ready to invite friends" gate: an 11-item checklist, including rotating the Anthropic key, with each item demonstrated on the live host before invites (see design doc → Launch & operations).
 
 ### Out of Scope
