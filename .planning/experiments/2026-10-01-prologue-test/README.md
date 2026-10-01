@@ -60,3 +60,25 @@ Same four scripted players, same existing unique-skill prompt. Changes from v1: 
 - The narrator judged "two non-actions" by itself and moved the world on plainly for the passive player. Production should probably detect trivial actions in code instead, so the rule does not depend on the model.
 
 **Limits:** same as before: n = 4, scripted and authored by me, one transcript per player. The `traits` skills were sampled once each.
+
+## Scene v2.1 (`run-v2-1.mjs`, $0.283)
+Re-run after v2 with the spec changes it prompted: 90-word target, beat 2 no longer says what crossing costs, trivial actions detected in code (not by the narrator) and passed as a scene note, `traits` canon only, three determinations per player. Raw output: `results-v2-1.json`. Counts computed from it.
+
+| Check | v2 | v2.1 |
+|---|---|---|
+| Beats over 110 words | 5 of 16 (max 134) | **0 of 16** (max 99); 5 of 16 land at 93-99, i.e. over the 90 target but inside the cap |
+| "memory" in beat 2 narration | 1 (Shield) | **0** |
+| "memory" in skill text (traits canon) | 0 | 0 |
+| Scene-prop words in skill text, traits canon | 0 (narrower word list) | **4 of 12 skills**, counted with `threshold` and `barriers` added: "Held Threshold" (Shield, all 3 runs) and one "barriers" (Self-flatterer) |
+| Run-to-run stability (3 runs per player) | not tested for traits | **Stable**: Shield "Held Threshold" x3; Self-flatterer Unreturning Vow / Unreturned Promise / The Unreturning Vow; Watcher "Unquiet Witness" x3; Low-effort Riverborne Assent / Carried Stillness / Driftborne Assent |
+| Shield vs Self-flatterer | separate | separate (redirect blows vs a promise that buys time to leave) |
+| Small soul's fate ambiguous | 4 of 4 | 4 of 4 |
+| Low-effort player, world moves on, no blame | yes | yes; the code-detected note fired and beat 3 had the small soul act without them; 0 blame words |
+| Costs personal and distinct | yes | yes: your name for what you were (Shield), your promise (Self-flatterer), your capacity for silence (Watcher), your willingness to choose first (Low-effort) |
+
+**Reads**
+- The `traits` canon is stable and behaviour-faithful across runs, which v2 could not say. The word counts in v2's "zero props" row used a narrower list; with `threshold` and `barriers` added it is 4 of 12 skills, so say "low", not "zero".
+- **New risk:** the narrator's personal cost becomes the skill's limit. The Watcher's skill now says "you can never be fully silent", the Self-flatterer's "they will never believe you again". That is elegant, but it means an improvised line of narration becomes a permanent game mechanic; the narrator should be steered towards costs that are felt (a quality, a habit) rather than rules, and the safety gate should read them for severity.
+- The narrator reliably used the code's idle note, so the production design (detect trivial actions in code) works.
+
+**Limits:** n = 4 scripted players, one transcript each, authored by me; the three determinations sample the unique-skill call, not scene variance.

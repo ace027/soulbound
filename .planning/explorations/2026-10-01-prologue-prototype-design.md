@@ -43,7 +43,7 @@ Decisions already made by the developer: opt-in flag with the questionnaire as d
 
 ## Feature Scope
 ### MVP
-- [x] Paper-test scene v2 with the same four scripted players before building any route (done 2026-10-01; see "Scene v2 paper-test result"). Re-run once with the spec changes it prompted (90-word target, beat-2 wording) if the developer wants evidence before building.
+- [x] Paper-test scene v2 with the same four scripted players before building any route (done 2026-10-01; see "Scene v2 paper-test result"). Re-run with the spec changes it prompted: done (v2.1, $0.283).
 - [ ] `POST /api/prologue/beat`: stateless; takes name, race name and the history so far, returns the next narration (beats 1-3 end on pressure, beat 4 closes the scene).
 - [ ] `POST /api/prologue/profile`: takes the finished transcript, returns the five `answers` keys written from behaviour only. Accepts `canon: 'scene' | 'traits'` (default `scene`) so the open canon question can be answered by comparing real profiles.
 - [ ] `PrologueScreen` (frontend): fixed opening text, four action turns with a visible "reading..." state, "← Return to title", ends by calling `onComplete(profile)`.
@@ -81,6 +81,10 @@ Decisions: keep the doorway and the cold; the cost of crossing is **personal** (
 Worked: four distinct personal costs; the passive player read neutrally with no blame; the small soul's fate ambiguous in 4 of 4; the Self-flatterer still separates from the Shield in both canon modes. Not worked: **5 of 16 beats overran 110 words** (up to 134), and the `scene` canon is no cleaner than v1 on scene props in skills (3 against 4) and carries more of the scene into the profile, while the `traits` canon produced **zero** prop words in every skill and profile and kept the personal cost in the profile.
 Spec changes made because of it: narration target tightened to **under 90 words**; beat 2's claim no longer says what crossing costs (it had seeded "memory" for the Shield); production should detect trivial actions in code and pass a flag to the narrator rather than rely on the model counting them.
 **Recommendation (open canon decision):** default to `traits` for session 1 of the playtest, and keep the switch so `scene` can be compared on real profiles. The final call stays with the developer.
+
+### Scene v2.1 re-run result (2026-10-01, $0.283; table in the experiment README)
+With the spec changes applied, **0 of 16 beats exceeded 110 words** (max 99; five at 93-99, so 90 is a soft target and 110 the cap), beat 2 no longer seeded "memory", and trivial actions detected in code worked (the narrator moved the world on, no blame). The `traits` canon was **stable across three runs per player** (same concept every time) and behaviour-faithful, with scene-prop words in 4 of 12 skills (a "Held Threshold" name and one "barriers"), so "low", not "zero" as v2 said. Costs stayed personal and distinct; the Shield and Self-flatterer stayed separate; the small soul's fate stayed ambiguous.
+**Evidence now supports the `traits` default for playtest session 1.** One new risk: the narrator's personal cost becomes the skill's limit ("you can never be fully silent"), so an improvised line becomes a permanent mechanic. Steer the narrator towards costs that are felt rather than rule-like, and have the safety gate read costs for severity.
 
 ## Experience / Workflow
 Title → race → name (unchanged) → with `?prologue=1`: the opening text appears; the player types an action, waits for the narration of its consequence, and repeats for four turns. The fourth beat closes the scene and the soul is "taken hold of". The loading screen then runs the existing "reads your soul" path: Unique Skill, intro scene, simulation. A normal URL shows the questionnaire exactly as today.
@@ -132,7 +136,7 @@ Build **now, as a short side-track before Phase 7**: v2 paper test, build, safet
 ## Open Questions
 - **`MODELS` / `EFFORT` pin: settled** (consent recorded under "Sequencing"). Not yet checked: whether any other test pins `EFFORT`. If one does, it is edited only to add the new keys, never loosened.
 - **Canon vs traits-only** profile: decided after reading real profiles (the switch above).
-- **Scene v2 is unvalidated.** Personal costs, neutral handling of inaction and the ambiguous fate answer the paper test's three problems on paper (repeated memory cost, harsh blame of the passive player, scene props in skills), but only a re-run shows whether they work. Personal costs could also make the narrator's invented costs uneven in quality.
+- **Scene v2 validated on paper, not with players.** v2.1 showed personal costs, neutral inaction handling, ambiguous fate, the length cap and `traits` canon stability all holding on four scripted players. Open: narrator-invented costs flow into skill limits and could be harsher or odder than intended (see v2.1 result); and real players will type things the scripts did not.
 - **Playtest design:** settled (see "Playtest Plan"). Remaining risk: one tester is one person, and novelty can still tilt the result.
 - **Hosted cost exposure:** the new routes are not metered by Phase 8's creation allowance, which counts at `/api/unique-skill`. Fine while the flag is opt-in and hosted is developer-only; must be resolved before friends are invited.
 - **Per-character cost** is unmeasured (see Inferences); the first live run records it.
