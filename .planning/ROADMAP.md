@@ -15,7 +15,7 @@
 - [ ] **Phase 11: Subscription Billing** — Stripe, priced from friends' real usage
 - [ ] **Phase 12: Condition & Inventory** — own design pass first, then contract + balance rules
 - [ ] **Phase 13: Launch Hardening & Conversion** — ToS/privacy, CSP, friends to paid, public-beta waitlist
-- [ ] **Phase 14: Prologue Prototype** — opt-in behaviour-based character creation; **runs before Phase 7** (developer decision 2026-10-01)
+- [x] **Phase 14: Prologue Prototype** — opt-in behaviour-based character creation; **runs before Phase 7** (developer decision 2026-10-01). Built and review-passed; safety-gate reading, playtest and canon decision still the developer's
 
 ## Phase Details
 
@@ -226,7 +226,7 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 - [x] 14-05: Live safety gate and cost measurement (gate UNREAD: the developer's verdicts are pending)
 - [x] 14-06: Records and playtest kit
 
-**Status**: built, not closed. Success criteria 1 (safe to test: the gate is UNREAD), 5 (playtest) and 6 (decision recorded) wait on the developer. Criteria 2-4 are covered by the plans' verification. See 14-CONTEXT.md.
+**Status**: built and review-passed (2 cycles, `14-REVIEW.md`), not closed. Success criteria 1 (safe to test: the gate is UNREAD), 5 (playtest) and 6 (decision recorded) wait on the developer. Criteria 2-4 are covered by the plans' verification. See 14-CONTEXT.md.
 
 ## Progress
 
@@ -245,5 +245,5 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 | 11. Subscription Billing | TBD | 0 | Pending |
 | 12. Condition & Inventory | TBD | 0 | Pending (design pass first) |
 | 13. Launch Hardening & Conversion | TBD | 0 | Pending |
-| 14. Prologue Prototype | 6 | 6 | Built 2026-10-01 — safety gate UNREAD; playtest and canon decision pending (developer) — **runs before Phase 7** |
+| 14. Prologue Prototype | 6 | 6 | Built and review-passed 2026-10-01 (2 cycles) — safety gate UNREAD; playtest and canon decision pending (developer) — **runs before Phase 7** |
 | **Total** | **46 + TBD** | **46** | Phases 1-6 shipped (6: live checks pending); 14 built, not closed (runs before 7); 7-13 pending |

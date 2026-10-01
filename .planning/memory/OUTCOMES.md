@@ -89,3 +89,11 @@ verification: build clean; 304 + 253 tests local; CI build-and-test (incl. hoste
 summary: Not a phase ship. Title fix shipped ahead of Phase 7 on the developer's call (reversing
   the 2026-09-25 decision) so the GHCR path change reaches main and the first release can run.
 tags: post-phase-6, pr-8, ghcr, dev-branch
+
+## Phase 14: Prologue Prototype — review passed 2026-10-01
+task_type: quality-review
+agent: testing-qa-verification-specialist, engineering-security-engineer, engineering-frontend-developer
+result: success
+verification: 2 cycles, 0 blockers, 7 warnings fixed; backend 404 + frontend 327 tests, e2e 28; QA mutation sweep killed all cycle-1 survivors
+summary: Panel review of the opt-in prologue (routes, screen, wrapper, tests). Not closed: safety gate UNREAD, playtest and canon decision are the developer's.
+tags: phase-14, review-passed, prologue, mutation-sweep

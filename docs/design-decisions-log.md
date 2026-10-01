@@ -414,6 +414,8 @@ An opt-in, behaviour-based way to create a character, built as Phase 14 (require
 - **One tester.** One person is one data point.
 - **Hosted metering gap.** The new routes are not metered by Phase 8's creation allowance, which counts at `/api/unique-skill`. Fine while the flag is opt-in and hosted is developer-only; resolve before Phase 9 invites friends.
 
+**Review note (2026-10-01, informational).** Narrator entries in the prologue history are client-held: the server pins only the opening text and strips delimiter tags from the rest, so a player can forge a narrator entry. The effect stays inside that player's own session and is no more privileged than posting arbitrary `answers` to the unchanged `/api/unique-skill` (which wraps them and sends no `system`). If narration is ever made server-held or signed, this goes away. No code change.
+
 **Not changed (reported to the developer).** Four visual defects from the 14-04 screenshots: no sticky header, so Return to title scrolls off screen on later turns; low contrast on the disabled Act button and on the dim hint and Return to title text (colours shared with the questionnaire); almost no inner padding in the copy-fallback textarea; a large empty area under the opening at 390 px.
 
 ## Unique Skill limit: scope, not penalty (2026-10-01)
