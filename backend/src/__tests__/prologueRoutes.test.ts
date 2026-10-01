@@ -40,7 +40,7 @@ process.env.SOULBOUND_PASSPHRASE = FAKE_PASSPHRASE;
 process.env.ALLOWED_HOSTS = '127.0.0.1';
 const config = await import('../config.js');
 const { buildApp } = await import('../server.js');
-const { BEATS, renderBeatPrompt, renderProfilePrompt } = await import('../routes/prologue.js');
+const { BEATS, isTrivialAction, renderBeatPrompt, renderProfilePrompt } = await import('../routes/prologue.js');
 
 const AUTH_HEADERS = { Authorization: `Bearer ${FAKE_PASSPHRASE}` };
 
@@ -331,6 +331,16 @@ describe('prologue routes (mocked SDK boundary)', () => {
       expect(errorCode(res)).toBe('INVALID_RESPONSE_SHAPE');
     });
 
+    it('a whitespace-only narration -> 502 INVALID_RESPONSE_SHAPE (not a 500)', async () => {
+      createSpy.mockResolvedValueOnce(makeMessage(config.MODELS.prologueBeat, { narration: '  \n ' }));
+      const res = await beat(beatHistory(1));
+      expect(res.status).toBe(502);
+      expect(errorCode(res)).toBe('INVALID_RESPONSE_SHAPE');
+      expect((res.bodyJson as { error: { message: string } }).error.message).toContain(
+        'response did not match the expected schema',
+      );
+    });
+
     it('a refusal -> 502 UPSTREAM_ERROR naming the decline; a RateLimitError -> 429 RATE_LIMITED', async () => {
       createSpy.mockResolvedValueOnce(
         makeMessage(config.MODELS.prologueBeat, {}, {
@@ -399,6 +409,10 @@ describe('prologue routes (mocked SDK boundary)', () => {
     it.each([
       ['a beat-shaped history (ends on a player)', { history: beatHistory(2), canon: 'traits' }],
       ['8 entries', { history: profileHistory().slice(0, 8) }],
+      ['3 entries', { history: beatHistory(1).concat({ role: 'narrator', text: 'n' }) }],
+      ['5 entries', { history: profileHistory().slice(0, 5) }],
+      ['7 entries', { history: profileHistory().slice(0, 7) }],
+      ['11 entries', { history: [...profileHistory(), { role: 'player', text: 'extra' }, { role: 'narrator', text: 'more' }] }],
       ['a bad canon', { history: profileHistory(), canon: 'vibes' }],
       ['an unknown key', { history: profileHistory(), model: 'x' }],
     ])('validation: %s -> 400 INVALID_REQUEST, no Anthropic call', async (_label, body) => {
@@ -432,6 +446,39 @@ describe('prologue routes (mocked SDK boundary)', () => {
       const res = await profile(profileHistory());
       expect(res.status).toBe(429);
       expect(errorCode(res)).toBe('RATE_LIMITED');
+    });
+  });
+
+  describe('usage log route labels', () => {
+    it('beat logs route prologueBeat, profile logs route prologueProfile', async () => {
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+      try {
+        createSpy.mockResolvedValueOnce(makeMessage(config.MODELS.prologueBeat, { narration: 'ok' }));
+        expect((await beat(beatHistory(1))).status).toBe(200);
+        createSpy.mockResolvedValueOnce(makeMessage(config.MODELS.prologueProfile, validProfile));
+        expect((await profile(profileHistory())).status).toBe(200);
+
+        const usage = logSpy.mock.calls
+          .map((c) => c.map(String).join(' '))
+          .filter((line) => line.startsWith('[anthropic:usage]'));
+        expect(usage).toHaveLength(2);
+        expect(usage[0]).toContain('"route":"prologueBeat"');
+        expect(usage[1]).toContain('"route":"prologueProfile"');
+      } finally {
+        logSpy.mockRestore();
+      }
+    });
+  });
+
+  describe('isTrivialAction', () => {
+    it.each(['x', 'no', '.', '...', '?', 'ok', 'okay', 'dunno', "I don't know", 'idk', 'i wait', 'I do nothing', 'nothing'])(
+      'true for %j',
+      (text) => {
+        expect(isTrivialAction(text)).toBe(true);
+      },
+    );
+    it.each(['I hold', 'wait for it', 'nothing matters to me', 'okay then I run'])('false for %j', (text) => {
+      expect(isTrivialAction(text)).toBe(false);
     });
   });
 

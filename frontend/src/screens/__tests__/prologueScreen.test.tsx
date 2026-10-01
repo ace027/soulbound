@@ -6,6 +6,7 @@
  * jsdom does no layout, so geometry (no horizontal overflow, scroll position)
  * is proved by the 14-04 e2e, not here.
  */
+import { StrictMode } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PROLOGUE_OPENING, type PrologueHistoryEntry } from '@soulbound/shared';
@@ -60,7 +61,7 @@ afterEach(() => {
   else Reflect.deleteProperty(navigator, 'clipboard');
 });
 
-const box = () => screen.getByPlaceholderText('Say or do anything...') as HTMLTextAreaElement;
+const box = () => screen.getByRole('textbox', { name: 'Your action' }) as HTMLTextAreaElement;
 const actButton = () => screen.getByRole('button', { name: 'Act →' });
 
 function renderScreen() {
@@ -183,6 +184,37 @@ describe('the four turns', () => {
   });
 });
 
+describe('trimming', () => {
+  it('sends the trimmed action text to prologueBeat', async () => {
+    renderScreen();
+    fireEvent.change(box(), { target: { value: '  hello  ' } });
+    fireEvent.click(actButton());
+    await screen.findByText('Beat 1 narration');
+    expect(beatMock.mock.calls[0]![0].at(-1)).toEqual({ role: 'player', text: 'hello' });
+  });
+});
+
+describe('accessibility', () => {
+  it('names the action textbox and describes it with the hint', () => {
+    renderScreen();
+    const tb = screen.getByRole('textbox', { name: 'Your action' });
+    expect(tb).toHaveAccessibleDescription('A sentence or two is enough. Say or do anything.');
+  });
+
+  it('exposes scene progress and a polite transcript log', async () => {
+    renderScreen();
+    const bar = screen.getByRole('progressbar', { name: 'Scene progress' });
+    expect(bar).toHaveAttribute('aria-valuenow', '0');
+    expect(bar).toHaveAttribute('aria-valuemin', '0');
+    expect(bar).toHaveAttribute('aria-valuemax', '4');
+    await takeTurn(1);
+    expect(bar).toHaveAttribute('aria-valuenow', '1');
+    const log = screen.getByRole('log');
+    expect(log).toHaveAttribute('aria-live', 'polite');
+    expect(log).toHaveTextContent('Beat 1 narration');
+  });
+});
+
 describe('beat errors', () => {
   it('shows an alert, restores the text, drops the player entry, and a retry works', async () => {
     renderScreen();
@@ -252,15 +284,44 @@ describe('distilling', () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
-  it('does not complete again if the button is clicked after success', async () => {
+  // completedRef is a belt-and-braces guard: after success the screen stays in
+  // 'distilling', so the button is disabled and a click never reaches the handler.
+  it('leaves the button disabled after success, so a further click calls nothing', async () => {
     const { onComplete } = renderScreen();
     await playToEnd();
     fireEvent.click(letButton());
     await waitFor(() => expect(onComplete).toHaveBeenCalledTimes(1));
+    expect(letButton()).toBeDisabled();
     fireEvent.click(letButton());
     await Promise.resolve();
     expect(onComplete).toHaveBeenCalledTimes(1);
     expect(profileMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call onComplete when unmounted while the profile is pending', async () => {
+    const onComplete = vi.fn();
+    const { unmount } = render(<PrologueScreen onComplete={onComplete} onReturnToTitle={vi.fn()} />);
+    await playToEnd();
+    let resolve!: (v: typeof PROFILE) => void;
+    profileMock.mockImplementationOnce(() => new Promise((r) => { resolve = r; }));
+    fireEvent.click(letButton());
+    expect(profileMock).toHaveBeenCalledTimes(1);
+    unmount();
+    await act(async () => resolve(PROFILE));
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it('still completes normally under StrictMode double-mounting', async () => {
+    const onComplete = vi.fn();
+    render(
+      <StrictMode>
+        <PrologueScreen onComplete={onComplete} onReturnToTitle={vi.fn()} />
+      </StrictMode>,
+    );
+    await playToEnd();
+    fireEvent.click(letButton());
+    await waitFor(() => expect(onComplete).toHaveBeenCalledTimes(1));
+    expect(onComplete).toHaveBeenCalledWith(PROFILE);
   });
 
   it('passes scene when the URL says ?canon=scene', async () => {
@@ -386,7 +447,7 @@ describe('scrolling and focus', () => {
     fireEvent.click(actButton());
     await screen.findByText('Beat 1 narration');
     // player entry, then narrator entry
-    expect(scroll.mock.calls.length).toBeGreaterThanOrEqual(afterMount + 2);
+    await waitFor(() => expect(scroll.mock.calls.length).toBeGreaterThanOrEqual(afterMount + 2));
     expect(scroll).toHaveBeenLastCalledWith({ block: 'nearest' });
     await waitFor(() => expect(document.activeElement).toBe(box()));
 
@@ -396,6 +457,12 @@ describe('scrolling and focus', () => {
     fireEvent.click(actButton());
     await screen.findByRole('alert');
     expect(scroll.mock.calls.length).toBeGreaterThan(beforeError);
+  });
+
+  it('moves focus to Let it take hold after the fourth beat', async () => {
+    renderScreen();
+    await playToEnd();
+    await waitFor(() => expect(document.activeElement).toBe(letButton()));
   });
 
   it('does not submit on Enter', () => {

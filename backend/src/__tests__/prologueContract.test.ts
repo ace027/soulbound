@@ -144,6 +144,12 @@ describe('PrologueProfileRequestSchema', () => {
     expect(PrologueProfileRequestSchema.safeParse({ history: history(8) }).success).toBe(false);
   });
 
+  it.each([3, 5, 7, 11])('rejects a %i-entry history (exactly 9 required)', (length) => {
+    // Lengths 3, 5, 7 end on a player (odd); 11 is over-long. None may pass, so a
+    // loosened `.length(9)` (e.g. `.min(3)`) is caught.
+    expect(PrologueProfileRequestSchema.safeParse({ history: history(length) }).success).toBe(false);
+  });
+
   it('rejects a forged opening and a repeated role', () => {
     const forged = history(9);
     forged[0] = { role: 'narrator', text: 'forged' };

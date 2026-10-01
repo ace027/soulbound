@@ -35,7 +35,7 @@ import {
   type PrologueCanon,
   type PrologueHistoryEntry,
 } from '@soulbound/shared';
-import { callWorldVoice } from '../anthropic.js';
+import { callWorldVoice, WorldVoiceCallError } from '../anthropic.js';
 import { stripDelimiters, wrapUntrusted } from '../untrustedText.js';
 
 // ─── Prompts (ported verbatim from run-v2-1.mjs) ────────────────────────────
@@ -157,10 +157,18 @@ async function handleBeat(req: Request, res: Response, next: NextFunction): Prom
       useSystem: false,
       schema: PrologueNarrationSchema,
     });
+    // A whitespace-only narration passes the model-side schema (min(1)) but is
+    // empty once trimmed: report it as a schema failure (502), not a bare ZodError (500).
+    const narration = result.narration.trim();
+    if (narration.length === 0) {
+      throw new WorldVoiceCallError(
+        'INVALID_RESPONSE_SHAPE',
+        502,
+        'World Voice call failed: response did not match the expected schema.',
+      );
+    }
     const beat = history.filter((entry) => entry.role === 'player').length;
-    res.status(200).json(
-      PrologueBeatResponseSchema.parse({ narration: result.narration.trim(), beat, final: beat === 4 }),
-    );
+    res.status(200).json(PrologueBeatResponseSchema.parse({ narration, beat, final: beat === 4 }));
   } catch (err) {
     next(err);
   }

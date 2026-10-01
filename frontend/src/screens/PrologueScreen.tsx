@@ -73,6 +73,18 @@ export default function PrologueScreen({ onComplete, onReturnToTitle }: Prologue
   const focusRef = useRef(false);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const takeHoldRef = useRef<HTMLButtonElement>(null);
+  // False once unmounted (Return to title mid-request): a late response must not
+  // call onComplete or set state. Set true inside the effect body so StrictMode's
+  // mount/unmount/mount cycle ends alive.
+  const aliveRef = useRef(false);
+
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+    };
+  }, []);
 
   const turns = history.filter((e) => e.role === 'player').length;
   // The fourth action is answered once status leaves 'reading'.
@@ -90,7 +102,8 @@ export default function PrologueScreen({ onComplete, onReturnToTitle }: Prologue
   useEffect(() => {
     if (status === 'idle' && focusRef.current) {
       focusRef.current = false;
-      inputRef.current?.focus();
+      // After the fourth beat the textarea is gone; hand focus to the next control.
+      (inputRef.current ?? takeHoldRef.current)?.focus();
     }
   }, [status, history.length]);
 
@@ -107,16 +120,20 @@ export default function PrologueScreen({ onComplete, onReturnToTitle }: Prologue
     setStatus('reading');
     try {
       const response = await prologueBeat(next);
+      if (!aliveRef.current) return;
       setHistory([...next, { role: 'narrator', text: response.narration }]);
     } catch (e) {
+      if (!aliveRef.current) return;
       // Drop the player entry and give the player their words back to retry.
       setHistory(before);
       setInput(input);
       setError(`The World Voice fell silent. ${messageOf(e)}`);
     } finally {
       busyRef.current = false;
-      focusRef.current = true;
-      setStatus('idle');
+      if (aliveRef.current) {
+        focusRef.current = true;
+        setStatus('idle');
+      }
     }
   }
 
@@ -127,9 +144,11 @@ export default function PrologueScreen({ onComplete, onReturnToTitle }: Prologue
     setStatus('distilling');
     try {
       const profile = await prologueProfile(history, prologueCanon());
+      if (!aliveRef.current) return;
       completedRef.current = true;
       onComplete(profile);
     } catch (e) {
+      if (!aliveRef.current) return;
       setError(`The World Voice fell silent. ${messageOf(e)}`);
       setStatus('idle');
     } finally {
@@ -182,11 +201,18 @@ export default function PrologueScreen({ onComplete, onReturnToTitle }: Prologue
         <p style={{ fontFamily: "'Cinzel', serif", fontSize: 11, color: '#7a1f1f', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 4 }}>
           The World Voice Speaks — The Threshold
         </p>
-        <div style={{ height: 2, background: '#2a2218', marginBottom: 32 }}>
+        <div
+          role="progressbar"
+          aria-label="Scene progress"
+          aria-valuemin={0}
+          aria-valuemax={PROLOGUE_BEAT_COUNT}
+          aria-valuenow={Math.min(turns, PROLOGUE_BEAT_COUNT)}
+          style={{ height: 2, background: '#2a2218', marginBottom: 32 }}
+        >
           <div style={{ height: '100%', background: '#d4a843', width: `${(Math.min(turns, PROLOGUE_BEAT_COUNT) / PROLOGUE_BEAT_COUNT) * 100}%`, transition: 'width 0.4s' }} />
         </div>
 
-        <div>
+        <div role="log" aria-live="polite">
           {history.map((entry, i) =>
             entry.role === 'narrator' ? (
               <p key={i} style={{ ...WRAP, color: '#c9b48a', fontStyle: 'italic', fontSize: 17, lineHeight: 1.7, marginBottom: 18 }}>
@@ -216,6 +242,8 @@ export default function PrologueScreen({ onComplete, onReturnToTitle }: Prologue
             <div style={{ background: '#0f0d09', border: '1px solid #2a2218', padding: '14px 16px', marginBottom: 8 }}>
               <textarea
                 ref={inputRef}
+                aria-label="Your action"
+                aria-describedby="prologue-hint"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 disabled={status !== 'idle'}
@@ -229,7 +257,7 @@ export default function PrologueScreen({ onComplete, onReturnToTitle }: Prologue
                 }}
               />
             </div>
-            <p style={{ fontSize: 12, color: '#6a5a40', fontStyle: 'italic', marginBottom: 16 }}>
+            <p id="prologue-hint" style={{ fontSize: 12, color: '#6a5a40', fontStyle: 'italic', marginBottom: 16 }}>
               A sentence or two is enough. Say or do anything.
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
@@ -256,6 +284,7 @@ export default function PrologueScreen({ onComplete, onReturnToTitle }: Prologue
               </button>
               <button
                 type="button"
+                ref={takeHoldRef}
                 onClick={letItTakeHold}
                 disabled={status === 'distilling'}
                 style={primaryButton(status !== 'distilling')}
