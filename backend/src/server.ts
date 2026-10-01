@@ -56,6 +56,7 @@ import { WORLD_SYSTEM_PROMPT } from './data/worldSystemPrompt.js';
 // own top level, does not reproduce the "throws with no key present" hazard
 // anthropic.ts's lazy-config comment documents.
 import introSceneRouter from './routes/introScene.js';
+import prologueRouter from './routes/prologue.js';
 import uniqueSkillRouter from './routes/uniqueSkill.js';
 import worldEngineRouter from './routes/worldEngine.js';
 
@@ -512,6 +513,8 @@ export function buildApp(config: AppConfig): Express {
   app.use(uniqueSkillRouter);
   app.use(worldEngineRouter);
   app.use(introSceneRouter);
+  // Prologue routes (Phase 14, opt-in from the frontend): system-free, so they join no cache namespace.
+  app.use(prologueRouter);
 
   // Unmatched /api routes get a JSON 404, scoped the same way as the limiter
   // and gate above (never a hand-written path check). This must be
