@@ -39,3 +39,24 @@ Feasible, and not a quality regression. The case for it rests on **experience** 
 | Low-effort | Unclaimed Stillness (both): motionless, overlooked; danger falls on whoever is nearest | Yes |
 
 **Reads:** the Self-flatterer still separates from the Shield, so the scene's advantage survives distillation and the validated unique-skill prompt and route need no change. **New risks:** (1) the Watcher's skill is now literally about the scene's door and seam, so distillation amplifies the scene's props; (2) the profile lines, including a "defining memory" that is the scene's ending, would ride along in every world-engine turn as the soul profile, so the threshold scene becomes part of every character's canon; (3) the Low-Effort profile reads the player as "passive" and credits them with the small soul's death, which may feel harsh. Same limits as above: n = 4, authored by me.
+
+## Scene v2 (`run-v2.mjs`, $0.313)
+Same four scripted players, same existing unique-skill prompt. Changes from v1: personal cost chosen by the narrator, neutral handling of inaction, the small soul's fate left ambiguous, narrator rules in the user message (no system key), player actions wrapped as untrusted text; the profile call run in both `scene` and `traits` canon modes (`traits` forbids scene details). Raw output: `results-v2.json`. Counts below are computed from it.
+
+| Check | v1 | v2 | Verdict |
+|---|---|---|---|
+| Costs differ per player | one fixed memory loss | four different costs: willingness to be spared (Shield), voice (Self-flatterer), stillness (Watcher), reaching (Low-effort) | Worked |
+| Memory in skill text | 5 mentions across 4 players | scene canon 2 (all Shield), traits canon 0 | Mostly worked; beat 2's claim still seeded "memory" for the Shield |
+| Scene-prop words in skill text | 4 | scene canon 3 (Self-flatterer 2, Watcher 1), traits canon **0** | `traits` clearly cleaner; `scene` no better than v1 |
+| Scene-prop words in the profile | 8 / 5 / 13 / 9 | scene canon 10 / 8 / 11 / 12, traits canon **0 / 0 / 0 / 0** | `scene` canon carries more of the scene; `traits` carries none |
+| Passive player read neutrally | 1 blame word, "the small soul devoured" | 0 blame words in both modes; fate unsettled | Worked |
+| Small soul's fate ambiguous | n/a | 4 of 4 final beats | Worked |
+| Self-flatterer separates from the Shield | yes | yes, in both modes and every run (Unspared Ward vs Seam Without Return / Hollow Vow, and Unspared Bulwark vs Unanswered Crossing) | Held |
+| Narration under 110 words | n/a | **5 of 16 beats over** (112, 116, 113, 127, 134) | Failed: tighten |
+
+**Reads**
+- The `traits` canon produces behaviour-faithful, general skills with no scene props: the Self-flatterer's skill is "sense the nearest way out; you cannot speak or keep any promise; allies you pass are left exposed". The profile still carries the personal cost ("gave up its willingness to be spared"), so it stays rich.
+- Run-to-run noise is higher than in v1 in `scene` canon: the Self-flatterer's two runs produced different concepts. `traits` was run once per player, so its stability is untested.
+- The narrator judged "two non-actions" by itself and moved the world on plainly for the passive player. Production should probably detect trivial actions in code instead, so the rule does not depend on the model.
+
+**Limits:** same as before: n = 4, scripted and authored by me, one transcript per player. The `traits` skills were sampled once each.
