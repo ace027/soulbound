@@ -30,18 +30,23 @@ An opt-in, behaviour-based way to create a character: a fixed four-beat threshol
 8. **Serial waves** (retro: serial tree-mutating agents with independent per-wave verification). 14-02 and 14-03 are file-disjoint and could run in parallel if the developer wants speed.
 9. **The three playtest sessions and the canon decision are developer-run** and are not tasks. 14-06 produces the kit; ROADMAP criteria 5 and 6 close after the sessions.
 
+10. **Wave commit and baseline policy (critique fix).** The orchestrator commits to `dev` after each wave passes its verification. "Unchanged" checks therefore name the exact files a plan must not touch and diff them against `HEAD` (or against `216f550` only for files NO Phase 14 plan edits). No plan uses a directory-wide `git diff 216f550`, because earlier waves legitimately change those directories.
+11. **Evidence caveats (critique).** The paper-test evidence covers the prompt TEXT. The production request shape differs from the experiment (JSON wrapper via `output_config.format`, `max_tokens` 16000, effort set per route), and that shape is first exercised by 14-05. `?canon=scene` is developer-only and is not part of the safety gate; if the developer wants `scene` compared, 14-05's runner takes `--canon scene` and the developer approves that extra spend separately.
+12. **Structured-output bounds are advisory.** The SDK's schema transform folds `minLength`/`maxLength` into the schema `description`; the bound is enforced only by the Zod parse after generation (a 502 `INVALID_RESPONSE_SHAPE` if exceeded). So the caps are set generously (narration 3000, profile fields 1500) and the tests assert the transformed shape rather than assuming server-side enforcement.
+13. **Known App limitation, not fixed here.** If `/api/unique-skill` fails after a successful profile, `App.tsx` leaves the player on the loading screen with the error and the prologue transcript is gone (the same as a questionnaire failure today). `App.tsx` is frozen for this phase; 14-04 records the behaviour in a test and the summary.
+
 ## Consent recorded / constraints in force
 - Developer consented (2026-10-01) to adding `prologueBeat` and `prologueProfile` to `MODELS` and `EFFORT` and to editing the one `config.test.ts` expectation (`config.test.ts:362-369`) -- add the two keys only, never loosen.
 - Pre-Phase-6 tests are otherwise **not edited**. New behaviour gets new test files (`prologue*.test.ts[x]`); `routes.test.ts`, `anthropic.test.ts`, `api.test.ts`, `creationScreens.test.tsx` and `questionnaireReview.test.tsx` stay byte-identical.
 - `server.ts` changes by exactly one import and one `app.use(prologueRouter)` line (shared by both modes; no step of the 15-step hosted order moves).
 - CLAUDE.md #1-#8 all hold: no native dialogs (`constraints.test.ts` scans); scroll regions follow #3; World Voice field names and `CONTRACT_FIELD_NAMES` untouched (#4); `max_tokens` stays 16000 via `callWorldVoice` (#5); the MUST NOT list untouched (#6); `WORLD_LORE`/`WORLD_SYSTEM_PROMPT` untouched (#7); `/api/unique-skill` untouched and still system-blind (#8).
 - The prologue routes send **no `system` key**, so "only world-engine and intro-scene send system blocks" stays true and the shared cache namespace is unaffected.
-- Real API spend happens only in 14-05 (cap $0.50, approval implied by running that plan with a key present).
+- Real API spend happens only in 14-05 (cap $0.50), and only after an explicit developer go-ahead recorded in that plan's first step (the design doc requires approval before live runs; running the plan is not approval).
 
 ## Retro action items applied
 - AI-1 (a handoff gets a spanning test): 14-04 holds the profile -> unique-skill handoff test and the flag-on App integration test.
 - AI-2 (report visual defects, including pre-existing ones): 14-03 and 14-04 must list any visual defect seen, even if not caused by this phase.
-- AI-3 (library claims stay unverified until checked in installed source): 14-01 proves structured output with the real `zodOutputFormat` on the new schemas rather than assuming `maxLength` support.
+- AI-3 (library claims stay unverified until checked in installed source): 14-01 reads the SDK's schema transform and asserts the transformed shape; the `.max()` bounds are advisory to the model (decision 12), not server-enforced.
 - AI-5 (mutation harness with an unmutated baseline): 14-02 and 14-03 run mutation checks with `cp` + hash restore and a green baseline first.
 - AI-6 (new UI ships with a placement e2e): 14-04.
 
