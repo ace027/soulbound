@@ -359,12 +359,14 @@ describe('ALLOWED_HOSTS', () => {
 });
 
 describe('MODELS', () => {
-  it('names exactly the three call sites, with no date-suffixed model IDs', async () => {
+  it('names exactly the five call sites, with no date-suffixed model IDs', async () => {
     const { MODELS } = await import('../config.js');
     expect(MODELS).toEqual({
       uniqueSkill: 'claude-opus-5-5',
       worldEngine: 'claude-sonnet-5-5',
       introScene: 'claude-sonnet-5-5',
+      prologueBeat: 'claude-sonnet-5-5',
+      prologueProfile: 'claude-sonnet-5-5',
     });
   });
 

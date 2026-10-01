@@ -138,7 +138,7 @@ const MAX_TOKENS = 16000;
  * prevent truncation: a higher effort value means more of that budget goes to
  * thinking rather than to the narration + JSON the frontend actually needs.
  *
- * All three calls need reliable adherence to two hard, balance-load-bearing
+ * The three original calls need reliable adherence to two hard, balance-load-bearing
  * constraints at once: the "MUST NOT" rule list (CLAUDE.md #6) and a strict
  * JSON schema via `output_config.format`. That argues for more than the unset
  * default. 'xhigh' and 'max' spend materially more of the turn budget on
@@ -156,7 +156,8 @@ const MAX_TOKENS = 16000;
  * answers, not rule-adherence over a 15k-token prompt.
  *
  * So: the two entries below that share a cache MUST stay equal to each other;
- * `uniqueSkill` may vary independently.
+ * `uniqueSkill` may vary independently. The two prologue routes are likewise
+ * system-free, short, and tested at 'low'.
  */
 const EFFORT: Record<WorldVoiceRoute, 'low' | 'medium' | 'high' | 'xhigh' | 'max'> = {
   // These two share a cache namespace — keep them equal to each other.
@@ -164,6 +165,9 @@ const EFFORT: Record<WorldVoiceRoute, 'low' | 'medium' | 'high' | 'xhigh' | 'max
   introScene: 'medium',
   // Independent: no system blocks, no cached prefix, no coupling.
   uniqueSkill: 'medium',
+  // Independent: system-free like uniqueSkill, no cached prefix, no coupling.
+  prologueBeat: 'low',
+  prologueProfile: 'low',
 };
 
 // ─── Error mapping ───────────────────────────────────────────────────────────
@@ -400,7 +404,7 @@ function logUsage(route: WorldVoiceRoute, message: Message): void {
 
 // ─── The shared call helper ──────────────────────────────────────────────────
 
-export type WorldVoiceRoute = 'uniqueSkill' | 'worldEngine' | 'introScene';
+export type WorldVoiceRoute = 'uniqueSkill' | 'worldEngine' | 'introScene' | 'prologueBeat' | 'prologueProfile';
 
 export interface CallWorldVoiceArgs<Schema extends z.ZodType> {
   /** Tags log lines and errors; not sent to the API. */

@@ -818,11 +818,17 @@ export const ALLOWED_HOSTS: readonly string[] = readAllowedHosts();
  * time, made with the prior reversal in view. On 2026-09-29 both moved to the
  * 5.5 generation with the split unchanged (a version bump, not a reversal). Do not "correct" it back to an
  * earlier arrangement; see docs/design-decisions-log.md.
+ *
+ * `prologueBeat` and `prologueProfile` send no system blocks, so they are
+ * independent of the worldEngine/introScene pair and of uniqueSkill. They have
+ * no cached prefix to strand and may move freely.
  */
 export const MODELS = {
   uniqueSkill: 'claude-opus-5-5',
   worldEngine: 'claude-sonnet-5-5',
   introScene: 'claude-sonnet-5-5',
+  prologueBeat: 'claude-sonnet-5-5',
+  prologueProfile: 'claude-sonnet-5-5',
 } as const;
 
 /**
