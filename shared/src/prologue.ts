@@ -37,7 +37,7 @@ export const PROLOGUE_OPENING =
 
 export const PROLOGUE_BEAT_COUNT = 4;
 export const PROLOGUE_ENTRY_MAX = 2000;
-export const PROLOGUE_NARRATION_MAX = 3000;
+export const PROLOGUE_NARRATION_MAX = 2000;
 export const PROLOGUE_PROFILE_FIELD_MAX = 1500;
 
 export const PROLOGUE_CANONS = ['traits', 'scene'] as const;

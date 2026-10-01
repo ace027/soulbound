@@ -324,8 +324,8 @@ describe('prologue routes (mocked SDK boundary)', () => {
       expect(createSpy).not.toHaveBeenCalled();
     });
 
-    it('an over-long narration (3001 chars) -> 502 INVALID_RESPONSE_SHAPE', async () => {
-      createSpy.mockResolvedValueOnce(makeMessage(config.MODELS.prologueBeat, { narration: 'n'.repeat(3001) }));
+    it('an over-long narration (2001 chars) -> 502 INVALID_RESPONSE_SHAPE', async () => {
+      createSpy.mockResolvedValueOnce(makeMessage(config.MODELS.prologueBeat, { narration: 'n'.repeat(2001) }));
       const res = await beat(beatHistory(1));
       expect(res.status).toBe(502);
       expect(errorCode(res)).toBe('INVALID_RESPONSE_SHAPE');

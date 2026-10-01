@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import {
   PROLOGUE_ENTRY_MAX,
+  PROLOGUE_NARRATION_MAX,
   PROLOGUE_OPENING,
   PrologueBeatRequestSchema,
   PrologueNarrationSchema,
@@ -159,11 +160,11 @@ describe('PrologueProfileRequestSchema', () => {
 });
 
 describe('PrologueNarrationSchema', () => {
-  it('accepts a valid narration and rejects empty, 3001 chars and extra keys', () => {
+  it('accepts a valid narration and rejects empty, 2001 chars and extra keys', () => {
     expect(PrologueNarrationSchema.safeParse({ narration: 'x' }).success).toBe(true);
-    expect(PrologueNarrationSchema.safeParse({ narration: 'x'.repeat(3000) }).success).toBe(true);
+    expect(PrologueNarrationSchema.safeParse({ narration: 'x'.repeat(2000) }).success).toBe(true);
     expect(PrologueNarrationSchema.safeParse({ narration: '' }).success).toBe(false);
-    expect(PrologueNarrationSchema.safeParse({ narration: 'x'.repeat(3001) }).success).toBe(false);
+    expect(PrologueNarrationSchema.safeParse({ narration: 'x'.repeat(2001) }).success).toBe(false);
     expect(PrologueNarrationSchema.safeParse({ narration: 'x', extra: 1 }).success).toBe(false);
   });
 });
@@ -196,7 +197,7 @@ describe('zodOutputFormat with the real SDK helper', () => {
     expect(schema.additionalProperties).toBe(false);
     const narration = schema.properties.narration;
     expect('maxLength' in narration).toBe(false);
-    expect(narration.description).toContain('3000');
+    expect(narration.description).toContain('2000');
   });
 
   it('constructs for PrologueProfileSchema; the bound lives in description, not maxLength', () => {
@@ -223,5 +224,23 @@ describe('unique-skill key alignment', () => {
     expect(PrologueProfileSchema.safeParse(profile).success).toBe(true);
     const r = UniqueSkillRequestSchema.safeParse({ name: 'x', race: { name: 'y' }, answers: profile });
     expect(r.success).toBe(true);
+  });
+});
+
+describe('narration bound vs history bound (found in 14-03)', () => {
+  it('a maximum-length narration can be sent back as a history entry', () => {
+    // The client echoes each narration into the next request's history, so the
+    // narration cap must not exceed the history entry cap, or a long (but valid)
+    // narration would make the NEXT call fail with a 400 the player cannot clear.
+    expect(PROLOGUE_NARRATION_MAX).toBeLessThanOrEqual(PROLOGUE_ENTRY_MAX);
+    const long = 'n'.repeat(PROLOGUE_NARRATION_MAX);
+    expect(PrologueNarrationSchema.safeParse({ narration: long }).success).toBe(true);
+    const history = [
+      { role: 'narrator', text: PROLOGUE_OPENING },
+      { role: 'player', text: 'I wait.' },
+      { role: 'narrator', text: long },
+      { role: 'player', text: 'I wait.' },
+    ];
+    expect(PrologueBeatRequestSchema.safeParse({ history }).success).toBe(true);
   });
 });
