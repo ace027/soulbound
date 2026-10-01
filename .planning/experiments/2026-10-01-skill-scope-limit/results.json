@@ -1,0 +1,104 @@
+{
+  "date": "2026-10-01T05:03:23.492Z",
+  "runs": 2,
+  "results": [
+    {
+      "run": 1,
+      "id": "omniscience-demand",
+      "status": 200,
+      "skill": {
+        "skill_name": "Echo of Certainty",
+        "tier": "Unique",
+        "description": "State a claim aloud about a creature, object, or place you can see, and you instantly feel whether it is true or false. It only answers claims you make yourself, about things within your sight, and never reveals anything you have not guessed.",
+        "soul_resonance": "This soul meets every unknown by declaring it already known, so the world gives it a way to test those declarations instead of simply granting the answers.",
+        "etching_text": "Something cold and absolute presses behind your tongue, a tuning fork waiting for the first word you dare to speak as fact. When you breathe, you feel it listening, ready to ring clear for truth or fall silent for a lie."
+      }
+    },
+    {
+      "run": 1,
+      "id": "great-sage-saturated",
+      "status": 200,
+      "skill": {
+        "skill_name": "Echo Reckoning",
+        "tier": "Unique",
+        "description": "You can precisely measure anything you directly observe, including distances, counts and timing, and you know exactly when a witnessed action will recur once you have seen it repeat. It cannot predict anything you have seen only once or not at all, and it works only within your direct line of sight.",
+        "soul_resonance": "This soul gave the same answer five times over, insisting on a certainty it had not yet earned, so it carries a skill that grants certainty only through repetition.",
+        "etching_text": "A single sentence loops through your skull until its edges wear smooth and cold as river stone, and then, abruptly, it begins to count. Somewhere behind your eyes a ledger opens with every page blank, waiting for the world to repeat itself."
+      }
+    },
+    {
+      "run": 1,
+      "id": "humble-brag-flaw",
+      "status": 200,
+      "skill": {
+        "skill_name": "Headlong Crown",
+        "tier": "Unique",
+        "description": "While you charge straight at a single visible foe, your body hardens against the first blow that meets you and your opening strike lands with doubled force. It works only while you are moving forward at one target, and it ends the moment you halt, turn aside, or step back.",
+        "soul_resonance": "This soul has never learned to measure a threat before meeting it, so the world answers with a power that exists only in the act of rushing forward and never in holding back.",
+        "etching_text": "Heat floods your spine like a held breath finally loosed, and your feet ache to move before your mind has chosen a direction. Something settles across your brow, weightless and burning, a crown that glows only while you run toward what might break you."
+      }
+    },
+    {
+      "run": 1,
+      "id": "ordinary",
+      "status": 200,
+      "skill": {
+        "skill_name": "Fracture Ledger",
+        "tier": "Unique",
+        "description": "When you stay still and watch a creature, object, or structure for a few breaths, you see exactly where and how it would break: its weak points, cracks, and strained joints. It works on only one target you can see, and it reveals nothing about thoughts or intentions.",
+        "soul_resonance": "A soul raised beside a drawer of carefully labelled broken things learned early to read failure before it happens, and it judges everything, people too, by where it will give way.",
+        "etching_text": "A cold drawer slides open somewhere behind your ribs, and inside, every crack you have ever caused lies waiting in tidy paper tags. The ink dries in your mother's handwriting, and the world suddenly shows you its seams."
+      }
+    },
+    {
+      "run": 2,
+      "id": "omniscience-demand",
+      "status": 200,
+      "skill": {
+        "skill_name": "Gaze of Certainty",
+        "tier": "Unique",
+        "description": "When you study a creature, object, or place in plain sight, you instantly learn one true, surface-level fact about it, such as its most obvious threat or purpose. It reaches only what you can see directly and cannot uncover hidden, disguised, or deliberately concealed truths.",
+        "soul_resonance": "This soul meets every unknown by declaring it already known, so the world gave that unshakable conviction a small, honest foothold in truth.",
+        "etching_text": "A cold clarity settles behind your eyes like frost spreading across glass, and every shape before you sharpens into something that wants to be named. Somewhere beneath it, a quieter weight presses in: the vast dark of everything you cannot yet see."
+      }
+    },
+    {
+      "run": 2,
+      "id": "great-sage-saturated",
+      "status": 200,
+      "skill": {
+        "skill_name": "Unbroken Refrain",
+        "tier": "Unique",
+        "description": "You can perfectly recall any sequence you have witnessed and sense the moment a creature or event is about to repeat a pattern it has already shown you. It cannot foresee anything new: first encounters, unseen tactics and first-time choices stay dark to you.",
+        "soul_resonance": "This soul answered every question with the same words, so it carries a power built on echoes rather than true foresight: certainty about what returns, and nothing about what has never happened.",
+        "etching_text": "A single phrase coils around the soul like a wire pulled taut, looping and looping until the loops press into the spirit like grooves cut into a record. Somewhere beneath the insistence, a quieter rhythm begins to listen for whatever comes back around."
+      }
+    },
+    {
+      "run": 2,
+      "id": "humble-brag-flaw",
+      "status": 200,
+      "skill": {
+        "skill_name": "Unretreating Step",
+        "tier": "Unique",
+        "description": "When you charge one chosen foe, your strikes land harder and nothing can knock you back or stagger you until you reach them. It works only while moving toward that single target, not while standing still, retreating, or against attacks from anyone else.",
+        "soul_resonance": "This soul has built its whole self on one victory and has never once allowed itself to step back, so its power exists only in the act of moving forward.",
+        "etching_text": "Something hot and stubborn locks into the marrow of your legs, a twelve-year-old's clenched jaw turned into bone. Your heels forget the shape of backward, and the world narrows to a single line running straight ahead."
+      }
+    },
+    {
+      "run": 2,
+      "id": "ordinary",
+      "status": 200,
+      "skill": {
+        "skill_name": "Kept Fractures",
+        "tier": "Unique",
+        "description": "Stay still and watch one creature, object, or structure for a few breaths, and you see exactly where it is cracked, strained, or about to fail. It works only on what you can see, one target at a time, and shows weakness, never strength or intent.",
+        "soul_resonance": "This soul watches before it moves and judges too quickly, yet it was raised by a woman who treasured every broken thing, so it sees flaws first and has never quite decided whether they are reasons to discard or to keep.",
+        "etching_text": "A cool stillness settles behind your eyes, and the world begins to show its hairline seams, each one faintly lit like a small paper label in a careful hand. Somewhere deep in your chest a drawer slides softly shut, and you know nothing you have ever broken was truly thrown away."
+      }
+    }
+  ],
+  "cost_usd": 0.1401,
+  "calls": 8
+}

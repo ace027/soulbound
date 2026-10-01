@@ -416,6 +416,15 @@ An opt-in, behaviour-based way to create a character, built as Phase 14 (require
 
 **Not changed (reported to the developer).** Four visual defects from the 14-04 screenshots: no sticky header, so Return to title scrolls off screen on later turns; low contrast on the disabled Act button and on the dim hint and Return to title text (colours shared with the questionnaire); almost no inner padding in the copy-fallback textarea; a large empty area under the opening at 390 px.
 
+## Unique Skill limit: scope, not penalty (2026-10-01)
+**Amends "Unique Skill legibility (2026-09-24)".** That change made `determineUniqueSkill` require "its real cost or limit" in every description. Developer feedback after the Phase 14 safety-gate run: most skills shouldn't have a drawback, because it cripples the player from the first turn. The second sentence now asks for the skill's **reach**: what it cannot do yet, as a limit on range, targets or conditions, "not a cost or penalty to the player".
+
+Why a scope limit rather than none: the stated limit was half of the Tier 0 hardening (it is what bounds an "Omniscience, no weaknesses" demand), so removing it entirely would have meant adding a MUST NOT rule to the world prompt and re-running everything. A boundary on reach keeps that, without a built-in penalty.
+
+**This touched the Tier 0 stress-tested prompt**, so the four cases were re-run live (twice each, $0.1401): every skill came back as a concrete effect plus a scope boundary, none with a cost or penalty, the omniscience demand stayed bounded, and the saturated Great Sage case was not a reskin. Evidence: `.planning/experiments/2026-10-01-skill-scope-limit/`. n = 2 per case, so treat it as a smoke check, and watch real turns for skills that now feel too strong. The call is still system-blind (CLAUDE.md #8), the response schema is unchanged, and `backend/src/__tests__/fixtures/uniqueSkill.prompt.txt` was updated to the new line (the only change to it).
+
+Not changed: the world-engine prompt still says a sub-ability should carry "the same tone, limitations" if the base skill has any (it is conditional, so it now matches); the prologue narrator still takes one personal thing from the soul at the crossing, which the profile call no longer needs to restate as a rule because the skill prompt does not ask for a cost. The nine skills in the Phase 14 safety-gate sheet were generated with the old wording and are stale on this point.
+
 ## Questionnaire Design
 Originally multiple-choice (5 options per question). Changed to fully open-ended free-text per the explicit reasoning that richer, longer answers produce a better-defined Unique Skill before the player ever enters the world. Each question has a `hint` line for guidance but no character limit. The Continue button is disabled until something is written, with a Back button to revise prior answers.
 

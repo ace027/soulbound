@@ -130,7 +130,7 @@ Respond ONLY with valid JSON, no markdown:
 {
   "skill_name": "...",
   "tier": "Unique",
-  "description": "2 short plain-language sentences, under 50 words total, that a player can act on: first, what they can actually DO with this skill right now (a concrete effect, not a metaphor); second, its real cost or limit.",
+  "description": "2 short plain-language sentences, under 50 words total, that a player can act on: first, what they can actually DO with this skill right now (a concrete effect, not a metaphor); second, its reach: what it cannot do yet (a limit on range, targets or conditions), not a cost or penalty to the player.",
   "soul_resonance": "1 sentence — why this soul carries this skill.",
   "etching_text": "The sensation of this skill crystallizing onto the soul — 2 sentences, visceral and poetic."
 }`;
