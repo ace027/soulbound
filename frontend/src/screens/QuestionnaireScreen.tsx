@@ -2,6 +2,8 @@ import { useState, type Dispatch, type SetStateAction } from 'react';
 import type { QuestionnaireAnswers } from '@soulbound/shared';
 import { QUESTIONS } from '../data/questions';
 import { sharedBg } from './sharedBg';
+import PrologueScreen from './PrologueScreen';
+import { isPrologueEnabled } from '../lib/prologueFlag';
 
 /**
  * Soul questionnaire — five open-ended free-text questions.
@@ -34,6 +36,10 @@ import { sharedBg } from './sharedBg';
  *     (App.tsx is untouched); Edit returns the player to the review, not to
  *     question 5, after changing an answer.
  * See docs/design-decisions-log.md → "Questionnaire screen fixes (2026-10-01)".
+ *
+ * Phase 14 (R36): the default export is now a thin wrapper. With `?prologue=1`
+ * it renders `PrologueScreen`; otherwise it renders `QuestionnaireForm`, the
+ * form below, unchanged. App.tsx is untouched and passes the same props.
  */
 
 export interface QuestionnaireScreenProps {
@@ -51,7 +57,7 @@ export interface QuestionnaireScreenProps {
   onReturnToTitle: () => void;
 }
 
-export default function QuestionnaireScreen({
+function QuestionnaireForm({
   qIndex,
   setQIndex,
   answers,
@@ -237,5 +243,13 @@ export default function QuestionnaireScreen({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function QuestionnaireScreen(props: QuestionnaireScreenProps) {
+  return isPrologueEnabled() ? (
+    <PrologueScreen onComplete={props.onComplete} onReturnToTitle={props.onReturnToTitle} />
+  ) : (
+    <QuestionnaireForm {...props} />
   );
 }

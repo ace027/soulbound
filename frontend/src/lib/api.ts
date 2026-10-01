@@ -40,11 +40,17 @@ import {
   INVITE_REDEEM_PATH,
   MODE_HEADER,
   PASSPHRASE_REQUIRED,
+  PrologueBeatResponseSchema,
+  PrologueProfileSchema,
   SIGN_IN_REQUIRED,
   UniqueSkillDeterminationSchema,
   WorldVoiceResponseSchema,
   type Character,
   type GameState,
+  type PrologueBeatResponse,
+  type PrologueCanon,
+  type PrologueHistoryEntry,
+  type PrologueProfile,
   type QuestionnaireAnswers,
   type Race,
   type UniqueSkillDetermination,
@@ -531,4 +537,25 @@ export function onSignInRequired(fn: () => void): () => void {
 /** Notify every subscriber. Called from this module's error paths. */
 export function emitSignInRequired(): void {
   for (const fn of signInListeners) fn();
+}
+
+// ─── Prologue (Phase 14, R36) ───────────────────────────────────────────────
+// Opt-in via `?prologue=1`; called only by PrologueScreen. Both routes are
+// system-free (no WORLD_LORE / WORLD_SYSTEM_PROMPT) and run Sonnet 5.5 at
+// `low`. Request shapes are `PrologueBeatRequestSchema` and
+// `PrologueProfileRequestSchema` in shared/src/prologue.ts.
+
+/** One narrated beat. `history` ends with the player's newest action. */
+export async function prologueBeat(
+  history: PrologueHistoryEntry[],
+): Promise<PrologueBeatResponse> {
+  return postJson('/api/prologue/beat', { history }, PrologueBeatResponseSchema);
+}
+
+/** Distils the finished nine-entry scene into the five `answers` keys. */
+export async function prologueProfile(
+  history: PrologueHistoryEntry[],
+  canon: PrologueCanon,
+): Promise<PrologueProfile> {
+  return postJson('/api/prologue/profile', { history, canon }, PrologueProfileSchema);
 }
