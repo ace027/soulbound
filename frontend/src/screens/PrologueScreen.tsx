@@ -80,6 +80,9 @@ export default function PrologueScreen({ onComplete, onReturnToTitle }: Prologue
   const canAct = input.trim().length > 0 && status === 'idle';
 
   useEffect(() => {
+    // Not on mount: with only the opening shown there is nothing new to reveal,
+    // and scrolling then opened the page 64 px down (found by the 14-04 e2e).
+    if (history.length <= 1 && error === null) return;
     const end = endRef.current;
     if (end && typeof end.scrollIntoView === 'function') end.scrollIntoView({ block: 'nearest' });
   }, [history.length, error]);
@@ -163,7 +166,7 @@ export default function PrologueScreen({ onComplete, onReturnToTitle }: Prologue
     }) as const;
 
   return (
-    <div style={{ ...sharedBg, padding: '32px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ ...sharedBg, padding: '32px 24px', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
       <div style={{ maxWidth: 600, width: '100%' }}>
         <button
           type="button"

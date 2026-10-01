@@ -378,6 +378,8 @@ describe('scrolling and focus', () => {
       writable: true,
     });
     renderScreen();
+    // Not on mount: scrolling there opened the page 64 px down (14-04 e2e finding).
+    expect(scroll).not.toHaveBeenCalled();
     const afterMount = scroll.mock.calls.length;
 
     fireEvent.change(box(), { target: { value: 'first' } });
