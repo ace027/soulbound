@@ -49,7 +49,7 @@ Before making any change:
 ## Model & API pattern
 - **Models are split — this is deliberate, and the split is load-bearing.**
   - `claude-opus-5-5` on unique-skill determination (`/api/unique-skill`), at `effort: 'medium'`
-  - `claude-sonnet-5-5` on the world engine loop AND intro scene generation, both at `effort: 'high'`
+  - `claude-sonnet-5-5` on the world engine loop AND intro scene generation, both at `effort: 'medium'`
   Defined in one place, `backend/src/config.ts`'s `MODELS` — never as a literal at a call site.
   **World-engine and intro-scene MUST stay on the same model as each other** — they are the
   only two routes that send system blocks, so they share one cache namespace. Prompt caches are

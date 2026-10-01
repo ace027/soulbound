@@ -373,6 +373,12 @@ Four screen-only changes to the default questionnaire. None of them changes what
 
 **Tests.** Ten new tests in `questionnaireReview.test.tsx`; four mutations of the review logic were each caught. The developer's consent to edit the existing last-Continue test covered "the one test"; it was two (`creationScreens.test.tsx` and `appIntegration.test.tsx`), each given the same mechanical edit (click the review button, then the completing button).
 
+## World engine and intro scene effort: high -> medium (2026-10-01)
+
+The developer's call, made by feel and without a measured sweep (no API key was available in the session to run one). Prompted by the Sonnet 5.5 migration audit: Anthropic recalibrated effort levels on 5.5 and suggests `medium` as the starting point for multistep work. `worldEngine` and `introScene` moved together, `'high'` -> `'medium'`, because they must send byte-identical `output_config` to share a cache namespace (pinned by the pair tests). `uniqueSkill` was already `'medium'` and is unchanged. Expect a one-time cache write on the first turn after deploy, since effort is part of the cached request shape.
+
+**Watch for:** the thing `'high'` was chosen to protect (adherence to the MUST NOT list plus the strict JSON schema, see the 2026-09-18 entry). If narration drifts or a MUST NOT rule slips, revert both values to `'high'` together. Compare `[anthropic:usage]` output_tokens before/after against the Narration length budget.
+
 ## Questionnaire Design
 Originally multiple-choice (5 options per question). Changed to fully open-ended free-text per the explicit reasoning that richer, longer answers produce a better-defined Unique Skill before the player ever enters the world. Each question has a `hint` line for guidance but no character limit. The Continue button is disabled until something is written, with a Back button to revise prior answers.
 

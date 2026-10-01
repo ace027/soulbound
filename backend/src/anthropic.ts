@@ -148,7 +148,7 @@ const MAX_TOKENS = 16000;
  * The uniformity requirement is narrower than an earlier version of this
  * comment claimed. `worldEngine` and `introScene` share a cache namespace, so
  * they must send byte-identical `output_config` — same `format` shape AND the
- * same `effort` — or the shared prefix stops matching. They are both 'high'.
+ * same `effort` — or the shared prefix stops matching. They are both 'medium'.
  *
  * `uniqueSkill` is NOT part of that pair: it sends no `system` parameter at
  * all, so it has no cached prefix to match and its effort is free to differ.
@@ -160,8 +160,8 @@ const MAX_TOKENS = 16000;
  */
 const EFFORT: Record<WorldVoiceRoute, 'low' | 'medium' | 'high' | 'xhigh' | 'max'> = {
   // These two share a cache namespace — keep them equal to each other.
-  worldEngine: 'high',
-  introScene: 'high',
+  worldEngine: 'medium',
+  introScene: 'medium',
   // Independent: no system blocks, no cached prefix, no coupling.
   uniqueSkill: 'medium',
 };
