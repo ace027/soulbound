@@ -564,6 +564,34 @@ describe('callWorldVoice error mapping', () => {
     expect(err.statusCode).toBe(502);
   });
 
+  it('a refusal (HTTP 200, stop_reason "refusal", no content) -> UPSTREAM_ERROR 502, named as a refusal — NOT INVALID_RESPONSE_SHAPE', async () => {
+    createSpy.mockResolvedValueOnce(
+      makeMessage('claude-sonnet-5-5', {}, {
+        content: [],
+        stop_reason: 'refusal',
+        stop_details: { type: 'refusal', category: 'cyber', explanation: null },
+      } as Partial<Message>),
+    );
+    const err = await captureThrown();
+    expect(err.code).toBe('UPSTREAM_ERROR');
+    expect(err.code).not.toBe('INVALID_RESPONSE_SHAPE');
+    expect(err.statusCode).toBe(502);
+    expect(err.message).toContain('declined');
+    // The category is operator-only: in the log, never in the client message.
+    expect(err.message).not.toContain('cyber');
+    const logged = consoleErrorSpy.mock.calls.map((call) => call.join(' ')).join('\n');
+    expect(logged).toContain('refusal category cyber');
+  });
+
+  it('a refusal with stop_details null is still named as a refusal', async () => {
+    createSpy.mockResolvedValueOnce(
+      makeMessage('claude-sonnet-5-5', {}, { content: [], stop_reason: 'refusal', stop_details: null } as Partial<Message>),
+    );
+    const err = await captureThrown();
+    expect(err.code).toBe('UPSTREAM_ERROR');
+    expect(err.message).toContain('declined');
+  });
+
   it('a non-schema AnthropicError ("Streaming is required...") -> UPSTREAM_ERROR, NOT INVALID_RESPONSE_SHAPE', async () => {
     // `AnthropicError` is the SDK's BASE class, so this branch is a catch-all:
     // streaming requirements, client misconfiguration and aborted requests all

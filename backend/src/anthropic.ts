@@ -252,6 +252,12 @@ function mapAnthropicError(
   route: WorldVoiceRoute,
   redact: (input: string) => string,
 ): WorldVoiceCallError {
+  // Already mapped inside the try block (the refusal check) — never re-wrap it
+  // into the "unexpected error" 500 below.
+  if (err instanceof WorldVoiceCallError) {
+    return err;
+  }
+
   if (err instanceof AuthenticationError) {
     return new WorldVoiceCallError(
       'AUTHENTICATION_FAILED',
@@ -507,6 +513,30 @@ export async function callWorldVoice<Schema extends z.ZodType>({
   try {
     const parsed = await getClient(getAnthropicApiKey()).messages.parse(request);
     logUsage(route, parsed);
+
+    // A model decline is HTTP 200 with `stop_reason: 'refusal'` and no usable
+    // content, so without this it lands in the null-`parsed_output` branch
+    // below and is reported as INVALID_RESPONSE_SHAPE — sending an operator
+    // hunting a schema bug that is not there. Checked first, so a refusal is
+    // named as one. Same public code as any other upstream failure (the
+    // frontend's code union is unchanged); the category is operator-only, in
+    // the log line. Limit: a refusal that arrives AFTER partial output carries
+    // truncated text, which the SDK's parse step rejects before this line runs
+    // — that case still surfaces as INVALID_RESPONSE_SHAPE.
+    if (parsed.stop_reason === 'refusal') {
+      const category = parsed.stop_details?.category ?? 'none';
+      throw new WorldVoiceCallError(
+        'UPSTREAM_ERROR',
+        502,
+        describeAndLog(
+          route,
+          new Error(`model declined the request (stop_reason: refusal, category: ${category})`),
+          'World Voice call failed: the model declined this request.',
+          redact,
+          `refusal category ${category}`,
+        ),
+      );
+    }
 
     if (parsed.parsed_output === null) {
       // Defensive: zodOutputFormat's own `.parse` throws AnthropicError on a
