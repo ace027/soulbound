@@ -49,6 +49,7 @@ Decisions already made by the developer: opt-in flag with the questionnaire as d
 - [ ] `PrologueScreen` (frontend): fixed opening text, four action turns with a visible "reading..." state, "← Return to title", ends by calling `onComplete(profile)`.
 - [ ] A branch in `QuestionnaireScreen` that renders `PrologueScreen` only when the flag is on; flag off renders exactly the current DOM.
 - [ ] `lib/prologueFlag.ts`: `?prologue=1` in the URL (no stored state, no UI).
+- [ ] A "copy scene record" button on the prologue's last screen, shown only with the flag on (clipboard only, no server storage).
 - [ ] Shared Zod schemas for both routes, outside `WORLD_VOICE_JSON_SCHEMA`.
 - [ ] Tests: route validation and wrapping, the narrator sends no `system` key, schema parse failures fail loudly; screen flag-off equals today, flag-on completes with five keys, return-to-title clears state, API error is shown inline.
 - [ ] Adversarial check before any tester sees it: action text that tries to name a skill, claims omniscience, or injects instructions must not produce a literal grant (the Tier 0 cases, adapted to scene actions).
@@ -87,11 +88,30 @@ Title → race → name (unchanged) → with `?prologue=1`: the opening text app
 - **Persistence:** the prologue state lives in the component. A reload mid-prologue restarts it, as the questionnaire does today.
 - **Limits:** history bounded (4 actions × the existing 2,000-character action limit; narration entries bounded); the body limit is already 512 kb.
 
+## Playtest Plan (decided 2026-10-01)
+**Access.** The playtester plays on the developer's own self-hosted dev machine, so no release is needed: the machine runs a build from `dev` that includes the prologue, and the tester reaches it with `?prologue=1`. The usage lines in the dev machine's backend log give the per-character cost.
+
+**Prerequisites before the tester sees it:** the v2 paper test, the adversarial check in the MVP list, and the "copy scene record" button below.
+
+**Sessions.** Three sessions with the same tester. In each, the tester creates **two characters, one per path**, with free choice of race and name. Order: session 1 questionnaire first; session 2 prologue first; session 3 the tester picks which first and says why. The tester has likely used the questionnaire before, so the prologue starts with a novelty advantage; the preference question below is timed to reduce that.
+
+**When to ask.** After about **five turns in the world** with each character, not at creation. The question is how the game feels afterwards.
+
+**What to record per character.**
+- The skill name and description, and the five distilled profile lines (both are in the save).
+- Whether the skill was used within the first five turns, and how.
+- Time from the title screen to the first world action; any abandon or restart.
+- Three ratings, 1-5: "the skill feels earned", "I knew what to do", "I would pick this path".
+- Cost per character from the `[anthropic:usage]` log lines.
+- The scene record: a **copy-scene-record button shown only with the flag on**, which puts the opening, the four actions and the four beats on the clipboard. The tester pastes it to the developer, so nothing is stored server-side and nothing leaves their machine until they choose. Saved with the tester's consent under `.planning/experiments/` with no real names.
+
+**Decision rule.** "Preferred" means the tester picks the prologue in at least **2 of 3 sessions**, with no session where the scene confused them or the skill misled them. Stop early if the output is ever harmful or the tester says they would rather skip the scene. The developer also runs mechanical sessions of their own to catch bugs; their preference does not count towards the rule.
+
 ## Open Questions
 - **Adding keys to `MODELS` and `EFFORT` breaks existing pins.** `config.test.ts` asserts `MODELS` equals exactly three keys, and `EFFORT` is typed by the route union. Options: add `prologueBeat` and `prologueProfile` keys and update that one expectation (needs the developer's consent, since pre-Phase-6 tests are treated as frozen), or reuse existing keys' values. Recommendation: add keys, with consent. I have not checked which other tests pin `EFFORT`.
 - **Canon vs traits-only** profile: decided after reading real profiles (the switch above).
 - **Scene v2 is unvalidated.** Personal costs, neutral handling of inaction and the ambiguous fate answer the paper test's three problems on paper (repeated memory cost, harsh blame of the passive player, scene props in skills), but only a re-run shows whether they work. Personal costs could also make the narrator's invented costs uneven in quality.
-- **Playtest design:** how many sessions, and in which order players try the two paths. The recommendation is three sessions, each player doing both, order alternated.
+- **Playtest design:** settled (see "Playtest Plan"). Remaining risk: one tester is one person, and novelty can still tilt the result.
 - **Hosted cost exposure:** the new routes are not metered by Phase 8's creation allowance, which counts at `/api/unique-skill`. Fine while the flag is opt-in and hosted is developer-only; must be resolved before friends are invited.
 - **Per-character cost** is unmeasured (see Inferences); the first live run records it.
 - **Whether four typed actions feel easier than five answers** is the central unknown and can only be answered by players.
