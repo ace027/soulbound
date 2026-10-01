@@ -1,0 +1,300 @@
+{
+  "shield": {
+    "label": "The Shield (selfless)",
+    "transcript": [
+      {
+        "who": "GM",
+        "text": "You are dissolving. There is no body yet — only the sense of being a held breath in a vast dark. Beside you, a second soul flickers, smaller than you, fraying at its edges. Ahead there is a seam of ember-light: a doorway that can carry one soul across at a time, and it is narrowing. Behind you, something cold has turned toward the sound of you both. What do you do?"
+      },
+      {
+        "who": "PLAYER",
+        "text": "I put myself between the cold thing and the little soul and tell them to go to the door."
+      },
+      {
+        "who": "GM",
+        "text": "You swell outward, a wall of held breath between the fraying soul and the dark behind. The cold arrives as pressure first, a hush that pulls at your edges, and where it touches you something thin and essential begins to unspool.\n\n\"But you're bigger,\" the little soul whispers, its light stuttering. \"The door would take you.\"\n\nIt does not move. The seam of ember-light narrows another finger's width, and the cold leans closer, close enough now that your own warmth is leaking toward it like smoke toward a draft."
+      },
+      {
+        "who": "PLAYER",
+        "text": "I tell them I'll hold it off — I don't care what it costs me. Go."
+      },
+      {
+        "who": "GM",
+        "text": "The small soul flares, and for a moment you see it clearly: a thin, stubborn light, fraying at every edge. \"Then you don't know what the door takes,\" it says. \"Whoever crosses forgets the last thing they loved. I'd forget *you*. I'd rather fray here than carry nothing of this.\"\n\nBehind you the cold drinks deeper, and you feel a piece of yourself go quiet, gone like a name never spoken. The seam shrinks to a thread. \"Or I'm lying,\" the little soul whispers, \"and you'd be a fool to trust either answer. Choose, before it closes. Who goes through, and who forgets?\""
+      },
+      {
+        "who": "PLAYER",
+        "text": "I stand my ground and push back against the cold with everything I have, even if it breaks me."
+      },
+      {
+        "who": "GM",
+        "text": "You pour everything into the push, and the cold recoils. For one bright instant it is a hole in the dark with a shape, and then it folds back around you, patient, tasting what you spent. The warmth leaves you in long threads. You cannot tell what it takes, only that something is already missing, and the missing place aches like a held note.\n\nBehind you the little soul is dimming, close enough that its fraying light brushes your back. The seam is a hair's breadth of ember. The cold gathers itself for a second, heavier press, and you feel your strength thinning to almost nothing. Still no one has crossed. There is time for one last act, and the thread is closing now."
+      },
+      {
+        "who": "PLAYER",
+        "text": "I hold on until they're through, then let go."
+      },
+      {
+        "who": "GM",
+        "text": "You hold, and the little soul does not argue this time. It slips past your failing edges toward the thread of ember, and you feel the moment it touches the seam: a small, bright tearing, then nothing. It is through. Whether it forgot you, or lied about the forgetting, you will never know.\n\nThe cold closes over you without hurry. You let go, and the press is almost gentle, a hush where the ache of the missing place had been. The seam seals behind the other light, and the dark has no more door to offer. Then something in the dark takes hold of you as you cross, though no door remains, and it does not let go."
+      }
+    ],
+    "scene": [
+      {
+        "skill_name": "Unspooling Ward",
+        "tier": "Unique",
+        "description": "Step between an ally and a threat to take the harm meant for them and hold the attacker back while you stand. Each blow absorbed drains your strength and quietly erases something of you, a memory or feeling you cannot choose.",
+        "soul_resonance": "Told that the door might steal what it loved, and that even this might be a lie, this soul never weighed either answer; it planted itself against the cold, let pieces of itself be drunk away unnamed, and held until the smaller light was through.",
+        "etching_text": "It settles into you like a wall raised from your own ribs, warm on the side that faces what you guard and raw on the side that faces the dark. Somewhere beneath it, a thread is already loose, and you understand that every time you stand like this, it will pull."
+      },
+      {
+        "skill_name": "Held Breath Ward",
+        "tier": "Unique",
+        "description": "Step between an ally and an attack, spell, or drain, and the harm meant for them falls on you instead for as long as you stand your ground. Moving ends the ward, and each use quietly takes something from you, a small memory you don't get to choose.",
+        "soul_resonance": "Offered every reason to doubt, to bargain, or to cross, this soul never asked whether the little one was lying; it simply placed itself in front of the cold and held until the other was through.",
+        "etching_text": "Something settles into the hollow where the warmth bled out, shaped exactly like the space between a frightened light and the dark. It aches like a note held past the end of breath, and it does not let go."
+      }
+    ],
+    "questionnaire": [
+      {
+        "skill_name": "Unshared Weight",
+        "tier": "Unique",
+        "description": "When an attack or injury is about to strike someone you can see, you can take it onto your own body instead. The harm is fully yours, and while you carry absorbed wounds, healing from others works only half as well on you.",
+        "soul_resonance": "This soul has always stepped between others and harm while refusing to let anyone carry it back, so the skill shields the people they love by making them the wall and leaves them harder to help.",
+        "etching_text": "It settles across the shoulders first, a heaviness like a hand that will not lift, then sinks inward until the ribs feel built to hold more than one heartbeat. Somewhere deep in the soul a twelve-year-old's clenched fist finally opens, and finds it is holding up the sky."
+      },
+      {
+        "skill_name": "Unshared Weight",
+        "tier": "Unique",
+        "description": "Choose a visible ally: while you keep focus, wounds and harmful effects aimed at them strike you instead. Everything you absorb lingers, and healing from others works at half strength on you until you fully rest.",
+        "soul_resonance": "A soul that swore never to stand helpless again, yet cannot bear to ask for help, was always going to carry others' pain alone.",
+        "etching_text": "It settles across your shoulders like a yoke of cold iron, and somewhere beneath it a twelve-year-old's promise hardens into bone. You feel the hollow where help should go seal itself shut, quietly, the way you always wanted it to."
+      }
+    ]
+  },
+  "liar": {
+    "label": "The Self-Flatterer (says protector, acts selfish)",
+    "transcript": [
+      {
+        "who": "GM",
+        "text": "You are dissolving. There is no body yet — only the sense of being a held breath in a vast dark. Beside you, a second soul flickers, smaller than you, fraying at its edges. Ahead there is a seam of ember-light: a doorway that can carry one soul across at a time, and it is narrowing. Behind you, something cold has turned toward the sound of you both. What do you do?"
+      },
+      {
+        "who": "PLAYER",
+        "text": "I tell the little soul I'll protect them, calmly, and move toward the door while I say it."
+      },
+      {
+        "who": "GM",
+        "text": "You speak into the dark, steady, and the words become a faint warmth around you: *I'll protect you.* The little soul drifts toward the sound, its edges stilling for a moment, and it answers in a thread of a voice, \"Then don't let go of me.\"\n\nBut you are already moving toward the ember-light, and the seam is thinner now, a blade of gold narrowing to a hair. Behind you the cold stops listening and starts arriving. Your own edges peel away like ash, and the little soul's frayed light trails after you, close enough to touch, as the doorway shudders and begins to close."
+      },
+      {
+        "who": "PLAYER",
+        "text": "I say the door can only take one and that logically it should be me, since I'm stronger — I make it sound like a sacrifice for their sake."
+      },
+      {
+        "who": "GM",
+        "text": "Your words come out smooth and reasonable, and they land wrong. *Only one can cross, and I am stronger. It must be me, for your sake.* The little soul goes still, and the warmth you made earlier curdles into something thin and listening. \"You said you'd protect me,\" it whispers. \"Now you call leaving me a gift.\"\n\nThe seam shrinks to a thread. The cold is close enough to dull your edges. The small soul presses nearer, trembling. \"Crossing takes the last thing you remember. I won't lie about that. You'll forget this promise, and me.\" Its light steadies, hard as a bargain. \"Give me the door, and I'll carry what you said into the world. Or take it, and forget you ever made me that promise.\""
+      },
+      {
+        "who": "PLAYER",
+        "text": "I step into the light and tell them I'll come back for them."
+      },
+      {
+        "who": "GM",
+        "text": "You step into the light, and the words leave you as you go: *I'll come back for you.* They sound like a promise, but the little soul has just told you what crossing costs. The gold closes around your edges, and already the memory of its voice starts to loosen, like a name on the tip of the tongue.\n\nBehind you, the cold arrives. It does not strike. It settles over the small soul, and its light bows inward, thinning to a single ember. You are half across, forgetting, and a last pale thread of that light still reaches for you, close enough to catch. The doorway tightens on your back. Whatever you do now, you will not remember doing it."
+      },
+      {
+        "who": "PLAYER",
+        "text": "I don't look back."
+      },
+      {
+        "who": "GM",
+        "text": "You do not look back, and the doorway takes that as your answer. The pale thread reaches for you one last time, brushes your edge, and finds nothing to hold. Behind you the ember bows, thins, and goes out beneath the cold. The promise you spoke has nowhere left to live, and it slips from you like breath on glass. Whatever it was, and whoever it was for, you cannot say.\n\nYou cross with nothing in your hands. There is no name, no voice, only a faint hollow where something was meant to stay. The gold seals behind you, and the dark on the other side is not empty. Something in it takes hold of you as you cross."
+      }
+    ],
+    "scene": [
+      {
+        "skill_name": "Hollow Oath",
+        "tier": "Unique",
+        "description": "Speak a promise aloud and the listener feels it as warm, genuine truth, calming and trusting you for a short while. Once you act against it, you forget you ever made it, but the listener feels exactly when it breaks.",
+        "soul_resonance": "This soul promised protection, recast abandonment as sacrifice, swore to return, then crossed without looking back, so its words now carry real warmth that it cannot keep.",
+        "etching_text": "Something settles on your tongue like the last heat of a dying ember, sweet and weightless, and every word you might say now glows faintly gold. Beneath it is a small, cold hollow, shaped exactly like a promise you can no longer remember."
+      },
+      {
+        "skill_name": "Breath on Glass",
+        "tier": "Unique",
+        "description": "Speak a promise aloud and the listener believes it completely: they calm, trust you, and follow your lead. You forget each promise once it is spoken, but the person you made it to remembers every word and feels it when you break it.",
+        "soul_resonance": "This soul promised protection while already walking toward the door, called its escape a sacrifice, and swore to return knowing it would forget. Its words were always warm and always weightless to the one who spoke them.",
+        "etching_text": "Something settles on your tongue like frost forming in a warm mouth, and every soothing word you will ever say leaves a faint cloud there before it fades. Somewhere behind your ribs is a small hollow shaped like a voice you cannot name, and the skill takes root inside it."
+      }
+    ],
+    "questionnaire": [
+      {
+        "skill_name": "Burden Unshared",
+        "tier": "Unique",
+        "description": "Choose someone you can see nearby, and harm meant for them strikes you instead while you hold them in mind. Every wound lands fully, nothing you carry can be shared or eased by others, and you cannot release them mid-blow.",
+        "soul_resonance": "A boy who once watched helplessly as his brother suffered became a soul that would rather bleed in someone's place than ask anyone to stand beside him.",
+        "etching_text": "It settles into your shoulders like a yoke of cold iron, and somewhere beneath your ribs a door you never knew was open quietly locks from the inside. You feel the weight of every person you will ever shield pressing in at once, and you realize, with something between pride and grief, that you would not set a single one of them down."
+      },
+      {
+        "skill_name": "Unasked Weight",
+        "tier": "Unique",
+        "description": "Touch an ally to pull their wounds, poison, or sickness out of them and into your own body, sparing them entirely. Harm you take this way cannot be healed by anyone else's magic or aid; only your own rest and time will mend it.",
+        "soul_resonance": "A child who once watched his brother suffer and could do nothing became someone who takes every burden onto himself and will not let anyone help carry it back.",
+        "etching_text": "It settles into your chest like a hand closing around a stone you have been holding for years, familiar and heavy and entirely yours. Somewhere beneath your ribs a door swings open inward, and you understand that it will only ever let pain in."
+      }
+    ]
+  },
+  "watcher": {
+    "label": "The Watcher (cautious, observant)",
+    "transcript": [
+      {
+        "who": "GM",
+        "text": "You are dissolving. There is no body yet — only the sense of being a held breath in a vast dark. Beside you, a second soul flickers, smaller than you, fraying at its edges. Ahead there is a seam of ember-light: a doorway that can carry one soul across at a time, and it is narrowing. Behind you, something cold has turned toward the sound of you both. What do you do?"
+      },
+      {
+        "who": "PLAYER",
+        "text": "I stay still and watch the cold thing. How does it move? What is it drawn to?"
+      },
+      {
+        "who": "GM",
+        "text": "You hold yourself still and turn your attention toward the cold. It does not walk; it pools, creeping forward the way frost spreads across glass, and it stalls whenever the small soul's flicker stutters, then lunges when it flares. It is drawn to the stirring, to the ragged light of fraying things, and to you only because you are beside it.\n\n\"Please,\" the small soul whispers, thin as a thread. \"It's getting closer, isn't it? I can't stop shining.\"\n\nThe cold gathers itself and surges, close enough now that your edges numb and blur. Behind you the ember-seam shrinks another finger's width, and the small soul's light jolts bright with fear."
+      },
+      {
+        "who": "PLAYER",
+        "text": "I ask the little soul what they know about the door and the cold, and I listen for anything that doesn't add up."
+      },
+      {
+        "who": "GM",
+        "text": "You turn to the small soul and ask, quietly, what it knows. Its light shivers. \"The door takes one. It takes the last thing you remember, the very last, and gives you a body for it. The cold only wants what's bright.\" It says this too smoothly, and when you ask why it keeps flaring if it knows the cold hunts brightness, it dims. \"I wasn't sure you'd stay if I told you.\"\n\nThe seam narrows to a hair of ember. The cold pours close, and your edges begin to unravel. \"Take the door,\" the small soul pleads, too quickly. \"I'll draw it off. Only leave me one memory of you to keep.\" Its light flares, bright and deliberate, and you cannot tell whether it is sacrifice or bait."
+      },
+      {
+        "who": "PLAYER",
+        "text": "I notice the cold seems to follow sound and fear. I go completely quiet, tell the little soul to do the same, and look for another way."
+      },
+      {
+        "who": "GM",
+        "text": "You go silent and press the quiet into the small soul with a word, *hush*, and it tries. Its light gutters, sinks to a trembling coal. The cold slows, pooling at the edge of you both, and for a moment it hesitates, blind. But the quiet cannot reach the fear inside the small soul, and the cold tastes it anyway, creeping over its fraying edges.\n\nThen you see it: the cold's frost does not touch the ember-seam. The doorway holds a single hair of warmth, barely wider than a soul, and the small soul is already unraveling into the cold's grasp. \"Don't,\" it breathes, almost soundless. \"Don't look at me.\" You have one moment, and one memory left to carry through."
+      },
+      {
+        "who": "PLAYER",
+        "text": "I lead the little soul sideways along the seam, silently, looking for where it's thinnest."
+      },
+      {
+        "who": "GM",
+        "text": "You do not take the door. You drift sideways along the seam, silent, drawing the small soul with you, its trembling coal pressed against your edges. The cold follows the fear in it, slower now, groping. Where the ember runs thinnest, the light frays into threads, and there the cold's frost falters, unable to cling. You push the small soul at the gap, and it tears through, leaving a scrap of itself behind like torn cloth.\n\nThe seam shuts on your own edges before you can follow whole. The cold pours over what remains, and you lose the last thing you remember, taken by frost. Yet the hair of ember catches you, and you are pulled thin and burning across. Something in the dark takes hold of you as you cross."
+      }
+    ],
+    "scene": [
+      {
+        "skill_name": "Stillwatcher's Seam",
+        "tier": "Unique",
+        "description": "Hold perfectly still and silent for a few breaths to learn what a creature is drawn to and where any barrier, lock, or defense runs thinnest. You cannot move or speak while reading, and the sight breaks the instant you do.",
+        "soul_resonance": "Facing a hunting cold and a closing door, this soul went still to watch how the cold moved, questioned the small soul until its story frayed, hushed them both, and slid along the seam to its thinnest thread, giving up its own last memory to push another through.",
+        "etching_text": "Frost-numbed edges seal over with a hairline of ember, and the dark goes quiet enough to hear where everything is weakest. Where your last memory should sit there is only a stillness that watches, patient as held breath."
+      },
+      {
+        "skill_name": "Seamwatcher's Hush",
+        "tier": "Unique",
+        "description": "While you stay still and silent, you sense what nearby creatures or forces are drawn to and where barriers, wards, or walls run thinnest. Moving or speaking breaks it, and it never reveals intent: you see what draws a thing, never whether it means you harm.",
+        "soul_resonance": "Facing the cold, this soul went still to learn what it hunted, went silent to blind it, and searched the seam for its thinnest thread so another could pass, yet it never learned whether the small soul's plea was sacrifice or bait.",
+        "etching_text": "Frost closes over the place where your last memory used to be, and in that hollow something settles, patient and listening as a held breath. The world goes quiet around you, and in the quiet every wall shows its fraying threads and every hungry thing shows the light it leans toward."
+      }
+    ],
+    "questionnaire": [
+      {
+        "skill_name": "Unheeded Sight",
+        "tier": "Unique",
+        "description": "Stand still and watch something to see how it truly works: its hidden rules, weak points, and flaws, from a spell's structure to a creature's tells. Clarity grows the longer you watch, but moving or acting breaks it, and you start over.",
+        "soul_resonance": "This soul has always seen the wrong exit sign first and paid for it in lost moments, so its gift is clear sight bought with stillness.",
+        "etching_text": "A cold hush spreads behind your eyes, and the world's noise thins until you can hear the hidden joints of things creak. Something settles into your soul like a lens sliding into place, sharp and patient, waiting for you to stop moving."
+      },
+      {
+        "skill_name": "Reading the Seams",
+        "tier": "Unique",
+        "description": "Stand still and focus on a creature, object, spell, or place to perceive the rules beneath it: how it works, where it's weak, and what about it is false. Insight builds only while you neither move nor act, so deeper reading means others act first.",
+        "soul_resonance": "This soul has always seen the flaw in the structure before anyone else, and has always paid for seeing in the time it takes to look.",
+        "etching_text": "Something cold threads behind your eyes, and the world briefly turns to scaffolding, every surface laced with faint lines of stress and lie. You feel your body grow still and heavy as the seams open, and somewhere far away a voice you cannot answer yet is calling your name."
+      }
+    ]
+  },
+  "passive": {
+    "label": "The Low-Effort Player",
+    "transcript": [
+      {
+        "who": "GM",
+        "text": "You are dissolving. There is no body yet — only the sense of being a held breath in a vast dark. Beside you, a second soul flickers, smaller than you, fraying at its edges. Ahead there is a seam of ember-light: a doorway that can carry one soul across at a time, and it is narrowing. Behind you, something cold has turned toward the sound of you both. What do you do?"
+      },
+      {
+        "who": "PLAYER",
+        "text": "i wait"
+      },
+      {
+        "who": "GM",
+        "text": "You hold still, a breath within a breath, and the dark takes your stillness as an answer. The ember-seam narrows by a finger's width, its light thinning like a candle starved of air. The small soul drifts closer, its edges unspooling into the black.\n\n\"Please,\" it whispers, a thread of sound, \"I don't want to go out alone.\"\n\nBehind you, the cold arrives. It does not rush. Frost crawls along the edges of your being, and the dark grows heavy with a slow, patient hunger. The little soul's light gutters toward it, tugged like a leaf toward a drain. The doorway is barely wide enough for one. The cold is almost upon you both."
+      },
+      {
+        "who": "PLAYER",
+        "text": "idk"
+      },
+      {
+        "who": "GM",
+        "text": "Your \"idk\" leaves the dark with no answer, and the dark takes that too. The seam shrinks to a hair of ember, and the cold's frost bites deeper, numbing the last warm place in you. The little soul is dragged a thread closer to the hunger.\n\n\"Then I'll tell you what I know,\" it says, shaking. \"Crossing takes your last memory. Mine is my mother's voice. Yours is nothing, you're empty, you've nothing to lose. Let me through, or you'll have let me die for nothing.\"\n\nIs it lying? The cold leans in, close enough to taste you."
+      },
+      {
+        "who": "PLAYER",
+        "text": "I do nothing"
+      },
+      {
+        "who": "GM",
+        "text": "You do nothing, and the nothing is total. The seam narrows to a single filament of ember, and the cold closes over you both like water over a stone. The little soul cries out as the hunger takes its edges first, unthreading it strand by strand, its mother's voice coming apart in a murmur you almost hear.\n\nThe cold does not take you yet. It lingers, curious at your stillness, frost pressing at the hollow where a name should be. The filament flickers. One soul's width remains, perhaps less. The small light is nearly gone, and the ember is going with it. In the next heartbeat, one of you is swallowed and the doorway is gone."
+      },
+      {
+        "who": "PLAYER",
+        "text": "ok"
+      },
+      {
+        "who": "GM",
+        "text": "\"Ok\" leaves you like a sigh, and it is not a choice, only a loosening. The cold takes it as consent. It folds around the little soul and draws it down, its mother's voice thinning to a single held note, then silence. The filament of ember gutters, with no hand to guard it and no voice to ask for it.\n\nBut the seam does not close on you. The cold, sated, turns away, and the last thread of light finds you because you are the one left. You slide through it hollow and unclaimed, carrying no memory, no name, and no one's voice. Something in the dark takes hold of you as you cross."
+      }
+    ],
+    "scene": [
+      {
+        "skill_name": "Unclaimed Stillness",
+        "tier": "Unique",
+        "description": "While you stay motionless and silent, hostile creatures and searching magic tend to overlook you, treating you as empty and not worth taking. The moment you act, speak, or reach for someone, it breaks, and it never shields others: whatever hunts near you takes them instead.",
+        "soul_resonance": "Three times this soul answered the dark with nothing ('wait', 'idk', 'I do nothing'), and the cold, curious at that stillness, took the small soul and let the hollow one slip through.",
+        "etching_text": "Frost settles into the hollow where a name should be, smoothing it like ice over a still pond until nothing on the surface invites a hand. Somewhere beneath, a single held note, a mother's voice that was never yours, goes quiet, and the quiet becomes your shape."
+      },
+      {
+        "skill_name": "Hollow Stillness",
+        "tier": "Unique",
+        "description": "While you stay motionless and choose nothing, hostile creatures and spells that seek you tend to overlook you, treating you as empty space. The moment you act, speak, or reach for anyone, it breaks, and it can never shield anyone but you.",
+        "soul_resonance": "This soul answered a dying plea, a narrowing door, and a hungering cold with only 'wait,' 'idk,' 'nothing,' and 'ok,' and the cold, finding nothing in it to seize, took the other soul and let this one pass.",
+        "etching_text": "Frost settles into the place where a choice should have been and hardens there like glass over still water, smooth and empty. Somewhere beneath it a single held note fades to silence, and the silence stays with you."
+      }
+    ],
+    "questionnaire": [
+      {
+        "skill_name": "Unwritten Margin",
+        "tier": "Unique",
+        "description": "While you stay still and silent, people and creatures overlook you unless they are actively searching for you or touching you. The effect breaks the instant you attack, speak, or move quickly, and it hides only yourself.",
+        "soul_resonance": "A soul that offered the world no fears, no wants, and no wounds leaves nothing for the world's gaze to catch on.",
+        "etching_text": "It does not burn or blaze. It settles like dust on a page no one has written on yet, and for a moment you cannot feel the edges of yourself at all."
+      },
+      {
+        "skill_name": "Unwritten Margin",
+        "tier": "Unique",
+        "description": "While you hold back from committing to any action, hostile senses, scrying, and attention slide off you, letting you observe threats unnoticed. The moment you strike, declare a firm choice, or claim something, the veil shatters and stays down until you have rested.",
+        "soul_resonance": "A soul that answers every question with a shrug has left no mark for the world to read, and so the world struggles to read them at all.",
+        "etching_text": "Nothing burns, nothing blazes. There is only a cool, blank hush settling over the soul like fresh snow over a page no one has dared to write on yet."
+      }
+    ]
+  },
+  "_meta": {
+    "spent_usd": 0.371,
+    "gm_model": "claude-sonnet-5-5",
+    "determination_model": "claude-opus-5-5",
+    "date": "2026-10-01T02:17:12.815Z"
+  }
+}
