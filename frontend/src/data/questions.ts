@@ -24,6 +24,8 @@ export const QUESTIONS: Question[] = [
   {
     id: "bond",
     text: "When you think about power — the kind that changes things — how do you feel about it? What do you do with it when you have it?",
-    hint: "Your relationship to power is the axis your Unique Skill will turn on.",
+    // 2026-10-01: was "Your relationship to power is the axis your Unique Skill will
+    // turn on." — that named the mechanic and invited answers written to suit it.
+    hint: "Think of a time you held real sway over something or someone.",
   },
 ];

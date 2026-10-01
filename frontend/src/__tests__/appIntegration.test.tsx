@@ -491,14 +491,16 @@ describe('App — character creation seeds narrative memory from the intro scene
     fireEvent.click(screen.getByText('Shadeveil'));
     fireEvent.click(screen.getByRole('button', { name: /Enter the World Voice/i }));
 
-    // Five open questions; the last button is worded differently.
+    // Five open questions; the last button is worded differently and opens a
+    // review (2026-10-01) whose button is the one that completes.
     for (let i = 0; i < 5; i++) {
       const box = await screen.findByPlaceholderText('Write freely...');
       fireEvent.change(box, { target: { value: `answer ${i}` } });
       fireEvent.click(
-        screen.getByRole('button', { name: i < 4 ? /Continue/i : /Speak to the World Voice/i }),
+        screen.getByRole('button', { name: i < 4 ? /Continue/i : /Review your answers/i }),
       );
     }
+    fireEvent.click(screen.getByRole('button', { name: /Speak to the World Voice/i }));
     await screen.findByPlaceholderText('What do you do?');
   }
 

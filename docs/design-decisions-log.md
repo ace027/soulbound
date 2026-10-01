@@ -361,6 +361,18 @@ Legacy had no way out of the race screen or the questionnaire: once a player tap
 
 **Deferred: refusal fallbacks.** Both 5.5 models can end a turn with `stop_reason: "refusal"`, and the API offers a server-side fallback for that. Adding it is a separate change, by the developer's decision.
 
+## Questionnaire screen fixes (2026-10-01)
+Four screen-only changes to the default questionnaire. None of them changes what `/api/unique-skill` receives, so the validated, system-blind prompt is untouched.
+
+- **Framing note above question 1** ("You are a soul about to be reborn. Answer as yourself — the World Voice reads who you are, not who you wish to seem."). Players were left to guess between answering as themselves and as a character; this settles it towards the existing "Speak as yourself" hint and the personal, non-racial framing behind the Unique Skill's origin (see "Where unique skills come from").
+- **"A sentence or two is enough." under every answer box.** One-word answers starve the soul-reading, while very long ones are re-sent to the world engine on every turn (up to 4,000 characters each). The line pulls both ways without a hard minimum.
+- **The power hint no longer names the mechanic.** "Your relationship to power is the axis your Unique Skill will turn on." invited answers written to suit the system; it now reads "Think of a time you held real sway over something or someone." This edits static hint data (`frontend/src/data/questions.ts`), a deliberate deviation from the verbatim port; the question text itself is unchanged.
+- **A review step before the last answer completes.** The final button now reads "Review your answers →" and opens a read-only list of all five answers with an Edit control on each. Only its "Speak to the World Voice" button calls `onComplete`, because completing starts the paid calls and a soul has exactly one Unique Skill. Edit returns the player to the review ("Back to review →") rather than to question 5; "← Back" from the review always goes to question 5. The state is local to the screen, so `App.tsx` is untouched.
+
+**Deliberately not done** because they change the prompt and would need the Tier 0 adversarial tests re-run: aligning the prompt's shortened question wording with the screen's, and adding a situational question. See `.planning/explorations/2026-10-01-prologue-prototype-design.md` for the larger idea these fixes sit beside.
+
+**Tests.** Ten new tests in `questionnaireReview.test.tsx`; four mutations of the review logic were each caught. The developer's consent to edit the existing last-Continue test covered "the one test"; it was two (`creationScreens.test.tsx` and `appIntegration.test.tsx`), each given the same mechanical edit (click the review button, then the completing button).
+
 ## Questionnaire Design
 Originally multiple-choice (5 options per question). Changed to fully open-ended free-text per the explicit reasoning that richer, longer answers produce a better-defined Unique Skill before the player ever enters the world. Each question has a `hint` line for guidance but no character limit. The Continue button is disabled until something is written, with a Back button to revise prior answers.
 

@@ -267,9 +267,13 @@ describe('QuestionnaireScreen', () => {
 
       const isLast = i === QUESTIONS.length - 1;
       fireEvent.click(
-        screen.getByRole('button', { name: isLast ? /Speak to the World Voice/ : /Continue/ }),
+        screen.getByRole('button', { name: isLast ? /Review your answers/ : /Continue/ }),
       );
     });
+
+    // 2026-10-01: the last answer now opens a review; only its button completes.
+    expect(onComplete).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /Speak to the World Voice/ }));
 
     expect(onComplete).toHaveBeenCalledTimes(1);
     expect(onComplete).toHaveBeenCalledWith(expected);
