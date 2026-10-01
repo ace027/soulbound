@@ -99,6 +99,7 @@ Initially the developer and their playtester. Then self-hosting deployers who su
   - An opt-in (`?prologue=1`) behaviour-based character creation: a fixed four-beat scene, narrated reactively by a new system-free route, distilled into the five `answers` keys; the existing unique-skill, intro-scene and world-engine paths are unchanged.
   - The questionnaire remains the default; success is the playtester preferring the prologue.
   - Safety gate of seven live cases before any tester sees it. Runs before Phase 7.
+  - **Status (2026-10-01):** built, all six plans executed. The routes, the flagged screen and the playtest kit exist; the questionnaire is still the default. **Safety gate: UNREAD** (nine cases run live, $0.3425 of the $0.50 cap, no verdicts recorded). Not ready for testers. Waiting on the developer: read the gate sheet and record verdicts, run the three playtest sessions, decide the canon and whether to replace, add or stop.
 - **R35** — "Ready to invite friends" gate: an 11-item checklist, including rotating the Anthropic key, with each item demonstrated on the live host before invites (see design doc → Launch & operations).
 
 ### Out of Scope

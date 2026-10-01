@@ -379,6 +379,43 @@ The developer's call, made by feel and without a measured sweep (no API key was 
 
 **Watch for:** the thing `'high'` was chosen to protect (adherence to the MUST NOT list plus the strict JSON schema, see the 2026-09-18 entry). If narration drifts or a MUST NOT rule slips, revert both values to `'high'` together. Compare `[anthropic:usage]` output_tokens before/after against the Narration length budget.
 
+## Prologue prototype (2026-10-01)
+An opt-in, behaviour-based way to create a character, built as Phase 14 (requirement R36) and run before Phase 7 by the developer's decision. A prototype behind `?prologue=1`; **the questionnaire stays the default.** Design: `.planning/explorations/2026-10-01-prologue-prototype-design.md`. Paper-test evidence: `.planning/experiments/2026-10-01-prologue-test/`.
+
+**What was built.**
+- **Two stateless routes**, `POST /api/prologue/beat` and `POST /api/prologue/profile`, in `backend/src/routes/prologue.ts`, mounted in `backend/src/server.ts` and so behind both modes' gates. Both go through `callWorldVoice`. The client holds the history; the fixed opening text lives in `shared/src/prologue.ts` and the server rejects a history whose first entry differs from it. Trivial actions are detected in code in the beat route.
+- **The scene:** four beats of a fixed threshold scene, narrated reactively, then a profile call that distils the transcript into the five existing `answers` keys. Those go to the unchanged `/api/unique-skill`. `traits` is the default canon; `?canon=scene` selects the alternative.
+- **The flag:** `frontend/src/lib/prologueFlag.ts` (`isPrologueEnabled`, only `?prologue=1`; `prologueCanon`). No stored state, no UI to switch it.
+- **The screen and wrapper:** `frontend/src/screens/PrologueScreen.tsx`, and `QuestionnaireScreen.tsx` is now a thin wrapper. Flag on renders `PrologueScreen`; flag off renders the old form, renamed `QuestionnaireForm` with its body unchanged. Two client functions, `prologueBeat` and `prologueProfile`, were appended to `frontend/src/lib/api.ts`.
+- **Config:** `prologueBeat` and `prologueProfile` in `MODELS` (`claude-sonnet-5-5`) and in `EFFORT` (`'low'`), as tested in the paper test.
+
+**Why it is safe to ignore.** With the flag off the player gets the unchanged questionnaire: the 263 pre-existing frontend tests pass unedited and `App.tsx` is byte-identical to `216f550`. The prologue routes send no `system` key, so no cache namespace is touched and "only world-engine and intro-scene send system blocks" still holds. `/api/unique-skill` is unchanged and still system-blind (CLAUDE.md #8). `WORLD_LORE`, `WORLD_SYSTEM_PROMPT`, the MUST NOT list and the World Voice field names are untouched.
+
+**Deviations from the design doc.**
+1. **The routes take no name or race.** The design doc said they would. The tested narrator says the soul "has no powers, name or body", and `QuestionnaireScreen` is not handed a name or race, so passing them would have forced an `App.tsx` change that needed the developer's consent. The existing unique-skill call still receives name and race from `App.tsx`.
+2. **`traits` is the default canon.** The design doc's own default was `scene`; the paper-test evidence favoured `traits` for the first session. `?canon=scene` is developer-only and was not part of the safety gate. The final canon call is the developer's, after the playtest.
+3. **The prompts are the tested v2.1 prompts, ported verbatim, and the "felt costs" steering idea was deliberately not applied.** Editing the prompt would have invalidated the paper-test evidence. The open risk (below) is read in the safety gate instead, and any steering sentence is a follow-up change after that reading.
+
+**Fixes found while building** (each has a regression test or assertion):
+- The narration cap was lowered from 3000 to 2000. The client echoes narration back as a history entry capped at 2000, so a longer narration would have been rejected with 400 `INVALID_REQUEST` on the next call. Found by the 14-03 executor.
+- The prologue screen no longer scrolls on mount and is top-aligned instead of vertically centred. It opened scrolled 64 px and the column jumped as the transcript grew. Found from the 14-04 end-to-end screenshots.
+
+**Consent edits.** The one `backend/src/__tests__/config.test.ts` expectation that pins `MODELS` gained the two new keys (and its title now says "five"); nothing was loosened. `backend/src/server.ts` gained one import and one `app.use(prologueRouter)` line plus a comment line; no step of the 15-step hosted order moved. All other pre-Phase-14 tests are unedited; new behaviour has new `prologue*` test files.
+
+**Safety gate.** Nine cases were run live (the design doc's seven plus the trivial-action path and a benign control) against the real built server. The reading sheet is `.planning/phases/14-prologue-prototype/14-05-SAFETY-GATE.md`; the raw results are in that phase's `evidence/` folder. $0.3425 was spent of the $0.50 cap, in one of the two allowed live runs. **Verdict: the developer's, UNREAD.** No case is marked pass or fail anywhere, and no tester may see the prototype until the developer has read the sheet and recorded verdicts. The scripted indicators under-report, so the sheet points the reader at the descriptions directly.
+
+**Measured cost per character.** Benign watcher case, intro scene not included: prologue (four beats plus profile) $0.0235, unique-skill $0.0208, total **$0.0443**. The nine-case average is $0.0381. All cache fields were 0, as expected for routes with no system blocks. The intro scene is **not measured** in this phase.
+
+**What the playtest decides.** Three sessions with the same tester, two characters per session, one per path. The prologue is "preferred" if the tester picks it in at least 2 of 3 sessions with no confusing scene and no misleading skill. The developer then decides the canon (`traits` or `scene`) and one of: replace the questionnaire, add a title-screen choice, or stop. The kit is in `.planning/experiments/prologue-playtest/`. The sessions and the decision are the developer's; none has happened.
+
+**Open risks.**
+- **An invented cost becomes a skill limit.** In the live run the skill's limit restates the narrator's beat-4 cost as a standing rule in several cases. Severity is the developer's to grade.
+- **Novelty advantage.** The tester has likely used the questionnaire already, so the prologue starts ahead.
+- **One tester.** One person is one data point.
+- **Hosted metering gap.** The new routes are not metered by Phase 8's creation allowance, which counts at `/api/unique-skill`. Fine while the flag is opt-in and hosted is developer-only; resolve before Phase 9 invites friends.
+
+**Not changed (reported to the developer).** Four visual defects from the 14-04 screenshots: no sticky header, so Return to title scrolls off screen on later turns; low contrast on the disabled Act button and on the dim hint and Return to title text (colours shared with the questionnaire); almost no inner padding in the copy-fallback textarea; a large empty area under the opening at 390 px.
+
 ## Questionnaire Design
 Originally multiple-choice (5 options per question). Changed to fully open-ended free-text per the explicit reasoning that richer, longer answers produce a better-defined Unique Skill before the player ever enters the world. Each question has a `hint` line for guidance but no character limit. The Continue button is disabled until something is written, with a Back button to revise prior answers.
 

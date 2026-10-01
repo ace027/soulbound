@@ -218,7 +218,15 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 - **Config:** `prologueBeat` and `prologueProfile` keys in `MODELS` and `EFFORT` (developer consent recorded for the one `MODELS` pin test).
 - **Playtest:** three sessions with the same tester on the developer's dev machine, both paths each, preference asked after about five world turns; scene records pasted by the tester; per-character cost recorded. Preferred in at least 2 of 3 sessions, with no confusing scene or misleading skill.
 - **Decision recorded:** canon (`traits` vs `scene`) chosen, and whether to replace the questionnaire, add a choice, or stop.
-**Plans**: 6 (planned 2026-10-01; serial waves: 14-01 contract and config keys, 14-02 routes, 14-03 flag/API client/screen, 14-04 spanning tests and placement e2e, 14-05 live safety gate, 14-06 records and playtest kit. The three playtest sessions and the canon decision are developer-run and close criteria 5 and 6 after the build. See 14-CONTEXT.md.)
+**Plans**: 6 of 6 executed 2026-10-01 (serial waves)
+- [x] 14-01: Prologue contract and config keys
+- [x] 14-02: Prologue routes
+- [x] 14-03: Flag, API client, PrologueScreen
+- [x] 14-04: Spanning tests and placement e2e
+- [x] 14-05: Live safety gate and cost measurement (gate UNREAD: the developer's verdicts are pending)
+- [x] 14-06: Records and playtest kit
+
+**Status**: built, not closed. Success criteria 1 (safe to test: the gate is UNREAD), 5 (playtest) and 6 (decision recorded) wait on the developer. Criteria 2-4 are covered by the plans' verification. See 14-CONTEXT.md.
 
 ## Progress
 
@@ -237,5 +245,5 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 | 11. Subscription Billing | TBD | 0 | Pending |
 | 12. Condition & Inventory | TBD | 0 | Pending (design pass first) |
 | 13. Launch Hardening & Conversion | TBD | 0 | Pending |
-| 14. Prologue Prototype | 6 | 0 | Planned 2026-10-01 — **runs before Phase 7** |
-| **Total** | **46 + TBD** | **40** | Phases 1-6 shipped (6: live checks pending); 14 planned (runs before 7); 7-13 pending |
+| 14. Prologue Prototype | 6 | 6 | Built 2026-10-01 — safety gate UNREAD; playtest and canon decision pending (developer) — **runs before Phase 7** |
+| **Total** | **46 + TBD** | **46** | Phases 1-6 shipped (6: live checks pending); 14 built, not closed (runs before 7); 7-13 pending |
