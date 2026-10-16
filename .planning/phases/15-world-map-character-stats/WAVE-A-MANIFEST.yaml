@@ -1,0 +1,17 @@
+wave: A
+phase: 15
+status: failed
+timestamp: "2026-10-16T03:59:13Z"
+service_groups:
+  mixed:
+    status: failed
+    plans: [15-01, 15-03]
+    files: [CLAUDE.md, backend/src/__tests__/contract.test.ts, backend/src/__tests__/prompts.test.ts, backend/src/__tests__/routes.test.ts, backend/src/data/worldSystemPrompt.ts, backend/src/routes/introScene.ts, backend/src/routes/worldEngine.ts, frontend/src/game/__tests__/applyWorldUpdate.test.ts, shared/src/worldVoice.ts]
+  frontend:
+    status: failed
+    plans: [15-02]
+    files: []
+  default:
+    status: failed
+    plans: [15-04]
+    files: []
