@@ -263,5 +263,5 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 | 12. Condition & Inventory | TBD | 0 | Pending (design pass first) |
 | 13. Launch Hardening & Conversion | TBD | 0 | Pending |
 | 14. Prologue Prototype | 6 | 6 | Built and review-passed 2026-10-01 (2 cycles) — safety gate PASSED 2026-10-16; playtest and canon decision pending (developer) — **runs before Phase 7** |
-| 15. World Map & Character Stats | 4 | 4 | Executed |
+| 15. World Map & Character Stats | 4 | 4 | Complete |
 | **Total** | **46 + TBD** | **46** | Phases 1-6 shipped (6: live checks pending); 14 built, not closed (runs before 7); 7-13 pending |

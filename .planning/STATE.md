@@ -8,7 +8,7 @@
   Tests at the end of wave 5: backend 373, frontend 321, Playwright e2e 28 (12 new), hosted 186 (0 skipped, 4 new); `mutate-order.sh` 3/3 caught after wave 2. Cost per character measured without the intro scene: $0.0443 (prologue $0.0235 plus unique-skill $0.0208); the intro scene is not measured in this phase.
   Visual defects reported to the developer, not changed: no sticky header; low contrast on the disabled Act button and the dim hint and Return to title text (shared with the questionnaire styling); almost no inner padding in the copy-fallback textarea; an empty area under the opening at 390 px.
   Waiting on the developer: (1) ~~read the safety gate sheet and record verdicts~~ done 2026-10-16, all PASS, (2) run the three playtest sessions, (3) decide the canon (`traits` or `scene`) and replace, add or stop.
-- **Phase**: 15 of 14 (executed, pending review)
+- **Phase**: 15 of 14 (complete)
 - **Phase 6 ship record**: **shipped and merged: [PR #7](https://github.com/DeanItServices/soulbound/pull/7) merged 2026-09-25 as `89219af` (pre-ship gate 6/6; includes the white page-frame fix `80d6ca2`); review PASSED (3 cycles); live deploy checks pending the developer.** Everything verifiable without the developer's accounts is done; the 14-step runbook (`docs/runbooks/phase-6-hosted-setup.md`) is UNTESTED until the developer runs it (merge to `main` first — the Blueprint deploys `main`). Tests: 304 backend + 249 frontend, hosted 182 (0 skipped), e2e 14 (in CI), smoke 7/7, mutate-order 3/3. Spec rows 1-23. Review record: `.planning/phases/06-hosted-mode-accounts/06-REVIEW.md`.
 - **Phase 6 results**: 06-01 ✅ `61382ec`, `a541df5`, `730421b` — mode switch, hosted secrets, generalised `redact`, allow-list tracker (hosted-only); backend 187 → 248 (+61 new, 0 edited), frontend 190; 8/8 mutations caught (orchestrator re-ran the suite: 248 + 190)
   06-02 ✅ `3e018dd`, `bb8fbd4`, `6aaa203` — pg pool, node-pg-migrate (001 from `auth@1.7.6` CLI, 002 with `reserved_email`), `test:hosted` (fails unset / on skips), CI+release Postgres service, image carries migrations; backend 248 → 258, hosted 11/11 0 skipped, smoke 7/7, 6/6 mutations; CI green run 36051126070. Handoff: 06-04 wires the boot-time pending-migration exit (orchestrator re-verified 258 + 190, hosted 11/11)
@@ -32,13 +32,13 @@
   05-04 ✅ `b9181de`..`a400774` — backend serves the bundle (`STATIC_DIR`; no fallback for file paths; `/api` 404 first); `backend/Dockerfile` builder → frontend-build (`$BUILDPLATFORM`) → api → runtime; dev compose targets `api`; frontend `runtime` stage removed; image `soulbound:05-04` 373MB, uid 1000; backend tests 180 → 187; mutations 2/2 caught
   05-05 ✅ `a54ddeb`..`236b006` — `scripts/smoke-image.sh` (7/7 local; negative run on pre-gate `7856b7d` fails checks 2,3,4,6); CI `smoke-image` job green on `af876ca` (run 78); `release.yml` dispatch-only, fail-closed overwrite check verified under `bash -e`. UNTESTED until first dispatch after merge: GHCR push, arm64, real GHCR existence response
   05-06 ✅ `87f3f0a`, `2900ccc`, `706d62d` — `compose.selfhost.yml` (verified on :3999), README/design log/CLAUDE.md (+2/−0)/PROJECT.md, `0.1.0`; phase-close re-verification: 187 + 184 tests, e2e 6/6, App.tsx unchanged, fresh-build smoke 7/7, mutations 11/12 caught (#6 equivalent, as recorded)
-- **Status**: Phase 15 under review — cycle 2/3, 0 blocker(s) remaining
+- **Status**: Phase 15 complete — review passed (3 cycle(s))
 - **Phase 5 status (historical)**: **Phase 5 complete — review passed (3 cycles)**; all 6 plans executed successfully (serial waves; was: planned — 6 plans across 6 serial waves) (`.planning/phases/05-docker-image-publishing/`).
   Spec critiqued once (REWORK → 12 findings applied), plans critiqued once (CAUTION → 29 findings
   applied; see `05-CONTEXT.md` → Execution protocol). Zero Anthropic spend planned.
 - **Phases 1-4**: **All four phases complete and shipped.** Phase 4 review PASSED after 3 cycles (3-reviewer panel, 29 findings, 0 blockers); shipped as [PR #3](https://github.com/DeanItServices/soulbound/pull/3), 15 commits / 48 files / +4,757−1,474. R13, R14, R15, R16 close. The legacy artifact is deleted — recover it with `git show 3d01fa5:legacy/souldbound-world.jsx` (the `parity-oracle` tag is local-only and cannot be pushed from this environment; the SHA is on the branch and works everywhere).
   ⚠️ **Correction**: this file previously said PR #2 was "open against `main`". It was **merged** 2026-09-18T01:49Z (head `5147bd8`). That is why Phase 4 needed a new PR rather than additions to #2.
-- **Last Activity**: Phase 15 review cycle 2 (2026-10-16)
+- **Last Activity**: Phase 15 review (2026-10-16)
   (pre-ship gate 6/6, CI green on `33d5aca`). Also on the PR, after the review: playtest prompt
   fixes (`fc5b2cd`, `363026f`, `2085d39` — narration length, no contrast framing, Unique Skill
   legibility; live-verified, Tier 0 adversarial tests re-run and held), polish (`727e7ca`,
@@ -54,7 +54,7 @@
     - `release.yml` derives the image name from the repo owner, so it follows the move automatically.
     - After the move, update the hardcoded `ghcr.io/deanitservices/soulbound` in `compose.selfhost.yml:41` and `README.md` (lines 68, 72, 115). Leave the historical mention in `docs/design-decisions-log.md` as it is.
   - **Key rotation is deferred by the developer**, who will rotate before friends are invited. It's tracked as a Phase 9 invite-gate item, so don't raise it again before then.
-- **Next Action**: Run `/triad:review` to verify Phase 15: World Map & Character Stats
+- **Next Action**: All phases complete — project review finished!
   After merge: dispatch `release.yml` once (GitHub → Actions → Release → Run workflow) — the GHCR
   publish is the one UNTESTED step. ⚠️ `SOULBOUND_PASSPHRASE` is now **required at boot** — add it to
   `.env` (12+ printable ASCII characters).
