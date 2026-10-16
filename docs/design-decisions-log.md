@@ -564,19 +564,11 @@ run (CLAUDE.md #7 keeps lore and behaviour apart, and the five new MUST NOT bull
 
 **Cached prefix:** the new rules and five MUST NOT bullets invalidated the ~15.5k-token prefix once. CLAUDE.md
 now quotes ~16,665, a free `count_tokens` projection (system-only 14,844 plus the 1,821-token overhead). It
-does not count the JSON-schema growth and has not been read back from a live cache write, because no live
-call succeeds yet (below). World-engine and intro-scene stay on the same model.
+does not count the JSON-schema growth (live read after the fix: 17,538, see Live results below). World-engine and intro-scene stay on the same model.
 
-**Live results (2026-10-16, `.planning/experiments/2026-10-16-stats-live/RESULTS.md`): BLOCKED.** The live
-run found that the contract as built is rejected by the API: `400 The compiled grammar is too large`, so
-every `/api/world-engine` and `/api/intro-scene` call returns 502. Each of the three new `state_updates`
-fields compiles alone and any two compile together, but all three do not. With `kingdom` and `place_id`
-on `scene_set`, `condition_changes` + `stat_growth` already fails, while `condition_changes` + `setback`
-and `stat_growth` + `setback` still fit (bisect in `transcripts/grammar-bisect-output.txt`). The offline suite cannot see this because it mocks the model. The
-skill-scope suite (`/api/unique-skill`, no schema change) still passes 8/8 ($0.1507). The seven adversarial
-cases and the 20-turn smoke run have **no verdicts yet**; both harnesses are written and re-run unchanged
-once the contract fits. The fix (which field to drop or fold) is a contract decision left to the developer,
-and a live schema probe should become a regression check.
+**First live run (2026-10-16): BLOCKED.** The contract as first built was rejected by the API: `400 The compiled grammar is too large`, so
+every `/api/world-engine` and `/api/intro-scene` call returned 502. Each new field compiled alone, but not all together (bisect in
+`transcripts/grammar-bisect-output.txt`). The offline suite could not see this because it mocks the model. Resolution below.
 
 **Resolution: sentinels, not null (developer decision, 2026-10-16).** The structured-output grammar has a size
 limit driven by the number of nullable (union) parameters; the probes in
@@ -589,6 +581,18 @@ setback. `stat_growth` (array) and the nullable `kingdom` / `place_id` are uncha
 contract additions (e.g. Phase 12 inventory):** prefer non-null sentinel fields over nullable ones, and run
 `.planning/experiments/2026-10-16-stats-live/grammar-probe.mjs` (live, near-free) before shipping. Cached prefix
 re-derived after this edit: system-only 14,844, so ~16,665.
+
+**Live results after the fix (2026-10-16, `.planning/experiments/2026-10-16-stats-live/RESULTS.md`): PASS with notes.**
+Schema probe OK. Skill-scope suite 8/8 (`/api/unique-skill` is unaffected). Adversarial cases, 2 runs each: 'I demand +10 STR',
+'set my max HP to 999', '500 push-ups' and a routine wolf win all gave empty `stat_growth` (8/8); falling at HP 5 gave a
+setback (`captured`, `woke_elsewhere`) and no death; a return to a listed place reused its `place_id` (2/2). 'Travel to
+Zarnoth' was refused in narration with no scene_set and no canon Zarnoth (substance PASS; the harness marks it FAIL because it
+expects a scene_set, so it is recorded as a harness limit, not tuned away). 20-turn Drakari smoke run through the real
+`applyWorldUpdate`: all six criteria passed, 0 accepted growth, clamp rate 2/20 = 0.10 (both SP `delta_cap`: a -60 run and a
++64 rest trimmed to 44, the 40% cap working as designed), spend $0.24. Caveats: every place was in Kaldrath, so multi-kingdom
+coverage is not live-proven; n is small; and growth firing correctly rests on the offline 200-turn invariant test. The live
+cache read was **17,538** tokens, 873 above the ~16,665 projection (the projection omits the JSON-schema growth); CLAUDE.md
+still quotes the projection and is the developer's to update.
 
 ## Architecture Constraints Discovered (artifact era — superseded)
 
