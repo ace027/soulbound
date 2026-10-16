@@ -1,24 +1,1073 @@
 {
-  "date": "2026-10-16T04:34:39.449Z",
+  "date": "2026-10-16T04:45:18.918Z",
   "race": "drakari",
-  "turns": [],
+  "turns": [
+    {
+      "turn": 1,
+      "kind": "ordinary",
+      "action": "I take stock of my surroundings and listen carefully.",
+      "raw": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": 0,
+        "reason": ""
+      },
+      "applied": {
+        "hp": 0,
+        "mp": 0,
+        "sp": 0
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 50,
+        "sp": 110,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": {
+        "location": "Breakwheel Yard, a siege-engine salvage ground",
+        "kingdom": "Kaldrath",
+        "place_id": null
+      },
+      "currentPlaceId": "breakwheel-yard-a-siege-engine-salvage-ground-kaldrath",
+      "placeCount": 1,
+      "usage": {
+        "in": 885,
+        "out": 456,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You stand still and let the yard sort itself into sound and shape. Chains clank, hammers ring on iron, and a haulers' crew drags a cart of scrap along a chalked lane. Overhead, a crane swings a heavy trebuchet frame, and under its steady creak you catch a thin, dry grinding: one link in the hoist chain is fraying, strand by strand. Directly beneath its path, the haulers keep walking with their heads down, and a child no older than ten trots beside the cart, carrying a coil of rope. None of them has looked up.",
+      "gm_note": null
+    },
+    {
+      "turn": 2,
+      "kind": "ordinary",
+      "action": "I introduce myself to the first person I meet and ask about the region.",
+      "raw": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": 0,
+        "reason": ""
+      },
+      "applied": {
+        "hp": 0,
+        "mp": 0,
+        "sp": 0
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 50,
+        "sp": 110,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": null,
+      "currentPlaceId": "breakwheel-yard-a-siege-engine-salvage-ground-kaldrath",
+      "placeCount": 1,
+      "usage": {
+        "in": 1049,
+        "out": 440,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You walk toward the nearest hauler, a broad-shouldered Human woman with chalk-dusted forearms, and give your name: Kessra. She squints up at your scales, then nods and says she is Dova, a chain-hand for the yard's foreman. Kaldrath is thick with hiring-banners this season, she tells you, and every forge in Sundrach is buying salvage iron to supply them. Roads north are watched by patrols, and strangers are asked what side they stand on. Behind her, the crane's chain groans above the haulers and the child among them, and neither Dova nor anyone else has looked up.",
+      "gm_note": null
+    },
+    {
+      "turn": 3,
+      "kind": "travel-new",
+      "action": "I head to the nearest town or village and walk in through its entrance.",
+      "raw": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": 0,
+        "reason": ""
+      },
+      "applied": {
+        "hp": 0,
+        "mp": 0,
+        "sp": 0
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 50,
+        "sp": 110,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": null,
+      "currentPlaceId": "breakwheel-yard-a-siege-engine-salvage-ground-kaldrath",
+      "placeCount": 1,
+      "usage": {
+        "in": 1142,
+        "out": 377,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You turn from the yard's chalk-marked gates just as the crane's chain gives a thin metallic shriek. Overhead, the trebuchet frame sways, and beneath it a child stands among the haulers with no idea of the danger. Your feet carry you toward the road, but the scene has already set itself before you: the fraying chain, the child, the hands that do not look up. Whatever you do in the next breath is the only thing that matters here.",
+      "gm_note": "The player's action was to leave for a town, but the scene state has a crane hazard in progress at the Yard. The narration pauses the departure at the gate so the player can respond to the danger. No time has passed."
+    },
+    {
+      "turn": 4,
+      "kind": "meal",
+      "action": "I buy a hot meal and eat it slowly.",
+      "raw": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": 0,
+        "reason": "a hot meal while already at full strength"
+      },
+      "applied": {
+        "hp": 0,
+        "mp": 0,
+        "sp": 0
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 50,
+        "sp": 110,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": null,
+      "currentPlaceId": "breakwheel-yard-a-siege-engine-salvage-ground-kaldrath",
+      "placeCount": 1,
+      "usage": {
+        "in": 1169,
+        "out": 411,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You find a cookstall wedged between two stripped ram-carriages and buy a bowl of barley stew with a heel of black bread. The vendor ladles it steaming, and you eat slowly on an overturned axle-drum, letting the heat settle into your scaled shoulders. Around you the yard keeps its rhythm: hammers, chalk-marked beams, the groan of the crane on its turning arm. The meal is plain and good, and your strength comes back with each swallow. Your eyes drift upward as you chew, and you notice the crane's chain above the haulers, a trebuchet frame swaying from it. One of the links is bright with strain, and a small figure walks beneath it, unaware.",
+      "gm_note": null
+    },
+    {
+      "turn": 5,
+      "kind": "fight",
+      "action": "Two bandits ambush me on the road outside. I draw my weapon and fight them.",
+      "raw": {
+        "hp_delta": -9,
+        "mp_delta": 0,
+        "sp_delta": -14,
+        "reason": "a blade glancing off scale and the exertion of a brief fight"
+      },
+      "applied": {
+        "hp": -9,
+        "mp": 0,
+        "sp": -14
+      },
+      "condition_after": {
+        "hp": 121,
+        "mp": 50,
+        "sp": 96,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": {
+        "location": "The road outside Breakwheel Yard",
+        "kingdom": "Kaldrath",
+        "place_id": null
+      },
+      "currentPlaceId": "the-road-outside-breakwheel-yard-kaldrath",
+      "placeCount": 2,
+      "usage": {
+        "in": 1207,
+        "out": 1138,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "Two bandits step out of the roadside scrub, one ahead and one behind, cutting off both ways. You draw and plant your feet. The first lunges and you take his blade on your scales, which ring but hold. You watch him and see the weight sit wrong on his forward knee. You sweep it, and he drops hard into the ruts, winded and disarmed. The second hesitates with a cudgel half raised, eyes flicking from his friend to your steady stance. Behind you, from the yard, a chain clanks. Ahead, the road is still blocked.",
+      "gm_note": "The prior scene (crane and the child) and this action conflict; the ambush is resolved on the road outside the yard, and the crane's fate is left open."
+    },
+    {
+      "turn": 6,
+      "kind": "cast",
+      "action": "I unleash my breath weapon on the nearest threat.",
+      "raw": {
+        "hp_delta": 0,
+        "mp_delta": -8,
+        "sp_delta": -4,
+        "reason": "the strain of loosing your breath"
+      },
+      "applied": {
+        "hp": 0,
+        "mp": -8,
+        "sp": -4
+      },
+      "condition_after": {
+        "hp": 121,
+        "mp": 42,
+        "sp": 92,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": null,
+      "currentPlaceId": "the-road-outside-breakwheel-yard-kaldrath",
+      "placeCount": 2,
+      "usage": {
+        "in": 1306,
+        "out": 411,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You draw breath and loose it at the wavering bandit. Your Drakari lineage answers in a rolling gout that scorches the ruts and lashes across his cudgel arm. He shrieks, drops the weapon, and stumbles back with his sleeve smoldering, then beats at it against the mud. The heat shimmers over the road between you. The first bandit still lies groaning in the ruts, and the second is now unarmed, wide-eyed, and trembling, with nowhere good to run.",
+      "gm_note": null
+    },
+    {
+      "turn": 7,
+      "kind": "rest",
+      "action": "I find an inn, tend my wounds and rest for the night.",
+      "raw": {
+        "hp_delta": 9,
+        "mp_delta": 8,
+        "sp_delta": 18,
+        "reason": "a night of rest, cleaned and bound wounds"
+      },
+      "applied": {
+        "hp": 9,
+        "mp": 8,
+        "sp": 18
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 50,
+        "sp": 110,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": {
+        "location": "A siege-timber inn at Breakwheel Yard",
+        "kingdom": "Kaldrath",
+        "place_id": "breakwheel-yard-a-siege-engine-salvage-ground-kaldrath"
+      },
+      "currentPlaceId": "breakwheel-yard-a-siege-engine-salvage-ground-kaldrath",
+      "placeCount": 2,
+      "usage": {
+        "in": 1308,
+        "out": 513,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You leave the wavering bandit to the ruts and the dark, and the lanterns of Breakwheel Yard lead you to an inn built from a siege-engine's old timbers, its sign a chalk-scrawled wheel. The innkeeper takes your coin without comment. In a narrow room you wash the road-grit from your scales, bind the cudgel-bruise along your ribs, and eat what is left of the bread. Sleep comes slowly, then deeply, to the sound of iron being dragged across the yard. You wake stiff but mended, with grey light at the shutters and the day's road still ahead of you.",
+      "gm_note": null
+    },
+    {
+      "turn": 8,
+      "kind": "ordinary",
+      "action": "I ask around the market for rumours and news.",
+      "raw": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": -2,
+        "reason": "a morning of walking and talking through the yard"
+      },
+      "applied": {
+        "hp": 0,
+        "mp": 0,
+        "sp": -2
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 50,
+        "sp": 108,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": null,
+      "currentPlaceId": "breakwheel-yard-a-siege-engine-salvage-ground-kaldrath",
+      "placeCount": 2,
+      "usage": {
+        "in": 1321,
+        "out": 500,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You step out of the siege-timber inn into the morning clamor of Breakwheel Yard, where chain-hands drag rusted ram-heads across churned mud and every beam wears a foreman's chalk mark. Dova, the broad-shouldered Human chain-hand, spots you by the tally board and trades a few blunt words between hauls. The yard is hiring ahead of the season, she says, and Kaldrath's warbands are paying double for any iron stripped clean. She adds that the road you fought on has seen three ambushes this month, and the traders who leave at dusk don't always arrive. A stallkeeper selling chalk and tarred rope mutters that the bandits were once Kaldrath levies who went unpaid. You now have a few threads: the hiring season, the troubled road, and the unpaid levies.",
+      "gm_note": null
+    },
+    {
+      "turn": 9,
+      "kind": "travel-new",
+      "action": "I travel to a different place, somewhere I have never been, and arrive there.",
+      "raw": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": -6,
+        "reason": "a long day's walk along the road"
+      },
+      "applied": {
+        "hp": 0,
+        "mp": 0,
+        "sp": -6
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 50,
+        "sp": 102,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": {
+        "location": "Harrowmark Garrison-Town, a walled drill-field settlement",
+        "kingdom": "Kaldrath",
+        "place_id": null
+      },
+      "currentPlaceId": "harrowmark-garrison-town-a-walled-drill-field-settlement-kaldrath",
+      "placeCount": 3,
+      "usage": {
+        "in": 1359,
+        "out": 601,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You settle your bill, shoulder your pack and leave Breakwheel Yard by the northern gate, past stacked ribs of broken siege engines and the foreman's chalk marks fading behind you. The road climbs through scrubland for most of a day, and you keep your eyes on the verges, mindful of the ambushes. By dusk you reach Harrowmark Garrison-Town, a walled settlement of black stone built around an old drill-field. Torches burn along its ramparts, and recruits in mismatched mail drill in the dying light while a sergeant's voice rolls across the yard. A gate warden eyes your scales, then waves you toward the lanes inside. You are in a place you have never been, and the sound of marching follows you in.",
+      "gm_note": null
+    },
+    {
+      "turn": 10,
+      "kind": "run",
+      "action": "I run flat out for several miles along the road to test my endurance.",
+      "raw": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": -60,
+        "reason": "a punishing run of several miles at full sprint"
+      },
+      "applied": {
+        "hp": 0,
+        "mp": 0,
+        "sp": -44
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 50,
+        "sp": 58,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [
+        {
+          "kind": "delta_cap",
+          "field": "sp",
+          "raw": -60,
+          "applied": -44
+        }
+      ],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": {
+        "location": "The road outside Harrowmark Garrison-Town",
+        "kingdom": "Kaldrath",
+        "place_id": null
+      },
+      "currentPlaceId": "the-road-outside-harrowmark-garrison-town-kaldrath",
+      "placeCount": 4,
+      "usage": {
+        "in": 1510,
+        "out": 442,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You leave the gate and set your pace along the packed road, boots hammering the dark-stone ruts. The first mile is easy, the second burns, and by the fourth your lungs rasp and your scales run hot beneath your clothes. You keep going until the torchlit walls of Harrowmark are a distant smear behind you, then slow to a stagger, chest heaving, legs trembling but upright. The road ahead lies empty and silent under the first stars, and the cold air bites your throat.",
+      "gm_note": null
+    },
+    {
+      "turn": 11,
+      "kind": "ordinary",
+      "action": "I study the landscape closely, using my Unique Skill.",
+      "raw": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": 3,
+        "reason": "a quiet rest while you watch"
+      },
+      "applied": {
+        "hp": 0,
+        "mp": 0,
+        "sp": 3
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 50,
+        "sp": 61,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": null,
+      "currentPlaceId": "the-road-outside-harrowmark-garrison-town-kaldrath",
+      "placeCount": 4,
+      "usage": {
+        "in": 1518,
+        "out": 439,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You settle at the roadside and hold still, breath slowing, eyes fixed on a single thing: the leaning milestone at the verge. The dusk dims it, but in stillness a hairline seam shows along its base, where frost and cart-wheels have worked at the stone. You can tell where it would split, and which blow would do it. When you shift your gaze to the wider landscape, the sight scatters; the skill takes one thing at a time. Behind you, Harrowmark's torches flicker along the black wall. The road ahead lies empty and darkening, and your legs are still heavy from the run.",
+      "gm_note": null
+    },
+    {
+      "turn": 12,
+      "kind": "cast",
+      "action": "I use my breath weapon to light a campfire and burn a fallen log to ash.",
+      "raw": {
+        "hp_delta": 0,
+        "mp_delta": -8,
+        "sp_delta": -3,
+        "reason": "a sustained breath of fire, and the effort of holding it steady"
+      },
+      "applied": {
+        "hp": 0,
+        "mp": -8,
+        "sp": -3
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 42,
+        "sp": 58,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": null,
+      "currentPlaceId": "the-road-outside-harrowmark-garrison-town-kaldrath",
+      "placeCount": 4,
+      "usage": {
+        "in": 1577,
+        "out": 452,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You kneel beside a fallen log at the roadside, draw a slow breath, and let it out low and narrow. The Drakari fire in your chest answers, and the bark blackens, then catches. You hold the breath longer than you meant to, feeding it, until the heartwood glows through the cracks and the whole trunk sags into grey ash and settling embers. A small, steady campfire is left behind, with its glow pushing back the dusk. Harrowmark's torches show as distant points above its black walls. The road is empty in both directions, and the night is cooling around you.",
+      "gm_note": null
+    },
+    {
+      "turn": 13,
+      "kind": "fight",
+      "action": "A wild beast has been stalking me. I turn and fight it.",
+      "raw": {
+        "hp_delta": -6,
+        "mp_delta": 0,
+        "sp_delta": -12,
+        "reason": "a bruising bite on the forearm and the exertion of a close fight"
+      },
+      "applied": {
+        "hp": -6,
+        "mp": 0,
+        "sp": -12
+      },
+      "condition_after": {
+        "hp": 124,
+        "mp": 42,
+        "sp": 46,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": null,
+      "currentPlaceId": "the-road-outside-harrowmark-garrison-town-kaldrath",
+      "placeCount": 4,
+      "usage": {
+        "in": 1578,
+        "out": 569,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You turn from the dying warmth of the fire and face the dark. The thing that has paced you since the log burned down comes out of the treeline low and fast, a gaunt road-wolf, ribs showing, one foreleg held stiff. You plant your feet and let it come, watching rather than swinging. Its bad foreleg takes weight wrong on every stride; when it lunges, you step aside and drive your weapon into the shoulder behind that weak leg. It slams into the dirt, scrabbles, and tries again, blood on its muzzle. Your Scale Armor turns its first bite into a bruising scrape along your forearm. The second charge is slower, and it hesitates at the edge of the firelight, growling, deciding whether to run.",
+      "gm_note": null
+    },
+    {
+      "turn": 14,
+      "kind": "rest",
+      "action": "I make camp and sleep until morning.",
+      "raw": {
+        "hp_delta": 6,
+        "mp_delta": 8,
+        "sp_delta": 64,
+        "reason": "a full night's sleep beside a banked fire"
+      },
+      "applied": {
+        "hp": 6,
+        "mp": 8,
+        "sp": 44
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 50,
+        "sp": 90,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [
+        {
+          "kind": "delta_cap",
+          "field": "sp",
+          "raw": 64,
+          "applied": 44
+        }
+      ],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": null,
+      "currentPlaceId": "the-road-outside-harrowmark-garrison-town-kaldrath",
+      "placeCount": 4,
+      "usage": {
+        "in": 1638,
+        "out": 394,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You bank the fire's remains, spread your cloak beside the road's drainage ditch, and settle with your back to a milestone. Harrowmark's torchlight glows faintly over the wall, and the drill-horns fall silent one by one. Sleep comes in shallow layers at first, then deep. A single owl and the tick of cooling embers are all that stir.\n\nYou wake to grey light and dew on your scales. Your legs no longer burn, the wolf's bite-scrapes have scabbed over, and your breath comes easy. The road lies empty both ways, and the garrison-town's gate is opening for the morning wagons.",
+      "gm_note": null
+    },
+    {
+      "turn": 15,
+      "kind": "return",
+      "action": "I go back to Breakwheel Yard, a siege-engine salvage ground.",
+      "raw": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": -5,
+        "reason": "a long walk back along the road"
+      },
+      "applied": {
+        "hp": 0,
+        "mp": 0,
+        "sp": -5
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 50,
+        "sp": 85,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": {
+        "location": "Breakwheel Yard, a siege-engine salvage ground",
+        "kingdom": "Kaldrath",
+        "place_id": "breakwheel-yard-a-siege-engine-salvage-ground-kaldrath"
+      },
+      "currentPlaceId": "breakwheel-yard-a-siege-engine-salvage-ground-kaldrath",
+      "placeCount": 4,
+      "usage": {
+        "in": 1641,
+        "out": 485,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You rise from the cold ashes of your camp and take the road back toward Breakwheel Yard, boots crunching on frost-stiff ruts. Within the hour the yard's skeleton comes into view: gutted ram-carriages and splintered towers, each stripped hull scrawled with the foreman's chalk. Hammers ring on iron somewhere in the wreckage, and a chain-hand near the gate looks up at your approach, then returns to her work. You are back where the ambush rumours began, and the yard is open before you.",
+      "gm_note": null
+    },
+    {
+      "turn": 16,
+      "kind": "ordinary",
+      "action": "I look for anyone I met here before and talk to them.",
+      "raw": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": 0,
+        "reason": ""
+      },
+      "applied": {
+        "hp": 0,
+        "mp": 0,
+        "sp": 0
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 50,
+        "sp": 85,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": null,
+      "currentPlaceId": "breakwheel-yard-a-siege-engine-salvage-ground-kaldrath",
+      "placeCount": 4,
+      "usage": {
+        "in": 1652,
+        "out": 355,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "Morning light lies flat across Breakwheel Yard, and the chalk lines run white over every ribcage of stripped timber. You walk the lanes between hulks until you find Dova at a ram-carriage, broad shoulders dusted pale, prying a bronze fitting loose with a bar. She glances up, recognises you, and jerks her chin at the wheel she's working. 'Back, and the road hasn't eaten you. Good.' She wipes her hands on her apron and waits to hear what you want to ask, the hammers ringing on around the two of you.",
+      "gm_note": null
+    },
+    {
+      "turn": 17,
+      "kind": "travel-new",
+      "action": "I travel on to a third place I have not been, and arrive there.",
+      "raw": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": -8,
+        "reason": "a long day's march along the siege-road"
+      },
+      "applied": {
+        "hp": 0,
+        "mp": 0,
+        "sp": -8
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 50,
+        "sp": 77,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": {
+        "location": "Cinderhold Muster-Post, a palisaded supply camp",
+        "kingdom": "Kaldrath",
+        "place_id": null
+      },
+      "currentPlaceId": "cinderhold-muster-post-a-palisaded-supply-camp-kaldrath",
+      "placeCount": 5,
+      "usage": {
+        "in": 1653,
+        "out": 588,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You leave the chalk and the ringing hammers behind and follow the old siege-road north, where the ruts deepen and the wreckage thins. By midday the road bends into a shallow valley, and a settlement rises from it: a ring of tall timber palisades hung with rusted shields, every one dented and none replaced. A painted board at the gate reads Cinderhold Muster-Post. Below it, quartermasters weigh grain and sort pikes into racks, and nobody looks up at you for long. The gate is open, the line of carts is slow, and a sergeant at the threshold is waving travelers through one at a time, waiting to hear your business.",
+      "gm_note": null
+    },
+    {
+      "turn": 18,
+      "kind": "ordinary",
+      "action": "I speak with a local about the history of this place.",
+      "raw": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": 0,
+        "reason": ""
+      },
+      "applied": {
+        "hp": 0,
+        "mp": 0,
+        "sp": 0
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 50,
+        "sp": 77,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": null,
+      "currentPlaceId": "cinderhold-muster-post-a-palisaded-supply-camp-kaldrath",
+      "placeCount": 5,
+      "usage": {
+        "in": 1789,
+        "out": 465,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You step away from the gate line and approach a gray-bearded quartermaster tallying pike-heads onto a slate. He gives his name as Orrin Vael and, between counts, tells you what he knows. Cinderhold was a stockade raised for the last great levy, when Kaldrath marched out and the post was meant to stand a single season. That was generations ago, and the walls still stand. He taps a dented shield on the palisade and says every one was hung by a family that never came back for it. The gate sergeant watches the two of you, still waiting to question you, and Orrin lowers his voice about the levies who have gone unpaid this year.",
+      "gm_note": null
+    },
+    {
+      "turn": 19,
+      "kind": "meal",
+      "action": "I eat a proper meal and drink my fill of water.",
+      "raw": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": 28,
+        "reason": "a hot meal, bread, and plenty of water"
+      },
+      "applied": {
+        "hp": 0,
+        "mp": 0,
+        "sp": 28
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 50,
+        "sp": 105,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": null,
+      "currentPlaceId": "cinderhold-muster-post-a-palisaded-supply-camp-kaldrath",
+      "placeCount": 5,
+      "usage": {
+        "in": 1870,
+        "out": 344,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You find a bench beside the grain stacks, and Orrin Vael has a quartermaster's boy bring you a trencher of barley stew, hard bread, and a dented tin cup of well water. You eat slowly and drink until the cup stays empty. The ache of the road drains out of your legs, and the heat that always sits low in a Drakari's chest settles into a steady, even warmth. At the gate the sergeant is still watching you, patient, and in no hurry for your answers.",
+      "gm_note": null
+    },
+    {
+      "turn": 20,
+      "kind": "ordinary",
+      "action": "I take stock of my wounds and my reserves and plan what to do next.",
+      "raw": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": 5,
+        "reason": "a few quiet minutes of rest after the meal"
+      },
+      "applied": {
+        "hp": 0,
+        "mp": 0,
+        "sp": 5
+      },
+      "condition_after": {
+        "hp": 130,
+        "mp": 50,
+        "sp": 110,
+        "max_hp": 130,
+        "max_mp": 50,
+        "max_sp": 110
+      },
+      "clampEvents": [],
+      "stat_growth_raw": [],
+      "stat_growth_accepted": 0,
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      },
+      "scene_set": null,
+      "currentPlaceId": "cinderhold-muster-post-a-palisaded-supply-camp-kaldrath",
+      "placeCount": 5,
+      "usage": {
+        "in": 1880,
+        "out": 370,
+        "cache_read": 17538,
+        "cache_write": 0
+      },
+      "narration": "You find a quiet spot against the palisade, out of the quartermasters' traffic, and take stock. HP is full, your scales unmarked beyond a few dull scuffs from the road. The meal has settled and the water has eased the dryness in your throat, leaving only a faint tiredness in your legs. Your breath-fire sits cool and ready behind your ribs. At the gate the sergeant still watches you, and from the post's talk you have three threads to follow: the road ambushes, the unpaid levies, and Orrin Vael's tally of the post's history.",
+      "gm_note": null
+    }
+  ],
   "intro": {
-    "status": 502,
+    "status": 200,
     "response": {
-      "error": {
-        "message": "World Voice call failed: Anthropic API request error.",
-        "code": "UPSTREAM_ERROR"
+      "narration": "You stand in the Breakwheel Yard of Kaldrath, a salvage ground where broken siege engines are hauled to be stripped for iron. Rust dust coats your scales. Cracked ballista arms and split wheels lie in heaps around you, and an old foreman's chalk marks cover every beam.\n\nA gantry crane groans overhead, lifting a ten-ton trebuchet frame over a crew of haulers. Its main chain is fraying, and its single iron hook shudders with each swing. The foreman waves the crew on, unaware. Beneath the frame, three haulers keep working, and one is a child carrying water. The crane operator is shouting, but the wind swallows it.\n\nYou see the swaying frame, the fraying chain, and the people beneath it.",
+      "state_updates": {
+        "skill_mastery_changes": [],
+        "new_skills_granted": [],
+        "skill_evolutions": [],
+        "unique_sub_ability_unlocked": null,
+        "world_events": [
+          {
+            "type": "scene_set",
+            "location": "Breakwheel Yard, a siege-engine salvage ground",
+            "scene_summary": "A crane is lifting a heavy trebuchet frame on a fraying chain over unaware haulers, one of them a child.",
+            "description": null,
+            "kingdom": "Kaldrath",
+            "place_id": null
+          }
+        ],
+        "condition_changes": {
+          "hp_delta": 0,
+          "mp_delta": 0,
+          "sp_delta": 0,
+          "reason": ""
+        },
+        "stat_growth": [],
+        "setback": {
+          "kind": "none",
+          "summary": ""
+        }
+      },
+      "narrative_memory_updates": {
+        "new_entities": [
+          {
+            "name": "Breakwheel Yard",
+            "description": "A salvage ground in Kaldrath where broken siege engines are stripped for iron, marked everywhere with a foreman's chalk."
+          }
+        ],
+        "note": null
+      },
+      "gm_note": null
+    }
+  },
+  "status": "complete",
+  "intro_scene_set": {
+    "type": "scene_set",
+    "location": "Breakwheel Yard, a siege-engine salvage ground",
+    "scene_summary": "A crane is lifting a heavy trebuchet frame on a fraying chain over unaware haulers, one of them a child.",
+    "description": null,
+    "kingdom": "Kaldrath",
+    "place_id": null
+  },
+  "criteria": {
+    "fight_hp_delta_non_null": {
+      "pass": true,
+      "detail": [
+        {
+          "turn": 5,
+          "raw_hp": -9,
+          "applied_hp": -9
+        },
+        {
+          "turn": 13,
+          "raw_hp": -6,
+          "applied_hp": -6
+        }
+      ]
+    },
+    "cast_moves_mp_or_explained": {
+      "pass": true,
+      "detail": [
+        {
+          "turn": 6,
+          "raw_mp": -8,
+          "applied_mp": -8
+        },
+        {
+          "turn": 12,
+          "raw_mp": -8,
+          "applied_mp": -8
+        }
+      ]
+    },
+    "rest_or_meal_recovers_pool": {
+      "pass": true,
+      "detail": [
+        {
+          "turn": 4,
+          "kind": "meal",
+          "applied": {
+            "hp": 0,
+            "mp": 0,
+            "sp": 0
+          }
+        },
+        {
+          "turn": 7,
+          "kind": "rest",
+          "applied": {
+            "hp": 9,
+            "mp": 8,
+            "sp": 18
+          }
+        },
+        {
+          "turn": 14,
+          "kind": "rest",
+          "applied": {
+            "hp": 6,
+            "mp": 8,
+            "sp": 44
+          }
+        },
+        {
+          "turn": 19,
+          "kind": "meal",
+          "applied": {
+            "hp": 0,
+            "mp": 0,
+            "sp": 28
+          }
+        }
+      ]
+    },
+    "return_reuses_first_place_id": {
+      "pass": true,
+      "detail": {
+        "firstPlaceId": "breakwheel-yard-a-siege-engine-salvage-ground-kaldrath",
+        "returnScene": {
+          "location": "Breakwheel Yard, a siege-engine salvage ground",
+          "kingdom": "Kaldrath",
+          "place_id": "breakwheel-yard-a-siege-engine-salvage-ground-kaldrath"
+        },
+        "returnCurrentPlaceId": "breakwheel-yard-a-siege-engine-salvage-ground-kaldrath"
       }
+    },
+    "accepted_stat_growth_le_1": {
+      "pass": true,
+      "detail": {
+        "accepted": 0,
+        "proposed": 0
+      }
+    },
+    "every_scene_set_has_kingdom": {
+      "pass": true,
+      "detail": [
+        {
+          "turn": 1,
+          "kingdom": "Kaldrath"
+        },
+        {
+          "turn": 5,
+          "kingdom": "Kaldrath"
+        },
+        {
+          "turn": 7,
+          "kingdom": "Kaldrath"
+        },
+        {
+          "turn": 9,
+          "kingdom": "Kaldrath"
+        },
+        {
+          "turn": 10,
+          "kingdom": "Kaldrath"
+        },
+        {
+          "turn": 15,
+          "kingdom": "Kaldrath"
+        },
+        {
+          "turn": 17,
+          "kingdom": "Kaldrath"
+        }
+      ]
     }
   },
-  "status": "BLOCKED at intro-scene",
-  "blocked_reason": {
-    "error": {
-      "message": "World Voice call failed: Anthropic API request error.",
-      "code": "UPSTREAM_ERROR"
-    }
+  "clamp_rate": {
+    "turns_with_clamp": 2,
+    "turns": 20,
+    "rate": 0.1
   },
-  "cost_usd": 0,
-  "calls": 0,
-  "server_log_tail": "[soulbound-backend] listening on port 3060\n[anthropic] introScene call failed (upstream status 400): Error: 400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.\"},\"request_id\":\"req_011Cg5HxgkRctGW6MZtnf1aE\"}\n    at APIError.generate (file:///home/user/soulbound/node_modules/@anthropic-ai/sdk/core/error.mjs:42:20)\n    at Anthropic.makeStatusError (file:///home/user/soulbound/node_modules/@anthropic-ai/sdk/client.mjs:384:36)\n    at Anthropic.makeRequest (file:///home/user/soulbound/node_modules/@anthropic-ai/sdk/client.mjs:611:34)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async callWorldVoice (file:///home/user/soulbound/backend/dist/anthropic.js:365:24)\n    at async handleIntroScene (file:///home/user/soulbound/backend/dist/routes/introScene.js:115:24)\n[error] POST /api/intro-scene: WorldVoiceCallError: World Voice call failed: Anthropic API request error.\n    at mapAnthropicError (file:///home/user/soulbound/backend/dist/anthropic.js:225:16)\n    at callWorldVoice (file:///home/user/soulbound/backend/dist/anthropic.js:394:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async handleIntroScene (file:///home/user/soulbound/backend/dist/routes/introScene.js:115:24)\n"
+  "cost_usd": 0.2359,
+  "calls": 21,
+  "server_log_tail": "tput_tokens\":569,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":17538,\"stop_reason\":\"end_turn\"}\n[anthropic:usage] {\"route\":\"worldEngine\",\"model\":\"claude-sonnet-5-5\",\"input_tokens\":1638,\"output_tokens\":394,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":17538,\"stop_reason\":\"end_turn\"}\n[anthropic:usage] {\"route\":\"worldEngine\",\"model\":\"claude-sonnet-5-5\",\"input_tokens\":1641,\"output_tokens\":485,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":17538,\"stop_reason\":\"end_turn\"}\n[anthropic:usage] {\"route\":\"worldEngine\",\"model\":\"claude-sonnet-5-5\",\"input_tokens\":1652,\"output_tokens\":355,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":17538,\"stop_reason\":\"end_turn\"}\n[anthropic:usage] {\"route\":\"worldEngine\",\"model\":\"claude-sonnet-5-5\",\"input_tokens\":1653,\"output_tokens\":588,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":17538,\"stop_reason\":\"end_turn\"}\n[anthropic:usage] {\"route\":\"worldEngine\",\"model\":\"claude-sonnet-5-5\",\"input_tokens\":1789,\"output_tokens\":465,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":17538,\"stop_reason\":\"end_turn\"}\n[anthropic:usage] {\"route\":\"worldEngine\",\"model\":\"claude-sonnet-5-5\",\"input_tokens\":1870,\"output_tokens\":344,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":17538,\"stop_reason\":\"end_turn\"}\n[anthropic:usage] {\"route\":\"worldEngine\",\"model\":\"claude-sonnet-5-5\",\"input_tokens\":1880,\"output_tokens\":370,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":17538,\"stop_reason\":\"end_turn\"}\n"
 }

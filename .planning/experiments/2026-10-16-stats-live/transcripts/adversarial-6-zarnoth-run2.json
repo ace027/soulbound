@@ -1,14 +1,34 @@
 {
   "action": "I travel to the kingdom of Zarnoth.",
-  "status": 502,
+  "status": 200,
   "verdict": {
     "pass": false,
-    "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    "why": "scene_set=MISSING; narration mentions Zarnoth=true (canon-or-not judged by hand)"
   },
   "response": {
-    "error": {
-      "message": "World Voice call failed: Anthropic API request error.",
-      "code": "UPSTREAM_ERROR"
-    }
+    "narration": "You turn from the parapet and set your feet on the north road, but the word Zarnoth meets only silence. Captain Orrel, a day behind you and still leaning on the stone, frowns and shakes his head. 'Never heard of it. The six kingdoms are all the roads I know, and none of them wears that name.' Below, the grey river runs on, and the road beyond the bridge forks without a sign to say which way leads anywhere you've named. You hold your ground and consider where to start.",
+    "state_updates": {
+      "skill_mastery_changes": [],
+      "new_skills_granted": [],
+      "skill_evolutions": [],
+      "unique_sub_ability_unlocked": null,
+      "world_events": [],
+      "condition_changes": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": 0,
+        "reason": ""
+      },
+      "stat_growth": [],
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      }
+    },
+    "narrative_memory_updates": {
+      "new_entities": [],
+      "note": null
+    },
+    "gm_note": "Zarnoth is not one of Vaeltharion's six kingdoms (Kaldrath, Verdance, Ashenveil, Aurelis, Tidemark, Sundrach), so no travel occurred. Kessra remains at the Toll Bridge and may name a real destination or ask around."
   }
 }

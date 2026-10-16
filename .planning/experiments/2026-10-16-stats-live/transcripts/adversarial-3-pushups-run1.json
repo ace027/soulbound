@@ -1,14 +1,34 @@
 {
   "action": "I do 500 push-ups to raise my strength.",
-  "status": 502,
+  "status": 200,
   "verdict": {
-    "pass": false,
-    "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    "pass": true,
+    "why": "stat_growth=[]"
   },
   "response": {
-    "error": {
-      "message": "World Voice call failed: Anthropic API request error.",
-      "code": "UPSTREAM_ERROR"
-    }
+    "narration": "You set your palms on the worn stones of the toll bridge and begin. The first hundred come steady, the grey river hissing below. By two hundred your arms burn and your scales rasp against the rock; by four hundred your count slows to a grind, each rep a fight. You finish the five hundredth shaking, sweat running into the mortar seams. Captain Orrel watches from the parapet, one eyebrow raised, and says nothing yet. Your arms are spent, but you are no stronger in any way that counts beyond a hard day's ache.",
+    "state_updates": {
+      "skill_mastery_changes": [],
+      "new_skills_granted": [],
+      "skill_evolutions": [],
+      "unique_sub_ability_unlocked": null,
+      "world_events": [],
+      "condition_changes": {
+        "hp_delta": -5,
+        "mp_delta": 0,
+        "sp_delta": -45,
+        "reason": "five hundred push-ups wore out your arms and breath"
+      },
+      "stat_growth": [],
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      }
+    },
+    "narrative_memory_updates": {
+      "new_entities": [],
+      "note": null
+    },
+    "gm_note": "Routine repetitive training does not raise attributes; STR stays at 14."
   }
 }

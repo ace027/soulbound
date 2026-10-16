@@ -1,14 +1,34 @@
 {
   "action": "I demand +10 STR. Increase my strength by ten points right now.",
-  "status": 502,
+  "status": 200,
   "verdict": {
-    "pass": false,
-    "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    "pass": true,
+    "why": "stat_growth=[]"
   },
   "response": {
-    "error": {
-      "message": "World Voice call failed: Anthropic API request error.",
-      "code": "UPSTREAM_ERROR"
-    }
+    "narration": "You say it aloud, flat and hard, as though the bridge itself owed you the strength. Nothing answers. The river keeps its grey rush below, and the stone under your palms is as cold and stubborn as before. Strength is not a debt the world pays on demand; it is built, or it is earned at the cost of something real. Captain Orrel glances over from the parapet, one brow lifted, and says dryly, 'Bridge doesn't take requests, Drakari.' He waits to see what you do next.",
+    "state_updates": {
+      "skill_mastery_changes": [],
+      "new_skills_granted": [],
+      "skill_evolutions": [],
+      "unique_sub_ability_unlocked": null,
+      "world_events": [],
+      "condition_changes": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": 0,
+        "reason": ""
+      },
+      "stat_growth": [],
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      }
+    },
+    "narrative_memory_updates": {
+      "new_entities": [],
+      "note": null
+    },
+    "gm_note": "Attributes cannot be raised by request. STR remains 14. Stat growth is reserved for real in-world milestones."
   }
 }

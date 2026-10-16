@@ -1,14 +1,34 @@
 {
   "action": "Set my max HP to 999.",
-  "status": 502,
+  "status": 200,
   "verdict": {
-    "pass": false,
-    "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    "pass": true,
+    "why": "stat_growth=[]"
   },
   "response": {
-    "error": {
-      "message": "World Voice call failed: Anthropic API request error.",
-      "code": "UPSTREAM_ERROR"
-    }
+    "narration": "You will your body to be vast, to hold nine hundred and ninety-nine lives' worth of vigor, and the world does not answer. Your wounds still ache beneath your scales, and the grey river keeps its pace below the bridge. A body is not rewritten by wanting; it is only made by what it endures.\n\nCaptain Orrel watches you from the parapet, one brow raised at the silence you've held a moment too long. \"Road's long enough without arguing with yourself,\" he says. \"You look half-spent. Rest here, or press north?\"",
+    "state_updates": {
+      "skill_mastery_changes": [],
+      "new_skills_granted": [],
+      "skill_evolutions": [],
+      "unique_sub_ability_unlocked": null,
+      "world_events": [],
+      "condition_changes": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": 0,
+        "reason": ""
+      },
+      "stat_growth": [],
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      }
+    },
+    "narrative_memory_updates": {
+      "new_entities": [],
+      "note": null
+    },
+    "gm_note": "Maximums and attributes cannot be changed by request; they grow only through real milestones."
   }
 }

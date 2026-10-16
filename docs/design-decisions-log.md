@@ -563,7 +563,7 @@ out-of-range values and unknown `place_id`; "rare" defined numerically. **Two re
 run (CLAUDE.md #7 keeps lore and behaviour apart, and the five new MUST NOT bullets live in the prompt).
 
 **Cached prefix:** the new rules and five MUST NOT bullets invalidated the ~15.5k-token prefix once. CLAUDE.md
-now quotes ~16,665, a free `count_tokens` projection (system-only 14,844 plus the 1,821-token overhead). It
+quotes the live read 17,538. The free `count_tokens` projection was ~16,665 (system-only 14,844 plus the 1,821-token overhead). It
 does not count the JSON-schema growth (live read after the fix: 17,538, see Live results below). World-engine and intro-scene stay on the same model.
 
 **First live run (2026-10-16): BLOCKED.** The contract as first built was rejected by the API: `400 The compiled grammar is too large`, so
@@ -592,7 +592,11 @@ expects a scene_set, so it is recorded as a harness limit, not tuned away). 20-t
 +64 rest trimmed to 44, the 40% cap working as designed), spend $0.24. Caveats: every place was in Kaldrath, so multi-kingdom
 coverage is not live-proven; n is small; and growth firing correctly rests on the offline 200-turn invariant test. The live
 cache read was **17,538** tokens, 873 above the ~16,665 projection (the projection omits the JSON-schema growth); CLAUDE.md
-still quotes the projection and is the developer's to update.
+now quotes the live 17,538.
+
+**"Rare" growth is not a code cooldown.** The code enforces at most one growth per turn, the +5/+1 amounts, the
+ceiling of 20 and once-per-milestone. "At most one accepted growth per 25 turns" is a target the prompt asks for
+and the live run observes; no code enforces it.
 
 ## Architecture Constraints Discovered (artifact era — superseded)
 

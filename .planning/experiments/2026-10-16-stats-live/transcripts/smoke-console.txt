@@ -1,3 +1,23 @@
-intro-scene: HTTP 502
+intro-scene: HTTP 200
+T1 [ordinary] raw(0,0,0) applied(0,0,0) clamps=0 growth=0/0 setback=none place=breakwheel-yard-a-siege-engine-salvage-ground-kaldrath kingdom=Kaldrath
+T2 [ordinary] raw(0,0,0) applied(0,0,0) clamps=0 growth=0/0 setback=none place=breakwheel-yard-a-siege-engine-salvage-ground-kaldrath
+T3 [travel-new] raw(0,0,0) applied(0,0,0) clamps=0 growth=0/0 setback=none place=breakwheel-yard-a-siege-engine-salvage-ground-kaldrath
+T4 [meal] raw(0,0,0) applied(0,0,0) clamps=0 growth=0/0 setback=none place=breakwheel-yard-a-siege-engine-salvage-ground-kaldrath
+T5 [fight] raw(-9,0,-14) applied(-9,0,-14) clamps=0 growth=0/0 setback=none place=the-road-outside-breakwheel-yard-kaldrath kingdom=Kaldrath
+T6 [cast] raw(0,-8,-4) applied(0,-8,-4) clamps=0 growth=0/0 setback=none place=the-road-outside-breakwheel-yard-kaldrath
+T7 [rest] raw(9,8,18) applied(9,8,18) clamps=0 growth=0/0 setback=none place=breakwheel-yard-a-siege-engine-salvage-ground-kaldrath kingdom=Kaldrath
+T8 [ordinary] raw(0,0,-2) applied(0,0,-2) clamps=0 growth=0/0 setback=none place=breakwheel-yard-a-siege-engine-salvage-ground-kaldrath
+T9 [travel-new] raw(0,0,-6) applied(0,0,-6) clamps=0 growth=0/0 setback=none place=harrowmark-garrison-town-a-walled-drill-field-settlement-kaldrath kingdom=Kaldrath
+T10 [run] raw(0,0,-60) applied(0,0,-44) clamps=1 growth=0/0 setback=none place=the-road-outside-harrowmark-garrison-town-kaldrath kingdom=Kaldrath
+T11 [ordinary] raw(0,0,3) applied(0,0,3) clamps=0 growth=0/0 setback=none place=the-road-outside-harrowmark-garrison-town-kaldrath
+T12 [cast] raw(0,-8,-3) applied(0,-8,-3) clamps=0 growth=0/0 setback=none place=the-road-outside-harrowmark-garrison-town-kaldrath
+T13 [fight] raw(-6,0,-12) applied(-6,0,-12) clamps=0 growth=0/0 setback=none place=the-road-outside-harrowmark-garrison-town-kaldrath
+T14 [rest] raw(6,8,64) applied(6,8,44) clamps=1 growth=0/0 setback=none place=the-road-outside-harrowmark-garrison-town-kaldrath
+T15 [return] raw(0,0,-5) applied(0,0,-5) clamps=0 growth=0/0 setback=none place=breakwheel-yard-a-siege-engine-salvage-ground-kaldrath kingdom=Kaldrath
+T16 [ordinary] raw(0,0,0) applied(0,0,0) clamps=0 growth=0/0 setback=none place=breakwheel-yard-a-siege-engine-salvage-ground-kaldrath
+T17 [travel-new] raw(0,0,-8) applied(0,0,-8) clamps=0 growth=0/0 setback=none place=cinderhold-muster-post-a-palisaded-supply-camp-kaldrath kingdom=Kaldrath
+T18 [ordinary] raw(0,0,0) applied(0,0,0) clamps=0 growth=0/0 setback=none place=cinderhold-muster-post-a-palisaded-supply-camp-kaldrath
+T19 [meal] raw(0,0,28) applied(0,0,28) clamps=0 growth=0/0 setback=none place=cinderhold-muster-post-a-palisaded-supply-camp-kaldrath
+T20 [ordinary] raw(0,0,5) applied(0,0,5) clamps=0 growth=0/0 setback=none place=cinderhold-muster-post-a-palisaded-supply-camp-kaldrath
 
-status BLOCKED at intro-scene; spent $0 over 0 calls
+status complete; spent $0.2359 over 21 calls

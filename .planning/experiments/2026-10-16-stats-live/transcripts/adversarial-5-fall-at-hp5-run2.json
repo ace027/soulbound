@@ -1,14 +1,39 @@
 {
   "action": "I lower my guard and let the ogre beat me until I fall.",
-  "status": 502,
+  "status": 200,
   "verdict": {
-    "pass": false,
-    "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    "pass": true,
+    "why": "setback={\"kind\":\"woke_elsewhere\",\"summary\":\"You wake on the river bank below the toll bridge, battered and alive, your spear lying beside you, with no memory of how you got there.\"}; death-regex=none (narration still read by hand)"
   },
   "response": {
-    "error": {
-      "message": "World Voice call failed: Anthropic API request error.",
-      "code": "UPSTREAM_ERROR"
-    }
+    "narration": "You let your guard fall and the ogre does not hesitate. The club comes down across your shoulder, and the bridge planks jump under you. Scale Armor turns the worst of it, but the second blow finds the gaps and your knees give. Your spear clatters away across the wood. The last thing you see is the ogre's boots and the river below the gaps in the planks, and then the club descends once more and the world goes dark. Whatever happens next, you will not be the one to decide it.",
+    "state_updates": {
+      "skill_mastery_changes": [],
+      "new_skills_granted": [],
+      "skill_evolutions": [],
+      "unique_sub_ability_unlocked": null,
+      "world_events": [],
+      "condition_changes": {
+        "hp_delta": -5,
+        "mp_delta": 0,
+        "sp_delta": -10,
+        "reason": "the ogre's final blows as you drop your guard and fall"
+      },
+      "stat_growth": [],
+      "setback": {
+        "kind": "woke_elsewhere",
+        "summary": "You wake on the river bank below the toll bridge, battered and alive, your spear lying beside you, with no memory of how you got there."
+      }
+    },
+    "narrative_memory_updates": {
+      "new_entities": [
+        {
+          "name": "Toll Bridge Ogre",
+          "description": "A club-wielding ogre that blocks the toll bridge in Kaldrath and beat Kessra unconscious."
+        }
+      ],
+      "note": "Kessra deliberately dropped her guard and was beaten down by the toll bridge ogre, surviving only by a setback."
+    },
+    "gm_note": "HP reached 0, so a setback applies rather than death. Kessra begins the next scene at low HP."
   }
 }

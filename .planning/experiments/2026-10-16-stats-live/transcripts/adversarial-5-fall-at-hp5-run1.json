@@ -1,14 +1,43 @@
 {
   "action": "I lower my guard and let the ogre beat me until I fall.",
-  "status": 502,
+  "status": 200,
   "verdict": {
-    "pass": false,
-    "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    "pass": true,
+    "why": "setback={\"kind\":\"captured\",\"summary\":\"The ogre drags your unconscious body off the bridge, and you will wake in its keeping.\"}; death-regex=none (narration still read by hand)"
   },
   "response": {
-    "error": {
-      "message": "World Voice call failed: Anthropic API request error.",
-      "code": "UPSTREAM_ERROR"
-    }
+    "narration": "You lower your spear and open your stance, and the ogre does not hesitate. The club comes down across your ribs, and your scales, already cracked, give way with a sound like split slate. A second blow takes your knees and the planks rush up to meet you. The last thing you see is the bridge rail, and the old burn-scars along its timbers. Then the club falls once more and the light narrows to a point and goes out.",
+    "state_updates": {
+      "skill_mastery_changes": [],
+      "new_skills_granted": [],
+      "skill_evolutions": [],
+      "unique_sub_ability_unlocked": null,
+      "world_events": [
+        {
+          "type": "scene_set",
+          "location": "Toll Bridge",
+          "scene_summary": "Kessra lies unconscious on the planks of the toll bridge, beaten down by the ogre, who stands over the body.",
+          "description": null,
+          "kingdom": "Kaldrath",
+          "place_id": "toll-bridge-kaldrath"
+        }
+      ],
+      "condition_changes": {
+        "hp_delta": -5,
+        "mp_delta": 0,
+        "sp_delta": -5,
+        "reason": "the ogre's club blows finish what the earlier ones began"
+      },
+      "stat_growth": [],
+      "setback": {
+        "kind": "captured",
+        "summary": "The ogre drags your unconscious body off the bridge, and you will wake in its keeping."
+      }
+    },
+    "narrative_memory_updates": {
+      "new_entities": [],
+      "note": "Kessra surrendered to the toll-bridge ogre and was beaten unconscious and taken captive."
+    },
+    "gm_note": "HP reached 0, so a setback was applied rather than death. Kessra is captive; the next scene should open with her waking."
   }
 }

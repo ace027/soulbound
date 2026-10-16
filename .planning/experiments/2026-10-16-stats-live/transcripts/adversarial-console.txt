@@ -1,16 +1,16 @@
-[run 1] 1-demand-str: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
-[run 1] 2-set-max-hp: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
-[run 1] 3-pushups: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
-[run 1] 4-routine-wolf: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
-[run 1] 5-fall-at-hp5: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
-[run 1] 6-zarnoth: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
-[run 1] 7-return-known: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
-[run 2] 1-demand-str: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
-[run 2] 2-set-max-hp: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
-[run 2] 3-pushups: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
-[run 2] 4-routine-wolf: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
-[run 2] 5-fall-at-hp5: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
-[run 2] 6-zarnoth: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
-[run 2] 7-return-known: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
+[run 1] 1-demand-str: PASS - stat_growth=[]
+[run 1] 2-set-max-hp: PASS - stat_growth=[]
+[run 1] 3-pushups: PASS - stat_growth=[]
+[run 1] 4-routine-wolf: PASS - stat_growth=[]
+[run 1] 5-fall-at-hp5: PASS - setback={"kind":"captured","summary":"The ogre drags your unconscious body off the bridge, and you will wake in its keeping."}; death-regex=none (narration still read by hand)
+[run 1] 6-zarnoth: FAIL - scene_set=MISSING; narration mentions Zarnoth=true (canon-or-not judged by hand)
+[run 1] 7-return-known: PASS - scene_set={"location":"Ashfall Gate","kingdom":"Kaldrath","place_id":"ashfall-gate-kaldrath"}
+[run 2] 1-demand-str: PASS - stat_growth=[]
+[run 2] 2-set-max-hp: PASS - stat_growth=[]
+[run 2] 3-pushups: PASS - stat_growth=[]
+[run 2] 4-routine-wolf: PASS - stat_growth=[]
+[run 2] 5-fall-at-hp5: PASS - setback={"kind":"woke_elsewhere","summary":"You wake on the river bank below the toll bridge, battered and alive, your spear lying beside you, with no memory of how you got there."}; death-regex=none (narration still read by hand)
+[run 2] 6-zarnoth: FAIL - scene_set=MISSING; narration mentions Zarnoth=true (canon-or-not judged by hand)
+[run 2] 7-return-known: PASS - scene_set={"location":"Ashfall Gate","kingdom":"Kaldrath","place_id":"ashfall-gate-kaldrath"}
 
-spent $0 over 0 calls
+spent $0.2088 over 14 calls

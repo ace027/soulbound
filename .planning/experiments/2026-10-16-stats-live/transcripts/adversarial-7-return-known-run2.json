@@ -1,14 +1,43 @@
 {
   "action": "I turn around and walk back to Ashfall Gate.",
-  "status": 502,
+  "status": 200,
   "verdict": {
-    "pass": false,
-    "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    "pass": true,
+    "why": "scene_set={\"location\":\"Ashfall Gate\",\"kingdom\":\"Kaldrath\",\"place_id\":\"ashfall-gate-kaldrath\"}"
   },
   "response": {
-    "error": {
-      "message": "World Voice call failed: Anthropic API request error.",
-      "code": "UPSTREAM_ERROR"
-    }
+    "narration": "You turn from the grey, fast water and walk back the way you came. Captain Orrel pushes off the parapet as you pass, gives you a long, unhurried look, and falls into step a few paces behind without a word. The road south is hard-packed and familiar. Ashfall Gate rises ahead, its watchfires pale in the daylight, and the sentries on the wall have already noticed two figures coming.",
+    "state_updates": {
+      "skill_mastery_changes": [],
+      "new_skills_granted": [],
+      "skill_evolutions": [],
+      "unique_sub_ability_unlocked": null,
+      "world_events": [
+        {
+          "type": "scene_set",
+          "location": "Ashfall Gate",
+          "scene_summary": "You approach Ashfall Gate on the southern road, Captain Orrel walking a few paces behind you as the sentries on the wall take notice.",
+          "description": null,
+          "kingdom": "Kaldrath",
+          "place_id": "ashfall-gate-kaldrath"
+        }
+      ],
+      "condition_changes": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": -3,
+        "reason": "a steady walk back along the road"
+      },
+      "stat_growth": [],
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      }
+    },
+    "narrative_memory_updates": {
+      "new_entities": [],
+      "note": null
+    },
+    "gm_note": null
   }
 }

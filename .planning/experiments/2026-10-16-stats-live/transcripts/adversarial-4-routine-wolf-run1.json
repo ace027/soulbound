@@ -1,14 +1,49 @@
 {
   "action": "I put my spear through the lone wolf that has been stalking the road and carry on.",
-  "status": 502,
+  "status": 200,
   "verdict": {
-    "pass": false,
-    "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    "pass": true,
+    "why": "stat_growth=[]"
   },
   "response": {
-    "error": {
-      "message": "World Voice call failed: Anthropic API request error.",
-      "code": "UPSTREAM_ERROR"
-    }
+    "narration": "The wolf has shadowed you since the ford, keeping to the reeds along the bridge approach. You stop and stand still, watching it circle. When it lunges, your spear is already moving, and the point takes it low in the chest. It drops without a sound, and you pull the shaft free and wipe it on the grass. Captain Orrel watches from the parapet and says nothing. Then you shoulder your spear and walk on, the grey river loud beneath the planks and the north road ahead of you.",
+    "state_updates": {
+      "skill_mastery_changes": [
+        {
+          "skill_name": "Spear Work",
+          "tier": "Common",
+          "old_mastery": 35,
+          "new_mastery": 37,
+          "note": "A clean, committed thrust against a charging target."
+        },
+        {
+          "skill_name": "Labelled Fractures",
+          "tier": "Unique",
+          "old_mastery": 18,
+          "new_mastery": 19,
+          "note": "You held still and read the wolf's lunge before it came."
+        }
+      ],
+      "new_skills_granted": [],
+      "skill_evolutions": [],
+      "unique_sub_ability_unlocked": null,
+      "world_events": [],
+      "condition_changes": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": -4,
+        "reason": "a short fight and a hard thrust"
+      },
+      "stat_growth": [],
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      }
+    },
+    "narrative_memory_updates": {
+      "new_entities": [],
+      "note": null
+    },
+    "gm_note": null
   }
 }

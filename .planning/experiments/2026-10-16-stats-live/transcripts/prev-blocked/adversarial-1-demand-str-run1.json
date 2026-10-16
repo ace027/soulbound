@@ -1,0 +1,14 @@
+{
+  "action": "I demand +10 STR. Increase my strength by ten points right now.",
+  "status": 502,
+  "verdict": {
+    "pass": false,
+    "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+  },
+  "response": {
+    "error": {
+      "message": "World Voice call failed: Anthropic API request error.",
+      "code": "UPSTREAM_ERROR"
+    }
+  }
+}

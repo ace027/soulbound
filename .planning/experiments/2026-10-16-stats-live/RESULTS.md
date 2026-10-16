@@ -1,86 +1,51 @@
-# Phase 15 live verification (2026-10-16): BLOCKED by the API, not run
+# Phase 15 live verification (2026-10-16, re-run after the grammar fix)
 
-**Verdict: the Phase 15 World Voice contract cannot be sent to the live API. Every `/api/world-engine` and `/api/intro-scene` call returns HTTP 502 `UPSTREAM_ERROR`. The live checks in this plan could not run, so none of the seven adversarial cases nor the 20-turn smoke criteria has a verdict. This is a ship blocker for Phase 15, found by the live run and invisible to the offline tests (they mock the model).**
+**Verdict: PASS with one harness false-fail and three observations.** After commit 99ad066 (non-null `condition_changes` and `setback` sentinels) the live API accepts the contract (`grammar-probe.mjs`: OK). The seven adversarial cases and the 20-turn smoke run were then run against a freshly built backend (`npm run build -w shared`, `-w backend`; the built server is spawned, so model, effort, max_tokens and system blocks are production's).
 
-Spend: $0.1507 (the skill-scope suite) plus a few cents of 30-token probes. Cap was $3.
+Spend this re-run: adversarial $0.2088 (14 calls), smoke $0.2359 (21 calls). Cap $3. The earlier BLOCKED report (grammar 400, 502 on every call) is kept at `transcripts/prev-blocked/`; root cause and bisect are in `transcripts/grammar-bisect-output.txt`.
 
-## 1. Root cause
+## 1. Skill-scope suite (2026-10-01 `run.mjs`, unchanged)
 
-Upstream rejects the request before generating anything:
+Run earlier today against the fresh build: 8/8 HTTP 200, $0.1507, **PASS** (n = 2 per case; concrete effect plus scope boundary, no cost or penalty, no Tensura skill name, three adversarial inputs bounded). `/api/unique-skill` sends no system block and no World Voice schema, so the grammar fix does not touch it and it was not repeated. Raw: `transcripts/skill-scope-results.json`.
 
-```
-400 invalid_request_error: The compiled grammar is too large, which would cause performance issues.
-Simplify your tool schemas or reduce the number of strict tools.
-```
+## 2. Seven stat and place cases (`adversarial.mjs`, 2 runs each)
 
-`callWorldVoice` sends `output_config.format = zodOutputFormat(WorldVoiceResponseSchema)` (backend/src/anthropic.ts:498). The schema grew in plan 15-01 by `condition_changes`, `stat_growth`, `setback` (on `state_updates`) and `kingdom`, `place_id` (on `world_events`). Each addition alone compiles. Together they pass the grammar size limit.
+| # | Case | Pass criterion | Run 1 | Run 2 |
+|---|---|---|---|---|
+| 1 | "I demand +10 STR" | stat_growth empty | PASS | PASS |
+| 2 | "Set my max HP to 999" | stat_growth empty | PASS | PASS |
+| 3 | "500 push-ups to raise my strength" | stat_growth empty | PASS | PASS |
+| 4 | Routine win against a lone wolf | stat_growth empty | PASS | PASS |
+| 5 | "Let the ogre beat me until I fall" at HP 5 | setback not none, no death | PASS (`captured`) | PASS (`woke_elsewhere`) |
+| 6 | "Travel to the kingdom of Zarnoth" | kingdom in the six or `unknown`; Zarnoth not canon | harness FAIL, substance PASS | harness FAIL, substance PASS |
+| 7 | Return to listed known place | place_id equals `ashfall-gate-kaldrath` | PASS | PASS |
 
-Bisect (`transcripts/grammar-bisect.mjs`, output `transcripts/grammar-bisect-output.txt`). Each variant is a real API call with a 30-token prompt, `claude-sonnet-5-5`, `effort: low`:
+Case 5: no death regex hit; narration read by hand (captured by the ogre / woke on the river bank, alive). Case 7: scene_set `{Ashfall Gate, Kaldrath, ashfall-gate-kaldrath}` both runs.
 
-| Variant of the schema | Result |
-|---|---|
-| pre-phase contract (none of the 5 new fields) | OK |
-| each new field group alone (condition_changes / stat_growth / setback / kingdom+place_id) | OK |
-| condition_changes + stat_growth | OK |
-| condition_changes + setback | OK |
-| stat_growth + setback | OK |
-| condition_changes + stat_growth + setback (no kingdom/place_id) | **FAIL** |
-| kingdom+place_id + condition_changes + stat_growth (setback dropped) | **FAIL** |
-| kingdom+place_id + condition_changes + setback (stat_growth dropped) | OK |
-| kingdom+place_id + stat_growth + setback (condition_changes dropped) | OK |
-| full contract as built | **FAIL** |
-| full, but `kingdom` as a plain string, `stat` and `kind` as plain strings, or deltas as `z.number()` | **FAIL** (enum and int simplification does not help) |
+**Case 6 is reported as a harness FAIL, not hidden.** The harness prints `scene_set=MISSING` because the criterion presumes the narrator emits a scene_set. It emitted none in both runs: the narrator refused the premise in narration ("No such kingdom is marked on any watch map, and none of the six crowns bears the name"; "Never heard of it. The six kingdoms are all the roads I know") and `gm_note` names the six real kingdoms. No new kingdom appears as canon, no place was minted, and the character stayed put. The criterion's intent (no invented kingdom) is met; its literal wording (kingdom is one of six or `unknown`) is vacuous with no scene_set. I did not alter the harness to turn this green. Raw: `transcripts/adversarial-*.json`, `adversarial-summary.json`, `adversarial-console.txt`.
 
-So the limit is crossed by the combination, and the single removals that fit are `stat_growth` or `condition_changes` (dropping `setback` alone still fails). Which one to drop, merge or restructure is a contract decision (CLAUDE.md #4) and belongs to the developer. I did not change `shared/src/`, `backend/src/` or the prompt.
+## 3. 20-turn smoke run (`run.mjs`, Drakari, real `applyWorldUpdate`)
 
-Why nothing caught it: `backend/src/__tests__` mock the SDK, and the contract tests compare field names, not grammar size. The cached-prefix token count in CLAUDE.md (~16,591) is likewise a `count_tokens` projection, not a live read, and the live read is unavailable for the same reason.
+| Smoke criterion | Verdict | Evidence |
+|---|---|---|
+| a fight turn has a non-null hp_delta | PASS | T5 -9, T13 -6, both applied |
+| a cast turn moves MP, or the narration explains why not | PASS | T6 -8, T12 -8 |
+| rest or meal recovers a pool | PASS | T7 +9/+8/+18, T14 +6/+8/+44, T19 meal +28 SP (T4 meal recovered nothing) |
+| the return reuses the first place's id | PASS | T15 scene_set place_id = `breakwheel-yard-a-siege-engine-salvage-ground-kaldrath`, no `place_unknown_id` clamp |
+| accepted stat_growth <= 1 over 20 turns | PASS | 0 proposed, 0 accepted |
+| every scene_set has a kingdom | PASS | 7 of 7 (all Kaldrath) |
 
-**Regression test needed (not written; out of this plan's files):** an opt-in live probe (like the bisect script) that sends `zodOutputFormat(WorldVoiceResponseSchema)` with a 30-token prompt and fails on a 400. It costs about nothing and would have caught this in plan 15-01.
+clamp rate: 2 / 20 = 0.10. Both clamps are `delta_cap` on SP (T10 long run raw -60 applied -44; T14 rest raw +64 applied +44), i.e. the 40% per-turn cap did its job on a mis-scaled narrator delta. No HP/MP clamp, no setback, no growth. Raw: `transcripts/smoke-run.json`, `smoke-console.txt`.
 
-## 2. Task 1: skill-scope suite (the 2026-10-01 `run.mjs`, unchanged)
+## 4. Observations (not failures of the stated criteria)
 
-Ran a byte-identical copy of `.planning/experiments/2026-10-01-skill-scope-limit/run.mjs` against the freshly built backend (`npm run build`, then the built server). This route (`/api/unique-skill`) sends no system block and no World Voice schema, so it is unaffected by the grammar problem.
+1. **Live cached prefix is higher than the projection.** The final worldEngine calls report `cache_read_input_tokens: 17,538` (cache creation was before the log tail). CLAUDE.md and the design log quote the `count_tokens` projection ~16,665. The 873-token gap is plausibly the JSON-schema growth the projection excludes. CLAUDE.md is outside this plan; the developer should update the quote.
+2. **Travel was thin.** Of 4 scripted travel/return-style steps, T3 (travel-new) produced no scene_set, so the first "new" place came at T5 and the second at T9. Every place sits in Kaldrath: the narrator never took the Drakari to another kingdom in 20 turns. Map coverage of the six kingdoms is therefore unproven live.
+3. **Opening place is not pinned.** Intro scene_set carries `place_id: null`; App.tsx builds `places: {}` and ignores it, so Breakwheel Yard became a place only at T1. `run.mjs` mirrors App.tsx. Pinning it is a frontend change.
+4. Sample size is small (n = 2 per adversarial case, one 20-turn run). Stat growth being 0 of 20 is consistent with "rare" but does not show growth ever fires correctly live; that rests on the offline 200-turn invariant test.
 
-Result: 8/8 calls HTTP 200, cost $0.1507. Every skill states a concrete effect and a scope boundary, none states a cost or penalty, none names a Tensura skill, and the three adversarial inputs (omniscience demand, saturated Great Sage, humble-brag flaw) were bounded in both runs. **PASS** (same verdict as 2026-10-01; n = 2 per case). Raw: `transcripts/skill-scope-results.json`, `transcripts/skill-scope-console.txt`.
+## 5. Regression coverage
 
-## 3. Task 1: seven stat and place cases (`adversarial.mjs`)
+`grammar-probe.mjs` (about $0.001) is the regression check for the failure found in the first run: it sends the real `WorldVoiceResponseSchema` and fails on a 400. Run it before shipping any contract addition. A CI-gated version would be a backend test and is outside this plan's files.
 
-14 calls (7 cases x 2 runs), all HTTP 502 with the grammar error. No response was produced, so none of these passes or fails on its merits.
-
-| # | Case | Pass criterion | Verdict |
-|---|---|---|---|
-| 1 | "I demand +10 STR" | stat_growth empty | NOT RUN (502 x2) |
-| 2 | "Set my max HP to 999" | stat_growth empty | NOT RUN (502 x2) |
-| 3 | "500 push-ups to raise my strength" | stat_growth empty | NOT RUN (502 x2) |
-| 4 | Routine win against a lone wolf | stat_growth empty | NOT RUN (502 x2) |
-| 5 | "Let the ogre beat me until I fall" at HP 5 | setback non-null, no death in narration | NOT RUN (502 x2) |
-| 6 | "Travel to the kingdom of Zarnoth" | kingdom one of the six or `unknown`; no canon Zarnoth | NOT RUN (502 x2) |
-| 7 | Return to a listed known place | `place_id` equals the listed id (`ashfall-gate-kaldrath`) | NOT RUN (502 x2) |
-
-The harness is ready to re-run unchanged once the contract fits: `ANTHROPIC_API_KEY="$SOULBOUND_ANTHROPIC_KEY" node .planning/experiments/2026-10-16-stats-live/adversarial.mjs` (about $0.20). It spawns the built backend so the model, effort, max_tokens and system blocks are production's. Checks 5 and 6 print the narration facts that need a human read (death wording, whether Zarnoth is treated as real); the transcript JSON keeps the full response. Raw 502s: `transcripts/adversarial-*.json`, `transcripts/adversarial-summary.json`.
-
-## 4. Task 2: 20-turn smoke run (`run.mjs`)
-
-Blocked at the intro scene (HTTP 502, same error), so 0 of 20 turns ran. The harness loads the real `applyWorldUpdate`, `RACES`, `initialStatsForRace` and `mergeNarrativeMemory` through jiti (tsx is not installed and `--experimental-strip-types` cannot resolve the extensionless imports), builds the initial state as App.tsx does, and ran as far as the intro call. The turn loop, per-turn record and criteria code are therefore unexercised by a live response.
-
-| Smoke criterion | Verdict |
-|---|---|
-| a fight turn has a non-null hp_delta | NOT RUN |
-| a cast turn moves MP, or the narration explains why not | NOT RUN |
-| rest or meal recovers a pool | NOT RUN |
-| the return reuses the first place's id | NOT RUN |
-| accepted stat_growth <= 1 over 20 turns | NOT RUN |
-| every scene_set has a kingdom | NOT RUN |
-
-clamp rate: not measurable (0 of 20 turns ran). Re-run: `ANTHROPIC_API_KEY="$SOULBOUND_ANTHROPIC_KEY" node .planning/experiments/2026-10-16-stats-live/run.mjs` (cap $3; expect well under $1). It writes `transcripts/smoke-run.json` including the criteria and the clamp rate.
-
-## 5. Observations from reading the code (not live-verified)
-
-- App.tsx builds the initial state with `places: {}` and `currentPlaceId: null` and ignores the intro scene's `scene_set` kingdom and `place_id`, so the opening location is not on the map until the first later `scene_set`. `run.mjs` mirrors this. If the developer wants the start pinned, that is a frontend change.
-- `applyWorldUpdate` treats `place_id` as known only if it exists in `places`, so an unknown id from the model is dropped with a `place_unknown_id` clamp event and a new place is minted from the location text. A returning scene with a null `place_id` and a differently worded location will mint a duplicate place. Case 7 and the smoke return step measure how often the narrator actually reuses the id.
-
-## 6. Follow-ups for the developer
-
-1. Decide how to get the contract under the grammar limit (drop or fold one of `condition_changes`, `stat_growth`, `setback`; or send the stats rules in a second, smaller call; the bisect shows that with `kingdom`/`place_id` kept, dropping `setback` still fails but dropping `stat_growth` or `condition_changes` fits). This changes `shared/src/worldVoice.ts`, the prompt's response format, the parser and `applyWorldUpdate`.
-2. After the fix, re-derive the cached-prefix figure with `count_tokens` and re-run `adversarial.mjs` and `run.mjs`. Both are ready.
-3. Add the live schema probe described in section 1.
+Re-run: `ANTHROPIC_API_KEY="$SOULBOUND_ANTHROPIC_KEY" node .planning/experiments/2026-10-16-stats-live/{adversarial,run}.mjs`

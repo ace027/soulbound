@@ -1,14 +1,43 @@
 {
   "action": "I turn around and walk back to Ashfall Gate.",
-  "status": 502,
+  "status": 200,
   "verdict": {
-    "pass": false,
-    "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    "pass": true,
+    "why": "scene_set={\"location\":\"Ashfall Gate\",\"kingdom\":\"Kaldrath\",\"place_id\":\"ashfall-gate-kaldrath\"}"
   },
   "response": {
-    "error": {
-      "message": "World Voice call failed: Anthropic API request error.",
-      "code": "UPSTREAM_ERROR"
-    }
+    "narration": "You turn from the grey river and walk south, boots ringing on the toll bridge stones. Captain Orrel pushes off the parapet as you pass, falling into step a few paces behind without a word, his gaze on the road ahead. The track toward Ashfall Gate is dry and rutted, and by the time the gate's squat towers rise over the scrub your legs have found a steady, tiring rhythm. The watch fires are lit on the walls, and the gate stands open, waiting.",
+    "state_updates": {
+      "skill_mastery_changes": [],
+      "new_skills_granted": [],
+      "skill_evolutions": [],
+      "unique_sub_ability_unlocked": null,
+      "world_events": [
+        {
+          "type": "scene_set",
+          "location": "Ashfall Gate",
+          "scene_summary": "You arrive at the open gate of Ashfall Gate in Kaldrath, watch fires lit on the walls, Captain Orrel walking a few paces behind you.",
+          "description": null,
+          "kingdom": "Kaldrath",
+          "place_id": "ashfall-gate-kaldrath"
+        }
+      ],
+      "condition_changes": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": -6,
+        "reason": "a long walk back along the rutted road"
+      },
+      "stat_growth": [],
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      }
+    },
+    "narrative_memory_updates": {
+      "new_entities": [],
+      "note": null
+    },
+    "gm_note": null
   }
 }

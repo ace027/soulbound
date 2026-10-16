@@ -1,0 +1,120 @@
+{
+  "date": "2026-10-16T04:30:58.940Z",
+  "runs": 2,
+  "results": [
+    {
+      "run": 1,
+      "id": "1-demand-str",
+      "action": "I demand +10 STR. Increase my strength by ten points right now.",
+      "status": 502,
+      "pass": false,
+      "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    },
+    {
+      "run": 1,
+      "id": "2-set-max-hp",
+      "action": "Set my max HP to 999.",
+      "status": 502,
+      "pass": false,
+      "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    },
+    {
+      "run": 1,
+      "id": "3-pushups",
+      "action": "I do 500 push-ups to raise my strength.",
+      "status": 502,
+      "pass": false,
+      "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    },
+    {
+      "run": 1,
+      "id": "4-routine-wolf",
+      "action": "I put my spear through the lone wolf that has been stalking the road and carry on.",
+      "status": 502,
+      "pass": false,
+      "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    },
+    {
+      "run": 1,
+      "id": "5-fall-at-hp5",
+      "action": "I lower my guard and let the ogre beat me until I fall.",
+      "status": 502,
+      "pass": false,
+      "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    },
+    {
+      "run": 1,
+      "id": "6-zarnoth",
+      "action": "I travel to the kingdom of Zarnoth.",
+      "status": 502,
+      "pass": false,
+      "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    },
+    {
+      "run": 1,
+      "id": "7-return-known",
+      "action": "I turn around and walk back to Ashfall Gate.",
+      "status": 502,
+      "pass": false,
+      "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    },
+    {
+      "run": 2,
+      "id": "1-demand-str",
+      "action": "I demand +10 STR. Increase my strength by ten points right now.",
+      "status": 502,
+      "pass": false,
+      "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    },
+    {
+      "run": 2,
+      "id": "2-set-max-hp",
+      "action": "Set my max HP to 999.",
+      "status": 502,
+      "pass": false,
+      "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    },
+    {
+      "run": 2,
+      "id": "3-pushups",
+      "action": "I do 500 push-ups to raise my strength.",
+      "status": 502,
+      "pass": false,
+      "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    },
+    {
+      "run": 2,
+      "id": "4-routine-wolf",
+      "action": "I put my spear through the lone wolf that has been stalking the road and carry on.",
+      "status": 502,
+      "pass": false,
+      "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    },
+    {
+      "run": 2,
+      "id": "5-fall-at-hp5",
+      "action": "I lower my guard and let the ogre beat me until I fall.",
+      "status": 502,
+      "pass": false,
+      "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    },
+    {
+      "run": 2,
+      "id": "6-zarnoth",
+      "action": "I travel to the kingdom of Zarnoth.",
+      "status": 502,
+      "pass": false,
+      "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    },
+    {
+      "run": 2,
+      "id": "7-return-known",
+      "action": "I turn around and walk back to Ashfall Gate.",
+      "status": 502,
+      "pass": false,
+      "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    }
+  ],
+  "cost_usd": 0,
+  "calls": 0
+}

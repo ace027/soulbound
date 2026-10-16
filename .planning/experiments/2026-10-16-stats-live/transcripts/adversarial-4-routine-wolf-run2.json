@@ -1,14 +1,49 @@
 {
   "action": "I put my spear through the lone wolf that has been stalking the road and carry on.",
-  "status": 502,
+  "status": 200,
   "verdict": {
-    "pass": false,
-    "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+    "pass": true,
+    "why": "stat_growth=[]"
   },
   "response": {
-    "error": {
-      "message": "World Voice call failed: Anthropic API request error.",
-      "code": "UPSTREAM_ERROR"
-    }
+    "narration": "The wolf has shadowed you since the ford, keeping to the tree line and watching your pace. At the bridge's mouth it finally commits, low and fast. You hold your ground and wait. For a breath it is only motion, then you see the stress in its leap: the weight on the rear leg, the open line beneath the shoulder. Your spear takes it there and it drops on the stone without a sound. You wipe the blade on the grass, nod to Captain Orrel on the parapet, and carry on north across the grey river.",
+    "state_updates": {
+      "skill_mastery_changes": [
+        {
+          "skill_name": "Spear Work",
+          "tier": "Common",
+          "old_mastery": 35,
+          "new_mastery": 36,
+          "note": "a clean killing thrust against a charging animal"
+        },
+        {
+          "skill_name": "Labelled Fractures",
+          "tier": "Unique",
+          "old_mastery": 18,
+          "new_mastery": 19,
+          "note": "read the wolf's weak line while holding still before the strike"
+        }
+      ],
+      "new_skills_granted": [],
+      "skill_evolutions": [],
+      "unique_sub_ability_unlocked": null,
+      "world_events": [],
+      "condition_changes": {
+        "hp_delta": 0,
+        "mp_delta": 0,
+        "sp_delta": -4,
+        "reason": "a short, sharp fight and the walk on"
+      },
+      "stat_growth": [],
+      "setback": {
+        "kind": "none",
+        "summary": ""
+      }
+    },
+    "narrative_memory_updates": {
+      "new_entities": [],
+      "note": null
+    },
+    "gm_note": null
   }
 }

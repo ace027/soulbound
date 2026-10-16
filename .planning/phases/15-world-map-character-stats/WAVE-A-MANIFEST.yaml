@@ -1,17 +1,29 @@
 wave: A
 phase: 15
-status: failed
-timestamp: "2026-10-16T04:12:08Z"
+status: complete
+timestamp: "2026-10-16T04:43:19Z"
 service_groups:
   mixed:
     status: complete
     plans: [15-01, 15-03]
-    files: [.planning/phases/15-world-map-character-stats/evidence/screenshots.mjs, frontend/src/components/ConditionStrip.tsx, frontend/src/components/SoulCodexContents.tsx, frontend/src/components/WorldMap.tsx, frontend/src/components/__tests__/worldMap.test.tsx, frontend/src/data/kingdomLayout.ts, frontend/src/screens/SimulationScreen.tsx]
+    files: []
   frontend:
     status: complete
     plans: [15-02]
-    files: [frontend/src/components/__tests__/codexAccount.test.tsx]
+    files: []
   default:
-    status: failed
+    status: complete
     plans: [15-04]
-    files: [.planning/experiments/2026-10-16-stats-live/RESULTS.md, .planning/experiments/2026-10-16-stats-live/adversarial.mjs, .planning/experiments/2026-10-16-stats-live/run.mjs, docs/design-decisions-log.md]
+    files: [docs/design-decisions-log.md]
+analysis_findings:
+  count: 2
+  by_agent:
+    engineering-backend-architect: {blockers: 0, warnings: 2}
+    engineering-security-engineer: {blockers: 0, warnings: 0}
+outputs:
+  total_files: 1
+  total_plans: 4
+  passed: 4
+  failed: 0
+gate: architecture
+gate_status: pending
