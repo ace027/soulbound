@@ -45,6 +45,11 @@ const GAME_STATE: GameState = {
   currentScene: 'The world begins.',
   actionHistory: [],
   narrativeMemory: { entities: {}, notes: [] },
+  condition: { hp: 80, mp: 90, sp: 80, max_hp: 80, max_mp: 90, max_sp: 80 },
+  attributes: { STR: 8, AGI: 11, INT: 13, WIL: 10 },
+  places: {},
+  currentPlaceId: null,
+  growthLog: [],
 };
 
 function codex() {

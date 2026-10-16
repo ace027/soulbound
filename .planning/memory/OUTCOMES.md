@@ -111,3 +111,5 @@ tags: tooling, triad, legion
 | O-004 | 2026-10-16 | dev | 14 | 14-00 | design-ux-architect | quality-review | partial | 5 | review, design | Phase 14 review ESCALATED in 3 cycle(s), 4 finding(s) |
 | O-005 | 2026-10-16 | dev | 15 | 15-01 | engineering-backend-architect | implementation | failed | 5 | world-map-character-stats, engineering | Contract, request caps and World Voice rules: Partial |
 | O-006 | 2026-10-16 | dev | 15 | 15-01 | engineering-backend-architect | implementation | success | 2 | world-map-character-stats, engineering | Contract, request caps and World Voice rules: Complete |
+| O-007 | 2026-10-16 | dev | 15 | 15-02 | engineering-senior-developer | implementation | failed | 5 | world-map-character-stats, engineering | Game state, save v2 migration and guard rails: Partial |
+| O-008 | 2026-10-16 | dev | 15 | 15-02 | engineering-senior-developer | implementation | success | 2 | world-map-character-stats, engineering | Game state, save v2 migration and guard rails: Complete |
