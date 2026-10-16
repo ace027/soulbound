@@ -38,10 +38,17 @@ Profile lines (prologue only):
 - I knew what to do:
 - I would pick this path:
 
-## After about five world turns
+## Confused / misled (prologue character only; skip for the questionnaire)
 
-- Preference between the two paths so far (this one / the other / no preference):
-- Why:
+- Tester asked "Did the scene confuse you?" (yes / no):
+- Tester asked "Did the skill turn out different from what its description led you to expect?" (yes / no):
+- Developer observation, for example stuck, or misreading what the skill does (describe, or "none"):
+
+(The session's single pick, "Which path would you use next time?", is recorded once per session in `decision-record.md`, not here.)
+
+## Problems on the questionnaire character (recorded, never blocking)
+
+- Describe, or "none":
 
 ## Cost
 
