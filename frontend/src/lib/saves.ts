@@ -73,6 +73,16 @@ export function migrateSave(save: RawSaveSlot & { gameState: Partial<GameState> 
       growthLog: [],
     };
     schemaVersion = SAVE_SCHEMA_VERSION;
+  } else if (!base.condition || !base.attributes || !base.places || !Array.isArray(base.growthLog)) {
+    // Corrupt or partially written v2 save: backfill only the absent fields.
+    const stats = initialStatsForRace(base.character?.race?.id ?? '');
+    gameState = {
+      ...gameState,
+      condition: base.condition ?? stats.condition,
+      attributes: base.attributes ?? stats.attributes,
+      places: base.places ?? {},
+      growthLog: Array.isArray(base.growthLog) ? base.growthLog : [],
+    };
   }
 
   return {

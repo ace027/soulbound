@@ -526,4 +526,15 @@ describe('v1/v0 -> v2 migration', () => {
     const gs = loadSave('sbc_mig5')?.gameState;
     for (const k of V2_KEYS) expect(gs?.[k]).toEqual(slot.gameState[k]);
   });
+
+  it('backfills fields missing from a partially written v2 save', () => {
+    const { condition: _c, attributes: _a, places: _p, growthLog: _g, ...partial } = makeSaveSlot().gameState;
+    seedRaw('sbc_mig6', partial, 2);
+
+    const gs = loadSave('sbc_mig6')?.gameState;
+    expect(gs?.condition.max_hp).toBeGreaterThan(0);
+    expect(gs?.attributes).toBeDefined();
+    expect(gs?.places).toEqual({});
+    expect(gs?.growthLog).toEqual([]);
+  });
 });

@@ -115,6 +115,12 @@ export default function SimulationScreen({
   const overlayOpen = mapOpen && !isMobile;
   const wasOpen = useRef(false);
 
+  // Crossing into mobile closes the overlay for good, so widening again
+  // does not reopen it (and steal focus) unprompted.
+  useEffect(() => {
+    if (isMobile) setMapOpen(false);
+  }, [isMobile]);
+
   // Focus into the overlay on open, back to the Map button on close.
   useEffect(() => {
     if (overlayOpen) {
@@ -155,7 +161,7 @@ export default function SimulationScreen({
                 background: mobileTab === tab ? "#0f0d09" : "transparent",
                 border: "none",
                 borderBottom: `2px solid ${mobileTab === tab ? "#d4a843" : "transparent"}`,
-                color: mobileTab === tab ? "#d4a843" : "#6a5a40",
+                color: mobileTab === tab ? "#d4a843" : "#a89878",
                 fontFamily: "'Cinzel', serif", fontSize: 11, letterSpacing: "0.15em",
                 textTransform: "uppercase", cursor: "pointer",
               }}
@@ -240,7 +246,7 @@ export default function SimulationScreen({
                   style={{
                     background: "#14110d", border: "1px solid #2a2218", color: "#c8b890",
                     fontFamily: "'Cinzel', serif", fontSize: 10, letterSpacing: "0.1em",
-                    padding: "4px 10px", cursor: "pointer", textTransform: "uppercase",
+                    padding: "8px 14px", cursor: "pointer", textTransform: "uppercase",
                   }}
                 >
                   Close

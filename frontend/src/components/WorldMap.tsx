@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import type { Kingdom, Place } from '@soulbound/shared';
 import {
   KINGDOM_LAYOUT,
@@ -166,16 +167,19 @@ function Pin({ pin, isCurrent, fontSize }: { pin: PinSpec; isCurrent: boolean; f
   );
 }
 
-export default function WorldMap({ places, currentPlaceId, location }: WorldMapProps) {
-  const ordered = Object.entries(places).sort(
-    ([, a], [, b]) => a.firstSeenTurn - b.firstSeenTurn || a.name.localeCompare(b.name),
-  );
-  const byKingdom = new Map<Kingdom, Array<[string, Place]>>();
-  for (const entry of ordered) {
-    const list = byKingdom.get(entry[1].kingdom) ?? [];
-    list.push(entry);
-    byKingdom.set(entry[1].kingdom, list);
-  }
+function WorldMap({ places, currentPlaceId, location }: WorldMapProps) {
+  const { ordered, byKingdom } = useMemo(() => {
+    const ordered = Object.entries(places).sort(
+      ([, a], [, b]) => a.firstSeenTurn - b.firstSeenTurn || a.name.localeCompare(b.name),
+    );
+    const map = new Map<Kingdom, Array<[string, Place]>>();
+    for (const entry of ordered) {
+      const list = map.get(entry[1].kingdom) ?? [];
+      list.push(entry);
+      map.set(entry[1].kingdom, list);
+    }
+    return { ordered, byKingdom: map };
+  }, [places]);
 
   const current = currentPlaceId ? places[currentPlaceId] : undefined;
   const hereText = current ? `${current.name}, ${kingdomName(current.kingdom)}` : location;
@@ -329,3 +333,5 @@ export default function WorldMap({ places, currentPlaceId, location }: WorldMapP
     </div>
   );
 }
+
+export default memo(WorldMap);

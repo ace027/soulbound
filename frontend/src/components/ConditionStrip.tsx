@@ -46,6 +46,30 @@ function clamp(n: number, lo: number, hi: number): number {
 
 export default function ConditionStrip({ condition, attributes, variant }: ConditionStripProps) {
   const compact = variant === 'compact';
+  const reduceMotion =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Polite announcement for the states that matter: low or empty HP.
+  const hpMax = Math.max(0, Math.round(condition.max_hp));
+  const hpNow = clamp(Math.round(condition.hp), 0, hpMax);
+  const alert =
+    hpMax > 0 && hpNow === 0 ? 'Health is at 0.'
+    : hpMax > 0 && hpNow / hpMax < 0.25 ? `Health is low: ${hpNow} of ${hpMax}.`
+    : '';
+  const liveRegion = (
+    <div
+      role="status"
+      style={{
+        position: 'absolute', width: 1, height: 1, margin: -1, padding: 0, border: 0,
+        overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap',
+        color: TEXT, backgroundColor: CONDITION_BG,
+      }}
+    >
+      {alert}
+    </div>
+  );
 
   const meters = POOLS.map(p => {
     const max = Math.max(0, Math.round(condition[p.max]));
@@ -68,7 +92,7 @@ export default function ConditionStrip({ condition, attributes, variant }: Condi
           </span>
         </div>
         <div style={{ background: "#1a1610", height: compact ? 4 : 5, borderRadius: 2, overflow: "hidden" }}>
-          <div style={{ background: `linear-gradient(90deg, ${p.fill}88, ${p.fill})`, width: `${pct}%`, height: "100%", transition: "width 1s ease" }} />
+          <div style={{ background: `linear-gradient(90deg, ${p.fill}88, ${p.fill})`, width: `${pct}%`, height: "100%", transition: reduceMotion ? "none" : "width 1s ease" }} />
         </div>
       </div>
     );
@@ -84,6 +108,7 @@ export default function ConditionStrip({ condition, attributes, variant }: Condi
         }}
       >
         {meters}
+        {liveRegion}
       </div>
     );
   }
@@ -95,6 +120,7 @@ export default function ConditionStrip({ condition, attributes, variant }: Condi
     >
       <p style={{ fontFamily: "'Cinzel', serif", fontSize: 9, color: MUTED, letterSpacing: "0.15em", textTransform: "uppercase", margin: "0 0 6px" }}>Condition</p>
       {meters}
+      {liveRegion}
       <dl style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 4, margin: "8px 0 0" }}>
         {ATTRS.map(a => (
           <div key={a.key} title={a.name} style={{ textAlign: "center", border: "1px solid #2a2218", padding: "3px 0" }}>

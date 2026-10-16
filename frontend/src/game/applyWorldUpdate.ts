@@ -76,6 +76,9 @@ export const MAX_DELTA_FRACTION = 0.4;
 export const MAX_POOL_GROWTH = 5;
 export const ATTRIBUTE_CEILING = 20;
 export const MAX_PLACES = 200;
+/** Fraction of max HP restored when a setback replaces death. */
+export const SETBACK_HP_FRACTION = 0.25;
+const POOL_OF_MAX = { max_hp: 'hp', max_mp: 'mp', max_sp: 'sp' } as const;
 
 export type ClampKind =
   | 'delta_cap'
@@ -257,7 +260,7 @@ export function applyWorldUpdate(
   const setback = rawSetback && rawSetback.kind !== 'none' ? rawSetback : null;
   if (condition.hp <= 0) {
     if (setback) {
-      condition.hp = Math.ceil(0.25 * condition.max_hp);
+      condition.hp = Math.ceil(SETBACK_HP_FRACTION * condition.max_hp);
     } else {
       condition.hp = 1;
       clampEvents.push({ kind: 'hp_floor', field: 'hp', raw: 0, applied: 1 });
@@ -274,7 +277,8 @@ export function applyWorldUpdate(
   });
   const g = growth[0];
   if (g) {
-    const isPool = g.stat === 'max_hp' || g.stat === 'max_mp' || g.stat === 'max_sp';
+    const poolOf: 'hp' | 'mp' | 'sp' | undefined = (POOL_OF_MAX as Record<string, 'hp' | 'mp' | 'sp'>)[g.stat];
+    const isPool = poolOf !== undefined;
     const milestoneKey = g.milestone.trim().toLowerCase();
     let amount = g.amount;
     let accepted = true;
@@ -296,10 +300,9 @@ export function applyWorldUpdate(
       accepted = false;
     }
     if (accepted) {
-      if (isPool) {
-        const poolKey = g.stat.slice(4) as 'hp' | 'mp' | 'sp';
-        condition[`max_${poolKey}`] += amount;
-        condition[poolKey] += amount;
+      if (poolOf) {
+        condition[`max_${poolOf}`] += amount;
+        condition[poolOf] += amount;
       } else {
         attributes[g.stat as keyof Attributes] += amount;
       }
@@ -307,7 +310,7 @@ export function applyWorldUpdate(
       // a long model-authored string can't wedge every later /api/world-engine call.
       const milestone = g.milestone.slice(0, 200);
       growthLog.push({ turn, stat: g.stat, amount, milestone });
-      sys(`+${amount} ${isPool ? g.stat.slice(4).toUpperCase() + ' max' : g.stat}: ${milestone}`);
+      sys(`+${amount} ${poolOf ? poolOf.toUpperCase() + ' max' : g.stat}: ${milestone}`);
     }
   }
 
