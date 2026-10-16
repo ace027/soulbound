@@ -32,7 +32,7 @@
   05-04 ✅ `b9181de`..`a400774` — backend serves the bundle (`STATIC_DIR`; no fallback for file paths; `/api` 404 first); `backend/Dockerfile` builder → frontend-build (`$BUILDPLATFORM`) → api → runtime; dev compose targets `api`; frontend `runtime` stage removed; image `soulbound:05-04` 373MB, uid 1000; backend tests 180 → 187; mutations 2/2 caught
   05-05 ✅ `a54ddeb`..`236b006` — `scripts/smoke-image.sh` (7/7 local; negative run on pre-gate `7856b7d` fails checks 2,3,4,6); CI `smoke-image` job green on `af876ca` (run 78); `release.yml` dispatch-only, fail-closed overwrite check verified under `bash -e`. UNTESTED until first dispatch after merge: GHCR push, arm64, real GHCR existence response
   05-06 ✅ `87f3f0a`, `2900ccc`, `706d62d` — `compose.selfhost.yml` (verified on :3999), README/design log/CLAUDE.md (+2/−0)/PROJECT.md, `0.1.0`; phase-close re-verification: 187 + 184 tests, e2e 6/6, App.tsx unchanged, fresh-build smoke 7/7, mutations 11/12 caught (#6 equivalent, as recorded)
-- **Status**: Phase 15 executing — Plan 15-01 failed
+- **Status**: Phase 15 executing — Plan 15-01 complete
 - **Phase 5 status (historical)**: **Phase 5 complete — review passed (3 cycles)**; all 6 plans executed successfully (serial waves; was: planned — 6 plans across 6 serial waves) (`.planning/phases/05-docker-image-publishing/`).
   Spec critiqued once (REWORK → 12 findings applied), plans critiqued once (CAUTION → 29 findings
   applied; see `05-CONTEXT.md` → Execution protocol). Zero Anthropic spend planned.
@@ -99,7 +99,7 @@ on :3001 and `vite` on :5173, with Playwright driving the pre-installed Chromium
 
 ## Progress
 ```
-[##################..] 92% — 46/50 plans complete
+[##################..] 94% — 47/50 plans complete
 ```
 
 ## Ship record
@@ -480,3 +480,4 @@ Planning-gate notes: architecture proposals and the spec pipeline were skipped �
 ## Phase 15 Results
 (build started 2026-10-16)
 - Plan 15-01 (Wave 1): Contract, request caps and World Voice rules — PARTIAL: The contract, request caps, per-turn block, prompt rules and 5 MUST NOT additions are in. The build and both test suites pass. The one open item is the CLAUDE.md token figure: it is a free projection 
+- Plan 15-01 (Wave 1): Contract, request caps and World Voice rules — Complete
