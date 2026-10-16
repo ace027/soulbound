@@ -26,4 +26,4 @@ outputs:
   passed: 4
   failed: 0
 gate: architecture
-gate_status: pending
+gate_status: passed
