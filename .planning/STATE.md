@@ -32,13 +32,13 @@
   05-04 ✅ `b9181de`..`a400774` — backend serves the bundle (`STATIC_DIR`; no fallback for file paths; `/api` 404 first); `backend/Dockerfile` builder → frontend-build (`$BUILDPLATFORM`) → api → runtime; dev compose targets `api`; frontend `runtime` stage removed; image `soulbound:05-04` 373MB, uid 1000; backend tests 180 → 187; mutations 2/2 caught
   05-05 ✅ `a54ddeb`..`236b006` — `scripts/smoke-image.sh` (7/7 local; negative run on pre-gate `7856b7d` fails checks 2,3,4,6); CI `smoke-image` job green on `af876ca` (run 78); `release.yml` dispatch-only, fail-closed overwrite check verified under `bash -e`. UNTESTED until first dispatch after merge: GHCR push, arm64, real GHCR existence response
   05-06 ✅ `87f3f0a`, `2900ccc`, `706d62d` — `compose.selfhost.yml` (verified on :3999), README/design log/CLAUDE.md (+2/−0)/PROJECT.md, `0.1.0`; phase-close re-verification: 187 + 184 tests, e2e 6/6, App.tsx unchanged, fresh-build smoke 7/7, mutations 11/12 caught (#6 equivalent, as recorded)
-- **Status**: Phase 14 under review — cycle 2/3, 0 blocker(s) remaining
+- **Status**: Phase 14 review escalated — 1 unresolved finding(s) (0 blocker/critical) after 3 cycles
 - **Phase 5 status (historical)**: **Phase 5 complete — review passed (3 cycles)**; all 6 plans executed successfully (serial waves; was: planned — 6 plans across 6 serial waves) (`.planning/phases/05-docker-image-publishing/`).
   Spec critiqued once (REWORK → 12 findings applied), plans critiqued once (CAUTION → 29 findings
   applied; see `05-CONTEXT.md` → Execution protocol). Zero Anthropic spend planned.
 - **Phases 1-4**: **All four phases complete and shipped.** Phase 4 review PASSED after 3 cycles (3-reviewer panel, 29 findings, 0 blockers); shipped as [PR #3](https://github.com/DeanItServices/soulbound/pull/3), 15 commits / 48 files / +4,757−1,474. R13, R14, R15, R16 close. The legacy artifact is deleted — recover it with `git show 3d01fa5:legacy/souldbound-world.jsx` (the `parity-oracle` tag is local-only and cannot be pushed from this environment; the SHA is on the branch and works everywhere).
   ⚠️ **Correction**: this file previously said PR #2 was "open against `main`". It was **merged** 2026-09-18T01:49Z (head `5147bd8`). That is why Phase 4 needed a new PR rather than additions to #2.
-- **Last Activity**: Phase 14 review cycle 2 (2026-10-16)
+- **Last Activity**: Phase 14 review (2026-10-16)
   (pre-ship gate 6/6, CI green on `33d5aca`). Also on the PR, after the review: playtest prompt
   fixes (`fc5b2cd`, `363026f`, `2085d39` — narration length, no contrast framing, Unique Skill
   legibility; live-verified, Tier 0 adversarial tests re-run and held), polish (`727e7ca`,
@@ -54,7 +54,7 @@
     - `release.yml` derives the image name from the repo owner, so it follows the move automatically.
     - After the move, update the hardcoded `ghcr.io/deanitservices/soulbound` in `compose.selfhost.yml:41` and `README.md` (lines 68, 72, 115). Leave the historical mention in `docs/design-decisions-log.md` as it is.
   - **Key rotation is deferred by the developer**, who will rotate before friends are invited. It's tracked as a Phase 9 invite-gate item, so don't raise it again before then.
-- **Next Action**: Phase 14 is built and review-passed (2 cycles; `14-REVIEW.md`), not closed. Developer: (1) read `.planning/phases/14-prologue-prototype/14-05-SAFETY-GATE.md` and record verdicts, since no tester may see the prototype before that; (2) run the three playtest sessions with `.planning/experiments/prologue-playtest/README.md`; (3) decide the canon and fill in `decision-record.md`. Phase 7 starts after that decision or on the developer's call (`/triad:plan 7`; it must first close the carried login-CSRF item). Separately, developer: work through `docs/runbooks/phase-6-hosted-setup.md` — `main` now carries `render.yaml`, so the Render Blueprint can be created (step 2); the agent verifies each step as it's reported. 
+- **Next Action**: Fix the unresolved findings in 14-REVIEW.md, accept the phase as is, or re-plan; then run `/triad:review --phase 14`
   After merge: dispatch `release.yml` once (GitHub → Actions → Release → Run workflow) — the GHCR
   publish is the one UNTESTED step. ⚠️ `SOULBOUND_PASSPHRASE` is now **required at boot** — add it to
   `.env` (12+ printable ASCII characters).
