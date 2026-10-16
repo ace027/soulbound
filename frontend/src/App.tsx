@@ -247,10 +247,13 @@ export default function App() {
 
       const sceneEvent = intro.state_updates?.world_events?.find((e) => e.type === 'scene_set');
 
+      // Same clamp as applyWorldUpdate: location max 400 (request schema), place name max 80.
+      const loc = (sceneEvent?.location || 'The Crossroads of Vaeltharion').slice(0, 400);
+
       const initialState: GameState = {
         character,
         skills,
-        location: sceneEvent?.location || 'The Crossroads of Vaeltharion',
+        location: loc,
         currentScene: sceneEvent?.scene_summary || 'The world begins.',
         actionHistory: [],
         // Seed the ledger from the intro scene instead of starting it empty.
@@ -268,9 +271,9 @@ export default function App() {
         ...(sceneEvent?.location
           ? (() => {
               const kingdom = sceneEvent.kingdom ?? 'unknown';
-              const id = slugPlaceId(sceneEvent.location, kingdom);
+              const id = slugPlaceId(loc, kingdom);
               return {
-                places: { [id]: { name: sceneEvent.location, kingdom, firstSeenTurn: 0 } },
+                places: { [id]: { name: loc.slice(0, 80), kingdom, firstSeenTurn: 0 } },
                 currentPlaceId: id,
               };
             })()

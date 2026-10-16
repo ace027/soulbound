@@ -68,7 +68,7 @@ export function migrateSave(save: RawSaveSlot & { gameState: Partial<GameState> 
       ...gameState,
       condition: stats.condition,
       attributes: stats.attributes,
-      places: placeId ? { [placeId]: { name: location, kingdom: 'unknown', firstSeenTurn: 0 } } : {},
+      places: placeId ? { [placeId]: { name: location.slice(0, 80), kingdom: 'unknown', firstSeenTurn: 0 } } : {},
       currentPlaceId: placeId,
       growthLog: [],
     };

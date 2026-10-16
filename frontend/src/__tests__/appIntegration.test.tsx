@@ -444,7 +444,7 @@ describe('App — the 80-entry log cap', () => {
  * the ledger back out of the autosave the flow writes.
  */
 describe('App — character creation seeds narrative memory from the intro scene', () => {
-  function mockCreationFetch() {
+  function mockCreationFetch(introLocation = 'The Sortage, Ashenveil') {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
@@ -467,7 +467,7 @@ describe('App — character creation seeds narrative memory from the intro scene
                 world_events: [
                   {
                     type: 'scene_set',
-                    location: 'The Sortage, Ashenveil',
+                    location: introLocation,
                     scene_summary: 'Sorting condemned correspondence at the burn-pit.',
                     description: null,
                     kingdom: 'Ashenveil',
@@ -529,6 +529,21 @@ describe('App — character creation seeds narrative memory from the intro scene
     const place = gs.places[gs.currentPlaceId!];
     expect(place.name).toBe('The Sortage, Ashenveil');
     expect(place.kingdom).toBe('Ashenveil');
+  });
+
+  it('clamps an over-long intro location (400 location, 80 place name, slug id)', async () => {
+    const long = 'A'.repeat(500);
+    mockCreationFetch(long);
+    await createCharacter();
+    const slot = await waitFor(() => {
+      const idx = JSON.parse(localStorage.getItem(SAVE_INDEX_KEY)!) as Array<{ id: string }>;
+      return JSON.parse(localStorage.getItem(SAVE_PREFIX + idx[0].id)!) as SaveSlot;
+    });
+    const gs = slot.gameState;
+    expect(gs.location).toHaveLength(400);
+    expect(gs.currentPlaceId).toBeTruthy();
+    expect(gs.currentPlaceId!.length).toBeLessThanOrEqual(80);
+    expect(gs.places[gs.currentPlaceId!].name).toHaveLength(80);
   });
 
   it('writes the intro scene\'s entities and note into the first autosave', async () => {

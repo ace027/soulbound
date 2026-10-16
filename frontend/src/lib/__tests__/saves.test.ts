@@ -468,6 +468,33 @@ describe('v1/v0 -> v2 migration', () => {
     expect(loaded?.log).toEqual([{ type: 'narration', text: 'hi' }]);
   });
 
+  it('truncates a 400-char location to the 80-char place name limit', () => {
+    const long = 'A'.repeat(400);
+    seedRaw('sbc_long', { ...V1_GAME_STATE, location: long }, 1);
+    const loaded = loadSave('sbc_long');
+    const places = Object.values(loaded?.gameState.places ?? {});
+    expect(places).toHaveLength(1);
+    expect(places[0].name).toBe('A'.repeat(80));
+  });
+
+  it('keeps a migrated 300-char location within PlaceRequestSchema limits', () => {
+    const long = 'Wandering Sundered Toll '.repeat(13).slice(0, 300);
+    seedRaw('sbc_long2', { ...V1_GAME_STATE, location: long }, 1);
+    const gs = loadSave('sbc_long2')?.gameState;
+    expect(gs?.location).toHaveLength(300);
+    const entries = Object.entries(gs?.places ?? {});
+    expect(entries).toHaveLength(1);
+    for (const [id, place] of entries) {
+      // Mirrors backend PlaceRequestSchema: record key max 100, name max 80,
+      // kingdom string, firstSeenTurn int >= 0.
+      expect(id.length).toBeLessThanOrEqual(100);
+      expect(place.name.length).toBeLessThanOrEqual(80);
+      expect(typeof place.kingdom).toBe('string');
+      expect(Number.isInteger(place.firstSeenTurn) && place.firstSeenTurn >= 0).toBe(true);
+    }
+    expect(gs?.currentPlaceId).toBe(entries[0][0]);
+  });
+
   it('is stable across write -> reload', () => {
     seedRaw('sbc_mig2', V1_GAME_STATE, 1);
     const first = loadSave('sbc_mig2');
