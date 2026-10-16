@@ -502,6 +502,23 @@ was re-SHA'd once already by a `rebase --exec ... --reset-author` (`.planning/ST
 and an unreferenced commit is garbage-collectable. A tag keeps the object reachable and survives
 rewrites of later history. Sixty-nine citations depend on it.
 
+## Planning tooling: Legion → Triad (2026-10-16)
+
+The `/legion:*` workflow (npm `@9thlevelsoftware/legion`) is replaced by the developer's own
+**Triad** plugin (`ace027/Multi-model-orchestrator`, plugin `triad`), which ports the same workflow
+onto three model tiers: Opus orchestrates, Sonnet codes, Haiku does menial work. **Tooling only:**
+`.planning/` is kept exactly as it is, because CLAUDE.md and `docs/` cite evidence files inside it
+and Triad reads Legion's layout without migration.
+
+- `.claude/settings.json` no longer pins `model` or `CLAUDE_CODE_SUBAGENT_MODEL`; Triad wants the main
+  session on Opus and sets subagent models through its own hooks.
+- New planning commits use the `triad` commit prefix (Triad's default when the project root has no
+  `settings.json`). Earlier commits keep `legion`; that is history, not drift.
+- Live "next action" references in STATE/ROADMAP/PROJECT now say `/triad:`. Historical phase files,
+  explorations, specs and memory are a record and still say `/legion:`.
+- `/triad validate` reports ~58 schema failures, almost all in the Phase 1–6 plan frontmatter (which
+  predates Legion's own plan schema). They are left as is, as part of that record.
+
 ## Architecture Constraints Discovered (artifact era — superseded)
 
 > **Historical.** Both constraints below were real inside the Claude.ai artifact and are no longer

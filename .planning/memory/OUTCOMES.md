@@ -97,3 +97,11 @@ result: success
 verification: 2 cycles, 0 blockers, 7 warnings fixed; backend 404 + frontend 327 tests, e2e 28; QA mutation sweep killed all cycle-1 survivors
 summary: Panel review of the opt-in prologue (routes, screen, wrapper, tests). Not closed: safety gate UNREAD, playtest and canon decision are the developer's.
 tags: phase-14, review-passed, prologue, mutation-sweep
+
+## Tooling: Legion → Triad — 2026-10-16
+task_type: tooling
+agent: orchestrator
+result: success
+verification: /triad status reads Phase 14 from .planning/ unchanged; validate failures are historical plan frontmatter only
+summary: Planning tooling moved to the Triad plugin; .planning/ kept as is, commit prefix now triad, model pins removed from .claude/settings.json.
+tags: tooling, triad, legion

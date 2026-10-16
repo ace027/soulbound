@@ -95,7 +95,7 @@ citations that deletion would strand each earned their own plan. Only one plan s
 **Plans**: 6 (planned 2026-09-23 from the spec; serial waves per retro AI-5. Architecture chosen from three competing proposals: Pragmatic + 2 from Clean. See 05-CONTEXT.md.)
 
 ### Phases 6-13: design source
-All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer-saas-design.md` (explored and refined 2026-09-24). **Two modes, one codebase:** every phase must leave `SOULBOUND_MODE=selfhost` behaving exactly as Phase 5 shipped, proven by the existing suite plus `scripts/smoke-image.sh`. Deliberate reversals (single-tenant auth scope, CLAUDE.md #2, PROJECT.md out-of-scope) are recorded in CLAUDE.md and the design log → "Hosted mode (2026-09-24)". Plan counts are set by `/legion:plan N`.
+All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer-saas-design.md` (explored and refined 2026-09-24). **Two modes, one codebase:** every phase must leave `SOULBOUND_MODE=selfhost` behaving exactly as Phase 5 shipped, proven by the existing suite plus `scripts/smoke-image.sh`. Deliberate reversals (single-tenant auth scope, CLAUDE.md #2, PROJECT.md out-of-scope) are recorded in CLAUDE.md and the design log → "Hosted mode (2026-09-24)". Plan counts are set by `/triad:plan N`.
 
 ### Phase 6: Hosted Mode & Accounts
 **Goal**: A hosted instance that the developer alone can sign into, deployed from day one, with self-host untouched.
@@ -189,7 +189,7 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 **Requirements**: R34
 **Recommended Agents**: AI Engineer, QA Verification Specialist
 **Success Criteria**:
-- **Design first:** a `/legion:explore` design is approved first, covering defeat semantics, item and tier rules, and what the World Voice may change.
+- **Design first:** a `/triad:explore` design is approved first, covering defeat semantics, item and tier rules, and what the World Voice may change.
 - **Contract:** the contract and MUST NOT additions land together.
 - **Testing:** the adversarial turn tests are re-run; old saves still load.
 **Plans**: TBD
