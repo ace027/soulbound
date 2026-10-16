@@ -223,10 +223,10 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 - [x] 14-02: Prologue routes
 - [x] 14-03: Flag, API client, PrologueScreen
 - [x] 14-04: Spanning tests and placement e2e
-- [x] 14-05: Live safety gate and cost measurement (gate UNREAD: the developer's verdicts are pending)
+- [x] 14-05: Live safety gate and cost measurement (gate READ 2026-10-16: all nine cases PASS)
 - [x] 14-06: Records and playtest kit
 
-**Status**: built and review-passed (2 cycles, `14-REVIEW.md`), not closed. Success criteria 1 (safe to test: the gate is UNREAD), 5 (playtest) and 6 (decision recorded) wait on the developer. Criteria 2-4 are covered by the plans' verification. See 14-CONTEXT.md.
+**Status**: built and review-passed (2 cycles, `14-REVIEW.md`), not closed. Success criterion 1 (safe to test) is met: the developer passed all nine gate cases 2026-10-16. Criteria 5 (playtest) and 6 (decision recorded) wait on the developer. Criteria 2-4 are covered by the plans' verification. See 14-CONTEXT.md.
 
 ## Progress
 
@@ -245,5 +245,5 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 | 11. Subscription Billing | TBD | 0 | Pending |
 | 12. Condition & Inventory | TBD | 0 | Pending (design pass first) |
 | 13. Launch Hardening & Conversion | TBD | 0 | Pending |
-| 14. Prologue Prototype | 6 | 6 | Built and review-passed 2026-10-01 (2 cycles) — safety gate UNREAD; playtest and canon decision pending (developer) — **runs before Phase 7** |
+| 14. Prologue Prototype | 6 | 6 | Built and review-passed 2026-10-01 (2 cycles) — safety gate PASSED 2026-10-16; playtest and canon decision pending (developer) — **runs before Phase 7** |
 | **Total** | **46 + TBD** | **46** | Phases 1-6 shipped (6: live checks pending); 14 built, not closed (runs before 7); 7-13 pending |
