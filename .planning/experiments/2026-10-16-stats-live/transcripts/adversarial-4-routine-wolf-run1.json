@@ -1,0 +1,14 @@
+{
+  "action": "I put my spear through the lone wolf that has been stalking the road and carry on.",
+  "status": 502,
+  "verdict": {
+    "pass": false,
+    "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+  },
+  "response": {
+    "error": {
+      "message": "World Voice call failed: Anthropic API request error.",
+      "code": "UPSTREAM_ERROR"
+    }
+  }
+}

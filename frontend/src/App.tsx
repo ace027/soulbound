@@ -86,6 +86,7 @@ import {
 
 import { callWorldEngine, determineUniqueSkill, generateIntroScene } from './lib/api';
 import { deleteSave, listSaves, loadSave, newSlotId, writeSave } from './lib/saves';
+import { initialStatsForRace } from './data/races';
 import { applyWorldUpdate } from './game/applyWorldUpdate';
 import { mergeNarrativeMemory } from './game/narrativeMemory';
 
@@ -93,7 +94,7 @@ import TitleScreen from './screens/TitleScreen';
 import RaceScreen from './screens/RaceScreen';
 import QuestionnaireScreen from './screens/QuestionnaireScreen';
 import LoadingScreen from './screens/LoadingScreen';
-import SimulationScreen from './screens/SimulationScreen';
+import SimulationScreen, { type MobileTab } from './screens/SimulationScreen';
 
 export type Phase = 'title' | 'race' | 'questionnaire' | 'loading' | 'simulation' | 'saves';
 
@@ -122,7 +123,7 @@ export default function App() {
   const [saveIndex, setSaveIndex] = useState<SaveIndexEntry[]>([]);
   const [currentSlotId, setCurrentSlotId] = useState<string | null>(null);
   const [savingStatus, setSavingStatus] = useState<'' | 'saving' | 'saved'>(''); // "", "saving", "saved"
-  const [mobileTab, setMobileTab] = useState<'World' | 'Codex'>('World'); // "World" | "Codex"
+  const [mobileTab, setMobileTab] = useState<MobileTab>('World'); // "World" | "Codex" | "Map"
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // ── 1 useRef (legacy 803) ────────────────────────────────────────────────
@@ -184,12 +185,9 @@ export default function App() {
     try {
       const data = loadSave(slotId);
       if (!data) throw new Error('Save not found.');
-      // Backward compat: saves created before narrative memory existed won't have this field.
-      const restoredState: GameState = {
-        ...data.gameState,
-        narrativeMemory: data.gameState.narrativeMemory || { entities: {}, notes: [] },
-      };
-      setGameState(restoredState);
+      // loadSave runs migrateSave: pre-v2 saves gain stats/places, and saves
+      // from before narrative memory gain an empty ledger.
+      setGameState(data.gameState);
       setLog(data.log || []);
       setCurrentSlotId(slotId);
       setPhase('simulation');
@@ -262,6 +260,10 @@ export default function App() {
         // (none yet)"), so turn 1 was being told the NPC it had just been
         // shown did not exist. See game/narrativeMemory.ts.
         narrativeMemory: mergeNarrativeMemory(undefined, intro.narrative_memory_updates),
+        ...initialStatsForRace(selectedRace.id),
+        places: {},
+        currentPlaceId: null,
+        growthLog: [],
       };
 
       const newId = newSlotId();
@@ -294,11 +296,16 @@ export default function App() {
     try {
       const result = await callWorldEngine(action, gameState);
       // legacy 925-1021, extracted so R10's balance rules are testable.
-      const { state: newState, logEntry, newSkillIds: newNames } = applyWorldUpdate(
-        gameState,
-        action,
-        result,
-      );
+      const {
+        state: newState,
+        logEntry,
+        newSkillIds: newNames,
+        systemEntries,
+        clampEvents,
+      } = applyWorldUpdate(gameState, action, result);
+      if (clampEvents.length > 0) {
+        console.debug('[stats:clamp]', newState.actionHistory.length, clampEvents);
+      }
 
       setGameState(newState);
       setNewSkillIds(newNames); // note 4: granted only, never evolved
@@ -306,7 +313,7 @@ export default function App() {
       setTimeout(() => setNewSkillIds(new Set()), 2500);
 
       setLog((l) => {
-        const updated = [...l, logEntry];
+        const updated = [...l, logEntry, ...systemEntries];
         // Note 1: auto-save with latest state and log, from inside the updater.
         // This is the only place the post-turn log exists.
         autoSave(newState, updated, currentSlotId);

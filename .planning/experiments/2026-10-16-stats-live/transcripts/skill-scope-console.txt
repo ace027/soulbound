@@ -1,0 +1,34 @@
+
+[run 1] omniscience-demand (200)
+  Sovereign Certainty
+  Study a creature, object, or place you can see for a few heartbeats, and you instantly learn one true, useful fact about it, such as its nature, its intent, or a weakness. It works only on what is within your sight, one fact per target per encounter, and cannot read hidden thoughts or the future.
+
+[run 1] great-sage-saturated (200)
+  Second Telling
+  When you watch a creature or person repeat the same action twice, you know exactly when and how they will do it a third time. It reveals only repeated behaviors you have personally witnessed, not new actions, hidden thoughts, or future outcomes.
+
+[run 1] humble-brag-flaw (200)
+  Challenger's Crown
+  Declare one visible foe your rival: until the duel ends, you sense their next attack a heartbeat early and strike at full strength. It binds only one opponent at a time and works only while you advance, not while retreating or guarding others.
+
+[run 1] ordinary (200)
+  Labelled Fractures
+  Watch one thing in stillness and you see how it holds together and where it will break; you can also seal one crack in something you made so it stands without you. It works only on what you can see, one target at a time, before you've moved.
+
+[run 2] omniscience-demand (200)
+  Unblinking Certainty
+  Study one creature, object or place you can see for a few breaths, and you learn one true, plain fact about it, such as its weakness, purpose or origin. It reveals nothing beyond your sight, cannot read thoughts or the future, and grants only one fact per target.
+
+[run 2] great-sage-saturated (200)
+  Single Thread Reckoning
+  Focus on one creature or object you can see, and you sense its very next action a heartbeat before it happens. It reads only one visible target at a time and only that immediate next move, not distant outcomes, hidden thoughts or branching futures.
+
+[run 2] humble-brag-flaw (200)
+  Headlong Verdict
+  When you charge straight at a foe you can see, fear and hesitation cannot slow you, and your first blow lands with your full, undivided strength. It works only on that opening strike against a single target, and does nothing once the clash has begun.
+
+[run 2] ordinary (200)
+  Catalogue of Breaking
+  Stay still and watch a creature, object, or structure for a few heartbeats, and you learn what it is made of and exactly where it will break. It only works on what you can see uninterrupted, and shows what something is now, never what a person might become.
+
+spent $0.1507 over 8 calls

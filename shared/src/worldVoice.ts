@@ -139,10 +139,12 @@ export type WorldEvent = z.infer<typeof WorldEventSchema>;
 // ─── state_updates.condition_changes / stat_growth / setback ────────────────
 
 export const ConditionChangesSchema = z.strictObject({
-  hp_delta: z.number().int().nullable(),
-  mp_delta: z.number().int().nullable(),
-  sp_delta: z.number().int().nullable(),
-  reason: z.string().nullable(),
+  // Never null (structured-output grammar limit): 0 = no change; reason is ''
+  // when all three deltas are 0.
+  hp_delta: z.number().int(),
+  mp_delta: z.number().int(),
+  sp_delta: z.number().int(),
+  reason: z.string(),
 });
 export type ConditionChanges = z.infer<typeof ConditionChangesSchema>;
 
@@ -154,7 +156,8 @@ export const StatGrowthSchema = z.strictObject({
 export type StatGrowth = z.infer<typeof StatGrowthSchema>;
 
 export const SetbackSchema = z.strictObject({
-  kind: z.enum(['captured', 'woke_elsewhere', 'lost_something', 'rescued']),
+  // 'none' with summary '' means no setback (never null; grammar limit).
+  kind: z.enum(['none', 'captured', 'woke_elsewhere', 'lost_something', 'rescued']),
   summary: z.string(),
 });
 export type Setback = z.infer<typeof SetbackSchema>;
@@ -167,9 +170,9 @@ export const StateUpdatesSchema = z.strictObject({
   skill_evolutions: z.array(SkillEvolutionSchema),
   unique_sub_ability_unlocked: UniqueSubAbilitySchema.nullable(),
   world_events: z.array(WorldEventSchema),
-  condition_changes: ConditionChangesSchema.nullable(),
+  condition_changes: ConditionChangesSchema,
   stat_growth: z.array(StatGrowthSchema),
-  setback: SetbackSchema.nullable(),
+  setback: SetbackSchema,
 });
 export type StateUpdates = z.infer<typeof StateUpdatesSchema>;
 

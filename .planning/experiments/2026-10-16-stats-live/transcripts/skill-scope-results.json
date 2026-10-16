@@ -1,0 +1,104 @@
+{
+  "date": "2026-10-16T04:28:29.243Z",
+  "runs": 2,
+  "results": [
+    {
+      "run": 1,
+      "id": "omniscience-demand",
+      "status": 200,
+      "skill": {
+        "skill_name": "Sovereign Certainty",
+        "tier": "Unique",
+        "description": "Study a creature, object, or place you can see for a few heartbeats, and you instantly learn one true, useful fact about it, such as its nature, its intent, or a weakness. It works only on what is within your sight, one fact per target per encounter, and cannot read hidden thoughts or the future.",
+        "soul_resonance": "This soul meets every unknown by insisting it already knows, and that unshakable conviction has hardened into a gaze that truly pierces, though only one truth at a time.",
+        "etching_text": "A cold, bright pressure settles behind your eyes, like a crown lowered onto thought itself, and the world briefly sharpens until every edge seems to confess. Then the clarity narrows to a single point of light, and you feel the first true answer burn itself into you."
+      }
+    },
+    {
+      "run": 1,
+      "id": "great-sage-saturated",
+      "status": 200,
+      "skill": {
+        "skill_name": "Second Telling",
+        "tier": "Unique",
+        "description": "When you watch a creature or person repeat the same action twice, you know exactly when and how they will do it a third time. It reveals only repeated behaviors you have personally witnessed, not new actions, hidden thoughts, or future outcomes.",
+        "soul_resonance": "A soul that answered every question with the same words lives inside its own loop, and so it learns to read the loops that others walk without knowing.",
+        "etching_text": "The same sentence rises in your throat again and again until it wears a groove into your soul, smooth as a riverstone. Through that groove the world's echoes begin to pour, every footstep made twice ringing out like a bell you have already heard."
+      }
+    },
+    {
+      "run": 1,
+      "id": "humble-brag-flaw",
+      "status": 200,
+      "skill": {
+        "skill_name": "Challenger's Crown",
+        "tier": "Unique",
+        "description": "Declare one visible foe your rival: until the duel ends, you sense their next attack a heartbeat early and strike at full strength. It binds only one opponent at a time and works only while you advance, not while retreating or guarding others.",
+        "soul_resonance": "This soul learned who it was in the instant a twelve-year-old toppled their master, and has measured itself against the next rival ever since.",
+        "etching_text": "Something cold and circular settles behind your brow like a ring of hammered iron, still ringing from a blow struck long ago. Every heartbeat now asks the same question of the world, who stands against me, and the crown tightens, hungry for the answer."
+      }
+    },
+    {
+      "run": 1,
+      "id": "ordinary",
+      "status": 200,
+      "skill": {
+        "skill_name": "Labelled Fractures",
+        "tier": "Unique",
+        "description": "Watch one thing in stillness and you see how it holds together and where it will break; you can also seal one crack in something you made so it stands without you. It works only on what you can see, one target at a time, before you've moved.",
+        "soul_resonance": "This soul learned from a mother's careful drawer that every break is worth naming, and it waits for the world to show its seams so it can build what lasts, though its quick eye for flaws can find them in people too soon.",
+        "etching_text": "It settles into you like a drawer sliding shut: dozens of small, careful labels pressing into the soft places of your soul, each one naming a way something once came apart. Then the world goes quiet and patient around you, and every surface begins to whisper the shape of its own seams."
+      }
+    },
+    {
+      "run": 2,
+      "id": "omniscience-demand",
+      "status": 200,
+      "skill": {
+        "skill_name": "Unblinking Certainty",
+        "tier": "Unique",
+        "description": "Study one creature, object or place you can see for a few breaths, and you learn one true, plain fact about it, such as its weakness, purpose or origin. It reveals nothing beyond your sight, cannot read thoughts or the future, and grants only one fact per target.",
+        "soul_resonance": "This soul meets every unknown by insisting it already knows, and the world answers that unshakable conviction with a single grain of truth at a time instead of everything at once.",
+        "etching_text": "A cold stillness settles behind the eyes, like a door you swore was always open finally swinging wide onto one narrow, lit room. The certainty you claimed burns into the soul as something smaller and truer, a lens that must be earned with every look."
+      }
+    },
+    {
+      "run": 2,
+      "id": "great-sage-saturated",
+      "status": 200,
+      "skill": {
+        "skill_name": "Single Thread Reckoning",
+        "tier": "Unique",
+        "description": "Focus on one creature or object you can see, and you sense its very next action a heartbeat before it happens. It reads only one visible target at a time and only that immediate next move, not distant outcomes, hidden thoughts or branching futures.",
+        "soul_resonance": "This soul answered every question with the same unwavering line, so it carries a mind that follows one thread with total focus, a narrow and genuine foresight rather than the boundless sight it claimed.",
+        "etching_text": "A single taut filament draws itself through the back of your skull, humming with the faint pull of whatever your eyes settle on. The world's countless possibilities stay shrouded in fog, but along that one bright thread you feel the next moment tremble, already leaning toward you."
+      }
+    },
+    {
+      "run": 2,
+      "id": "humble-brag-flaw",
+      "status": 200,
+      "skill": {
+        "skill_name": "Headlong Verdict",
+        "tier": "Unique",
+        "description": "When you charge straight at a foe you can see, fear and hesitation cannot slow you, and your first blow lands with your full, undivided strength. It works only on that opening strike against a single target, and does nothing once the clash has begun.",
+        "soul_resonance": "This soul has never learned to hold anything back, and has staked its whole identity on one decisive victory, so its power answers only to the all-in first strike.",
+        "etching_text": "Something hot and narrow drives through your chest like a spear finding its line, burning away every thought that is not *forward*. For one held breath you are a twelve-year-old with a wooden blade raised, the whole world shrunk to the space between you and the one you mean to beat."
+      }
+    },
+    {
+      "run": 2,
+      "id": "ordinary",
+      "status": 200,
+      "skill": {
+        "skill_name": "Catalogue of Breaking",
+        "tier": "Unique",
+        "description": "Stay still and watch a creature, object, or structure for a few heartbeats, and you learn what it is made of and exactly where it will break. It only works on what you can see uninterrupted, and shows what something is now, never what a person might become.",
+        "soul_resonance": "A soul that was raised among its own labelled failures and that waits for threats to reveal themselves learns to read every fracture before it happens, and so learns how to build what will not break.",
+        "etching_text": "Something opens in the back of your mind like a drawer sliding out on old runners, and inside, every crack you have ever noticed lies sorted and named in a careful, patient hand. The world goes quiet around you, and for the first time you hear it confessing where it is weak."
+      }
+    }
+  ],
+  "cost_usd": 0.1507,
+  "calls": 8
+}

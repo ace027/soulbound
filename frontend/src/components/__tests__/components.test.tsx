@@ -8,6 +8,7 @@ import { TIER_STYLE } from '@soulbound/shared';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ActionBar from '../ActionBar';
+import ConditionStrip from '../ConditionStrip';
 import SkillCard from '../SkillCard';
 import SoulCodexContents from '../SoulCodexContents';
 import WorldLog from '../WorldLog';
@@ -66,6 +67,11 @@ function baseGameState(skills: Skill[]): GameState {
     currentScene: 'The world begins.',
     actionHistory: [],
     narrativeMemory: { entities: {}, notes: [] },
+    condition: { hp: 100, mp: 50, sp: 100, max_hp: 100, max_mp: 50, max_sp: 100 },
+    attributes: { STR: 10, AGI: 10, INT: 10, WIL: 12 },
+    places: {},
+    currentPlaceId: null,
+    growthLog: [],
   };
 }
 
@@ -167,6 +173,137 @@ describe('SoulCodexContents', () => {
     );
     fireEvent.click(screen.getByText('+ Slot'));
     expect(handleManualSave).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ─── ConditionStrip (Phase 15) ──────────────────────────────────────────────
+
+/** WCAG 2.x relative luminance of `#rrggbb` or `rgb(r, g, b)`. */
+function relativeLuminance(color: string): number {
+  let rgb: number[];
+  const hex = /^#([0-9a-f]{6})$/i.exec(color.trim());
+  if (hex) {
+    rgb = [0, 2, 4].map(i => parseInt(hex[1].slice(i, i + 2), 16));
+  } else {
+    const m = /^rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(color.trim());
+    if (!m) throw new Error(`unparseable colour: ${color}`);
+    rgb = [m[1], m[2], m[3]].map(Number);
+  }
+  const [r, g, b] = rgb.map(v => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrastRatio(fg: string, bg: string): number {
+  const [hi, lo] = [relativeLuminance(fg), relativeLuminance(bg)].sort((a, b) => b - a);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/**
+ * Every element that renders its own text, paired with the colour it is
+ * drawn in and the nearest declared background behind it. Walking the
+ * rendered DOM, rather than a hand-copied colour list, means a new text
+ * element or a changed colour is measured automatically.
+ */
+function textPairs(root: Element): Array<{ text: string; fg: string; bg: string }> {
+  const nearest = (el: Element | null, read: (e: HTMLElement) => string): string => {
+    for (let n = el; n; n = n.parentElement) {
+      const v = read(n as HTMLElement);
+      if (v) return v;
+    }
+    return '';
+  };
+  const pairs: Array<{ text: string; fg: string; bg: string }> = [];
+  for (const el of Array.from(root.querySelectorAll('*'))) {
+    const own = Array.from(el.childNodes)
+      .filter(n => n.nodeType === Node.TEXT_NODE)
+      .map(n => n.textContent ?? '')
+      .join('')
+      .trim();
+    if (!own) continue;
+    pairs.push({
+      text: own,
+      fg: nearest(el, e => e.style?.color ?? ''),
+      bg: nearest(el, e => e.style?.backgroundColor ?? ''),
+    });
+  }
+  return pairs;
+}
+
+describe('ConditionStrip', () => {
+  const CONDITION = { hp: 84, mp: 20, sp: 61, max_hp: 100, max_mp: 50, max_sp: 90 };
+  const ATTRIBUTES = { STR: 11, AGI: 9, INT: 14, WIL: 12 };
+
+  it('renders HP/MP/SP as visible text and the four attributes (full)', () => {
+    render(<ConditionStrip condition={CONDITION} attributes={ATTRIBUTES} variant="full" />);
+    expect(screen.getByText('HP 84/100')).toBeInTheDocument();
+    expect(screen.getByText('MP 20/50')).toBeInTheDocument();
+    expect(screen.getByText('SP 61/90')).toBeInTheDocument();
+    for (const [k, v] of Object.entries(ATTRIBUTES)) {
+      expect(screen.getByText(k)).toBeInTheDocument();
+      expect(screen.getByText(String(v))).toBeInTheDocument();
+    }
+  });
+
+  it('exposes each pool as role="meter" with correct aria values', () => {
+    render(<ConditionStrip condition={CONDITION} attributes={ATTRIBUTES} variant="full" />);
+    const meters = screen.getAllByRole('meter');
+    expect(meters).toHaveLength(3);
+    const hp = screen.getByRole('meter', { name: /HP/ });
+    expect(hp).toHaveAttribute('aria-valuemin', '0');
+    expect(hp).toHaveAttribute('aria-valuenow', '84');
+    expect(hp).toHaveAttribute('aria-valuemax', '100');
+    const mp = screen.getByRole('meter', { name: /MP/ });
+    expect(mp).toHaveAttribute('aria-valuenow', '20');
+    expect(mp).toHaveAttribute('aria-valuemax', '50');
+    const sp = screen.getByRole('meter', { name: /SP/ });
+    expect(sp).toHaveAttribute('aria-valuenow', '61');
+    expect(sp).toHaveAttribute('aria-valuemax', '90');
+  });
+
+  it('renders a 0 HP state', () => {
+    render(<ConditionStrip condition={{ ...CONDITION, hp: 0 }} attributes={ATTRIBUTES} variant="full" />);
+    expect(screen.getByText('HP 0/100')).toBeInTheDocument();
+    expect(screen.getByRole('meter', { name: /HP/ })).toHaveAttribute('aria-valuenow', '0');
+  });
+
+  it('compact variant shows the three meters and no attribute row', () => {
+    render(<ConditionStrip condition={CONDITION} attributes={ATTRIBUTES} variant="compact" />);
+    expect(screen.getAllByRole('meter')).toHaveLength(3);
+    expect(screen.getByText('HP 84/100')).toBeInTheDocument();
+    expect(screen.queryByText('STR')).not.toBeInTheDocument();
+  });
+
+  it.each(['full', 'compact'] as const)('every text/background pair meets WCAG AA 4.5:1 (%s)', variant => {
+    const { container } = render(
+      <ConditionStrip condition={CONDITION} attributes={ATTRIBUTES} variant={variant} />,
+    );
+    const pairs = textPairs(container);
+    expect(pairs.length).toBeGreaterThan(0);
+    for (const p of pairs) {
+      expect(p.fg, `no colour declared for "${p.text}"`).not.toBe('');
+      expect(p.bg, `no background declared behind "${p.text}"`).not.toBe('');
+      expect(contrastRatio(p.fg, p.bg), `"${p.text}" ${p.fg} on ${p.bg}`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('sits at the top of the Soul Codex', () => {
+    render(
+      <SoulCodexContents
+        gameState={baseGameState([UNIQUE_SKILL])}
+        uniqueSkill={UNIQUE_SKILL}
+        newSkillIds={new Set()}
+        savingStatus=""
+        handleManualSave={vi.fn()}
+        setPhase={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('HP 100/100')).toBeInTheDocument();
+    expect(screen.getByTestId('condition-strip-full')).toBeInTheDocument();
+    // No Map button unless the desktop layout asks for one.
+    expect(screen.queryByRole('button', { name: 'Map' })).not.toBeInTheDocument();
   });
 });
 

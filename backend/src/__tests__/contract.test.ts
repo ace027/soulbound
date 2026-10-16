@@ -134,7 +134,7 @@ describe('Phase 15 contract fields (stats, setback, places)', () => {
           place_id: null,
         },
       ],
-      condition_changes: { hp_delta: -2, mp_delta: null, sp_delta: -1, reason: 'a blow' },
+      condition_changes: { hp_delta: -2, mp_delta: 0, sp_delta: -1, reason: 'a blow' },
       stat_growth: [{ stat: 'WIL', amount: 1, milestone: 'held firm' }],
       setback: { kind: 'rescued', summary: 'dragged out' },
     },
@@ -169,6 +169,25 @@ describe('Phase 15 contract fields (stats, setback, places)', () => {
     const bad = clone();
     bad.state_updates.condition_changes.hp_delta = 1.5;
     expect(WorldVoiceResponseSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it.each(['condition_changes', 'setback'])('null %s is rejected (grammar limit)', (key) => {
+    const bad = clone();
+    bad.state_updates[key] = null;
+    expect(WorldVoiceResponseSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it('null condition delta fields are rejected', () => {
+    const bad = clone();
+    bad.state_updates.condition_changes.mp_delta = null;
+    expect(WorldVoiceResponseSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it('the none sentinels are accepted', () => {
+    const ok = clone();
+    ok.state_updates.condition_changes = { hp_delta: 0, mp_delta: 0, sp_delta: 0, reason: '' };
+    ok.state_updates.setback = { kind: 'none', summary: '' };
+    expect(WorldVoiceResponseSchema.safeParse(ok).success).toBe(true);
   });
 
   it('CONTRACT_FIELD_NAMES lists the three new fields', () => {

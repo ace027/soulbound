@@ -95,9 +95,9 @@ Each call only gives you the last 5 raw actions, not the full playthrough — so
 4. A Soul Etching moment gets its own paragraph, set apart, describing the sensation of something locking onto the soul.
  
 ### Condition, Attributes and Places:
-- The player has HP, MP and SP (and maximums), and four attributes: STR, AGI, INT, WIL. You are given them each turn. Report changes in "state_updates.condition_changes" whenever harm, exertion, casting, rest, healing or meals happen: integer hp_delta / mp_delta / sp_delta (negative for loss; null for any that did not change) and a one-line in-world "reason". If nothing changed, condition_changes is null.
+- The player has HP, MP and SP (and maximums), and four attributes: STR, AGI, INT, WIL. You are given them each turn. Report changes in "state_updates.condition_changes" whenever harm, exertion, casting, rest, healing or meals happen: integer hp_delta / mp_delta / sp_delta (negative for loss; 0 for any that did not change) and a one-line in-world "reason". ALWAYS send condition_changes, never null: if nothing changed, send hp_delta 0, mp_delta 0, sp_delta 0 and reason "".
 - "state_updates.stat_growth" is for real milestones only: an array of {"stat": one of max_hp, max_mp, max_sp, STR, AGI, INT, WIL, "amount": integer, "milestone": one in-world line}. Empty array on almost every turn.
-- "state_updates.setback" is used only when HP reaches 0: {"kind": "captured" | "woke_elsewhere" | "lost_something" | "rescued", "summary": one in-world sentence}. Null otherwise.
+- "state_updates.setback" is ALWAYS sent, never null. It is used only when HP reaches 0: {"kind": "captured" | "woke_elsewhere" | "lost_something" | "rescued", "summary": one in-world sentence}. Otherwise send {"kind": "none", "summary": ""}.
 - Attributes inform outcomes; they never guarantee them. MP or SP at 0 is portrayed as exhaustion in the fiction — the game blocks nothing.
 - Every "scene_set" event carries "kingdom" (one of Kaldrath, Verdance, Ashenveil, Aurelis, Tidemark, Sundrach, or "unknown") and "place_id" (the listed id when the player returns to a known place, null for a new place). Events of any other type send "kingdom" and "place_id" as null.
  
@@ -134,9 +134,9 @@ You must ALWAYS respond with a JSON object. No prose outside the JSON. Structure
     "skill_evolutions": [],
     "world_events": [],
     "unique_sub_ability_unlocked": null,
-    "condition_changes": {"hp_delta": -3, "mp_delta": null, "sp_delta": -2, "reason": "a glancing blow and a hard sprint"},
+    "condition_changes": {"hp_delta": -3, "mp_delta": 0, "sp_delta": -2, "reason": "a glancing blow and a hard sprint"},
     "stat_growth": [],
-    "setback": null
+    "setback": {"kind": "none", "summary": ""}
   },
   "narrative_memory_updates": {
     "new_entities": [],

@@ -114,3 +114,4 @@ tags: tooling, triad, legion
 | O-007 | 2026-10-16 | dev | 15 | 15-02 | engineering-senior-developer | implementation | failed | 5 | world-map-character-stats, engineering | Game state, save v2 migration and guard rails: Partial |
 | O-008 | 2026-10-16 | dev | 15 | 15-02 | engineering-senior-developer | implementation | success | 2 | world-map-character-stats, engineering | Game state, save v2 migration and guard rails: Complete |
 | O-009 | 2026-10-16 | dev | 15 | 15-03 | engineering-frontend-developer | implementation | partial | 4 | world-map-character-stats, engineering | Condition strip, kingdom map and mobile Map tab: Complete with Warnings |
+| O-010 | 2026-10-16 | dev | 15 | 15-04 | testing-qa-verification-specialist | quality-review | failed | 5 | world-map-character-stats, testing | Adversarial re-run, live smoke run and design log: BLOCKED |

@@ -60,6 +60,11 @@ function makeGameState(overrides: Partial<GameState> = {}): GameState {
       entities: { sevreth: { name: 'Sevreth', description: 'A Sovereign that watches.' } },
       notes: ['Owed a debt by the toll-keeper.'],
     },
+    condition: { hp: 100, mp: 50, sp: 100, max_hp: 100, max_mp: 50, max_sp: 100 },
+    attributes: { STR: 10, AGI: 10, INT: 10, WIL: 12 },
+    places: {},
+    currentPlaceId: null,
+    growthLog: [],
     ...overrides,
   };
 }
@@ -89,7 +94,15 @@ describe('artifact-era compatibility (R11)', () => {
    * be "fixed" by a change to the writer.
    */
   function seedArtifactSave(slotId: string): void {
-    const { narrativeMemory: _dropped, ...preMigrationState } = makeGameState();
+    const {
+      narrativeMemory: _dropped,
+      condition: _c,
+      attributes: _a,
+      places: _p,
+      currentPlaceId: _cp,
+      growthLog: _g,
+      ...preMigrationState
+    } = makeGameState();
     localStorage.setItem(
       ARTIFACT_SAVE_PREFIX + slotId,
       JSON.stringify({
@@ -131,10 +144,10 @@ describe('artifact-era compatibility (R11)', () => {
     expect(loaded?.log).toHaveLength(2);
   });
 
-  it('treats a missing schemaVersion as 0 rather than undefined', () => {
+  it('migrates a missing schemaVersion (v0) up to the current version', () => {
     seedArtifactSave('sbc_artifact_2');
 
-    expect(loadSave('sbc_artifact_2')?.schemaVersion).toBe(0);
+    expect(loadSave('sbc_artifact_2')?.schemaVersion).toBe(SAVE_SCHEMA_VERSION);
   });
 
   it('backfills narrativeMemory absent from pre-migration saves', () => {
@@ -171,7 +184,7 @@ describe('writeSave / loadSave round trip', () => {
     expect(loaded?.log).toEqual(slot.log);
     expect(loaded?.savedAt).toBe(slot.savedAt);
     expect(loaded?.schemaVersion).toBe(SAVE_SCHEMA_VERSION);
-    expect(loaded?.schemaVersion).toBe(1);
+    expect(loaded?.schemaVersion).toBe(2);
   });
 
   it('writes under the artifact key so migrated saves stay artifact-shaped', () => {
@@ -380,5 +393,110 @@ describe('deleteSave — the storage-failure path', () => {
       spy.mockRestore();
       quiet.mockRestore();
     }
+  });
+});
+
+// ─── v1 -> v2 migration ─────────────────────────────────────────────────────
+
+const V2_KEYS = ['condition', 'attributes', 'places', 'currentPlaceId', 'growthLog'] as const;
+
+/** A committed v1 payload, written by hand so no writer change can "fix" it. */
+const V1_GAME_STATE = {
+  character: {
+    name: 'Yulen',
+    race: {
+      id: 'drakari',
+      name: 'Drakari',
+      desc: 'Descendants of dragons.',
+      intrinsic: [
+        { name: 'Scale Armor', description: 'Turns blows.' },
+        { name: 'Breath Weapon', description: 'A focused cone.' },
+      ],
+    },
+    uniqueSkill: {
+      skill_name: 'Ember Oath',
+      tier: 'Unique',
+      description: 'Burns what is promised.',
+      soul_resonance: 'Vows as fuel.',
+      etching_text: 'The oath is written in ash.',
+    },
+    answers: { nature: 'proud' },
+  },
+  skills: [
+    { name: 'Scale Armor', tier: 'Intrinsic', mastery: 5, description: 'Turns blows.' },
+    { name: 'Ember Oath', tier: 'Unique', mastery: 12, description: 'Burns.', sub_abilities: [], usage_notes: ['n'], soul_resonance: 'Vows.' },
+  ],
+  location: 'The Sundered Toll',
+  currentScene: 'Rain on a bridge.',
+  actionHistory: ['Looked.', 'Waited.'],
+  narrativeMemory: { entities: { ysra: { name: 'Ysra', description: 'Toll-keeper.' } }, notes: ['A note.'] },
+};
+
+function seedRaw(slotId: string, gameState: unknown, schemaVersion?: number): void {
+  localStorage.setItem(
+    ARTIFACT_SAVE_PREFIX + slotId,
+    JSON.stringify({
+      gameState,
+      log: [{ type: 'narration', text: 'hi' }],
+      savedAt: 1_690_000_000_000,
+      ...(schemaVersion === undefined ? {} : { schemaVersion }),
+    }),
+  );
+}
+
+describe('v1/v0 -> v2 migration', () => {
+  it.each([
+    ['v1', 1],
+    ['v0 (no schemaVersion)', undefined],
+  ])('loads a %s save with every old field unchanged and new fields seeded', (_label, version) => {
+    seedRaw('sbc_mig', V1_GAME_STATE, version);
+
+    const loaded = loadSave('sbc_mig');
+    expect(loaded?.schemaVersion).toBe(2);
+    const gs = loaded?.gameState as unknown as Record<string, unknown>;
+    for (const [k, v] of Object.entries(V1_GAME_STATE)) expect(gs[k]).toEqual(v);
+
+    expect(loaded?.gameState.condition).toEqual({
+      hp: 130, mp: 50, sp: 110, max_hp: 130, max_mp: 50, max_sp: 110,
+    });
+    expect(loaded?.gameState.attributes).toEqual({ STR: 14, AGI: 9, INT: 8, WIL: 11 });
+    expect(loaded?.gameState.places).toEqual({
+      'the-sundered-toll-unknown': { name: 'The Sundered Toll', kingdom: 'unknown', firstSeenTurn: 0 },
+    });
+    expect(loaded?.gameState.currentPlaceId).toBe('the-sundered-toll-unknown');
+    expect(loaded?.gameState.growthLog).toEqual([]);
+    expect(loaded?.log).toEqual([{ type: 'narration', text: 'hi' }]);
+  });
+
+  it('is stable across write -> reload', () => {
+    seedRaw('sbc_mig2', V1_GAME_STATE, 1);
+    const first = loadSave('sbc_mig2');
+    expect(first).not.toBeNull();
+    writeSave('sbc_mig2', first as SaveSlot);
+    expect(loadSave('sbc_mig2')).toEqual(first);
+  });
+
+  it('gives an unknown race the human baseline', () => {
+    const gs = { ...V1_GAME_STATE, character: { ...V1_GAME_STATE.character, race: { ...V1_GAME_STATE.character.race, id: 'nope' } } };
+    seedRaw('sbc_mig3', gs, 1);
+
+    const loaded = loadSave('sbc_mig3');
+    expect(loaded?.gameState.condition.max_hp).toBe(100);
+    expect(loaded?.gameState.attributes).toEqual({ STR: 10, AGI: 10, INT: 10, WIL: 12 });
+  });
+
+  it('seeds no place for an empty location', () => {
+    seedRaw('sbc_mig4', { ...V1_GAME_STATE, location: '' }, 1);
+
+    const loaded = loadSave('sbc_mig4');
+    expect(loaded?.gameState.places).toEqual({});
+    expect(loaded?.gameState.currentPlaceId).toBeNull();
+  });
+
+  it('leaves an existing v2 save untouched', () => {
+    const slot = makeSaveSlot();
+    writeSave('sbc_mig5', slot);
+    const gs = loadSave('sbc_mig5')?.gameState;
+    for (const k of V2_KEYS) expect(gs?.[k]).toEqual(slot.gameState[k]);
   });
 });

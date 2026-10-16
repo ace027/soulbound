@@ -102,6 +102,11 @@ const GAME_STATE: GameState = {
     entities: { 'toll-keeper': { name: 'Toll-Keeper Ysra', description: 'Counts in a dead tongue.' } },
     notes: ['Ysra remembers the unpaid.'],
   },
+  condition: { hp: 100, mp: 50, sp: 100, max_hp: 100, max_mp: 50, max_sp: 100 },
+  attributes: { STR: 10, AGI: 10, INT: 10, WIL: 12 },
+  places: {},
+  currentPlaceId: null,
+  growthLog: [],
 };
 
 const WORLD_VOICE_RESPONSE: WorldVoiceResponse = {
@@ -119,8 +124,13 @@ const WORLD_VOICE_RESPONSE: WorldVoiceResponse = {
         location: 'The Sundered Toll',
         scene_summary: 'A standoff in the rain.',
         description: null,
+        kingdom: null,
+        place_id: null,
       },
     ],
+    condition_changes: { hp_delta: 0, mp_delta: 0, sp_delta: 0, reason: '' },
+    stat_growth: [],
+    setback: { kind: 'none', summary: '' },
   },
   narrative_memory_updates: { new_entities: [], note: null },
   gm_note: null,

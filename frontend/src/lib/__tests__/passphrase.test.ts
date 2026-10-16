@@ -41,6 +41,11 @@ function makeGameState(): GameState {
     currentScene: 'Spore-light drifts.',
     actionHistory: [],
     narrativeMemory: { entities: {}, notes: [] },
+    condition: { hp: 100, mp: 50, sp: 100, max_hp: 100, max_mp: 50, max_sp: 100 },
+    attributes: { STR: 10, AGI: 10, INT: 10, WIL: 12 },
+    places: {},
+    currentPlaceId: null,
+    growthLog: [],
   };
 }
 

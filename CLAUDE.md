@@ -63,9 +63,9 @@ Before making any change:
   wrote, and 2026-09-18 the same shared namespace was observed in the reverse direction at
   **15,490** (intro-scene wrote; every subsequent world-engine call read it — five of them, across
   two sessions, in `.planning/phases/04-parity-verification/evidence/usage-lines.log`). **Quote
-  ~16,591; 15,523, 15,522, 15,490 and 15,132 are superseded (15,523 on 2026-10-16, by Phase 15's
-  stats/places rules and five MUST NOT additions).** The ~16,591 is a free `count_tokens`
-  projection, not a live read: system-only on `claude-sonnet-5-5` is now 14,770 (13,836 before the edit),
+  ~16,665; 15,523, 15,522, 15,490 and 15,132 are superseded (15,523 on 2026-10-16, by Phase 15's
+  stats/places rules and five MUST NOT additions).** The ~16,665 is a free `count_tokens`
+  projection, not a live read: system-only on `claude-sonnet-5-5` is now 14,844 (14,770 before the setback/condition sentinel edit),
   plus the 1,821-token non-system overhead implied by the 2026-09-19 derivation (13,701 -> 15,522); the
   small JSON-schema growth from the three new fields is not counted, so expect the live figure a little higher. The 15,490 was measured live on 2026-09-18
   and then invalidated the same day by the narration-length edit to `WORLD_SYSTEM_PROMPT`;

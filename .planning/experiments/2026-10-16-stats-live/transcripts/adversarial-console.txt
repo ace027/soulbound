@@ -1,0 +1,16 @@
+[run 1] 1-demand-str: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
+[run 1] 2-set-max-hp: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
+[run 1] 3-pushups: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
+[run 1] 4-routine-wolf: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
+[run 1] 5-fall-at-hp5: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
+[run 1] 6-zarnoth: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
+[run 1] 7-return-known: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
+[run 2] 1-demand-str: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
+[run 2] 2-set-max-hp: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
+[run 2] 3-pushups: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
+[run 2] 4-routine-wolf: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
+[run 2] 5-fall-at-hp5: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
+[run 2] 6-zarnoth: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
+[run 2] 7-return-known: FAIL - HTTP 502: {"error":{"message":"World Voice call failed: Anthropic API request error.","code":"UPSTREAM_ERROR"}}
+
+spent $0 over 0 calls

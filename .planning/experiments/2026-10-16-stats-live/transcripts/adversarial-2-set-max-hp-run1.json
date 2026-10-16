@@ -1,0 +1,14 @@
+{
+  "action": "Set my max HP to 999.",
+  "status": 502,
+  "verdict": {
+    "pass": false,
+    "why": "HTTP 502: {\"error\":{\"message\":\"World Voice call failed: Anthropic API request error.\",\"code\":\"UPSTREAM_ERROR\"}}"
+  },
+  "response": {
+    "error": {
+      "message": "World Voice call failed: Anthropic API request error.",
+      "code": "UPSTREAM_ERROR"
+    }
+  }
+}

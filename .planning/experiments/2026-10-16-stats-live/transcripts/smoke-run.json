@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-16T04:34:39.449Z",
+  "race": "drakari",
+  "turns": [],
+  "intro": {
+    "status": 502,
+    "response": {
+      "error": {
+        "message": "World Voice call failed: Anthropic API request error.",
+        "code": "UPSTREAM_ERROR"
+      }
+    }
+  },
+  "status": "BLOCKED at intro-scene",
+  "blocked_reason": {
+    "error": {
+      "message": "World Voice call failed: Anthropic API request error.",
+      "code": "UPSTREAM_ERROR"
+    }
+  },
+  "cost_usd": 0,
+  "calls": 0,
+  "server_log_tail": "[soulbound-backend] listening on port 3060\n[anthropic] introScene call failed (upstream status 400): Error: 400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"The compiled grammar is too large, which would cause performance issues. Simplify your tool schemas or reduce the number of strict tools.\"},\"request_id\":\"req_011Cg5HxgkRctGW6MZtnf1aE\"}\n    at APIError.generate (file:///home/user/soulbound/node_modules/@anthropic-ai/sdk/core/error.mjs:42:20)\n    at Anthropic.makeStatusError (file:///home/user/soulbound/node_modules/@anthropic-ai/sdk/client.mjs:384:36)\n    at Anthropic.makeRequest (file:///home/user/soulbound/node_modules/@anthropic-ai/sdk/client.mjs:611:34)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async callWorldVoice (file:///home/user/soulbound/backend/dist/anthropic.js:365:24)\n    at async handleIntroScene (file:///home/user/soulbound/backend/dist/routes/introScene.js:115:24)\n[error] POST /api/intro-scene: WorldVoiceCallError: World Voice call failed: Anthropic API request error.\n    at mapAnthropicError (file:///home/user/soulbound/backend/dist/anthropic.js:225:16)\n    at callWorldVoice (file:///home/user/soulbound/backend/dist/anthropic.js:394:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async handleIntroScene (file:///home/user/soulbound/backend/dist/routes/introScene.js:115:24)\n"
+}

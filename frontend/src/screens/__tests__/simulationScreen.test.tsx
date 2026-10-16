@@ -2,7 +2,7 @@ import { act } from 'react';
 import type { GameState, LogEntry, Skill } from '@soulbound/shared';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import SimulationScreen from '../SimulationScreen';
+import SimulationScreen, { type MobileTab } from '../SimulationScreen';
 
 /**
  * Simulation screen tests (plan 03-08).
@@ -74,6 +74,11 @@ function baseGameState(): GameState {
     currentScene: 'The world begins.',
     actionHistory: [],
     narrativeMemory: { entities: {}, notes: [] },
+    condition: { hp: 100, mp: 50, sp: 100, max_hp: 100, max_mp: 50, max_sp: 100 },
+    attributes: { STR: 10, AGI: 10, INT: 10, WIL: 12 },
+    places: {},
+    currentPlaceId: null,
+    growthLog: [],
   };
 }
 
@@ -121,12 +126,13 @@ function renderScreen(props?: Partial<Parameters<typeof SimulationScreen>[0]>) {
 // ─── Mobile two-tab layout ──────────────────────────────────────────────────
 
 describe('SimulationScreen — mobile layout', () => {
-  it('renders the two-tab layout below 700px', () => {
+  it('renders the three-tab layout below 700px', () => {
     setViewportWidth(360);
     renderScreen();
 
     expect(screen.getByText('✦ World')).toBeInTheDocument();
     expect(screen.getByText('☽ Codex')).toBeInTheDocument();
+    expect(screen.getByText('◈ Map')).toBeInTheDocument();
     // World tab active: WorldLog content visible, Codex content is not.
     expect(screen.getByText('The world begins.')).toBeInTheDocument();
     expect(screen.queryByText('Soul Codex')).not.toBeInTheDocument();
@@ -134,8 +140,8 @@ describe('SimulationScreen — mobile layout', () => {
 
   it('swaps World ↔ Codex when the tab switcher is used', () => {
     setViewportWidth(360);
-    let tab: 'World' | 'Codex' = 'World';
-    const setMobileTab = vi.fn((next: 'World' | 'Codex') => {
+    let tab: MobileTab = 'World';
+    const setMobileTab = vi.fn((next: MobileTab) => {
       tab = next;
     });
     const { rerender } = renderScreen({ mobileTab: tab, setMobileTab });
@@ -163,6 +169,53 @@ describe('SimulationScreen — mobile layout', () => {
 
     expect(screen.getByText('Soul Codex')).toBeInTheDocument();
     expect(screen.queryByText('The world begins.')).not.toBeInTheDocument();
+  });
+
+  it('Map tab shows the world map full height and asks for the Map tab on click', () => {
+    setViewportWidth(360);
+    const setMobileTab = vi.fn();
+    renderScreen({ setMobileTab });
+    fireEvent.click(screen.getByText('◈ Map'));
+    expect(setMobileTab).toHaveBeenCalledWith('Map');
+
+    cleanup();
+    renderScreen({ mobileTab: 'Map' });
+    const map = screen.getByTestId('world-map');
+    expect(screen.getByRole('group', { name: 'Map of Vaeltharion' })).toBeInTheDocument();
+    expect(screen.getByText('You are here:').parentElement).toHaveTextContent('You are here: The Hollow Verge');
+    expect(screen.queryByText('The world begins.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Soul Codex')).not.toBeInTheDocument();
+    // No desktop overlay or Map button on mobile.
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Map' })).not.toBeInTheDocument();
+
+    // CLAUDE.md #3: real div wrapper with flex: 1 + minHeight: 0, inside the
+    // minHeight: 0 content wrapper.
+    const wrapper = map.parentElement as HTMLElement;
+    expect(wrapper.tagName).toBe('DIV');
+    expect(wrapper.style.flex).toBe('1 1 0%');
+    expect(wrapper.style.minHeight).toBe('0px');
+    const contentWrapper = wrapper.parentElement as HTMLElement;
+    expect(contentWrapper.style.minHeight).toBe('0px');
+    expect(contentWrapper.style.overflow).toBe('hidden');
+  });
+
+  it('pins the compact meters directly above the ActionBar on the World tab', () => {
+    setViewportWidth(360);
+    renderScreen();
+    const strip = screen.getByTestId('condition-strip-compact');
+    expect(screen.getByText('HP 100/100')).toBeInTheDocument();
+    expect(screen.getAllByRole('meter')).toHaveLength(3);
+    const textarea = screen.getByPlaceholderText('What do you do?');
+    const actionBarRoot = ancestorWhere(textarea, e => e.previousElementSibling === strip);
+    expect(actionBarRoot.parentElement).toBe(strip.parentElement);
+  });
+
+  it('shows no compact meters on the Codex tab (the full strip is there instead)', () => {
+    setViewportWidth(360);
+    renderScreen({ mobileTab: 'Codex' });
+    expect(screen.queryByTestId('condition-strip-compact')).not.toBeInTheDocument();
+    expect(screen.getByTestId('condition-strip-full')).toBeInTheDocument();
   });
 
   // ── CLAUDE.md #3 regression: the scroll container is a real element ─────

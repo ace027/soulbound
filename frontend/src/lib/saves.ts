@@ -36,6 +36,8 @@ import {
   type SaveIndexEntry,
   type SaveSlot,
 } from '@soulbound/shared';
+import { initialStatsForRace } from '../data/races';
+import { slugPlaceId } from '../game/places';
 
 /** The shape JSON.parse actually hands back: everything optional, nothing trusted. */
 interface RawSaveSlot {
@@ -43,6 +45,42 @@ interface RawSaveSlot {
   log?: LogEntry[];
   savedAt?: number;
   schemaVersion?: number;
+}
+
+/**
+ * Bring a parsed save up to schema v2. Versions 0 and 1 keep every existing
+ * field untouched and gain condition/attributes (from the character's race),
+ * a place seeded from the current location, and an empty growth log. Versions
+ * at or above 2 pass through (narrativeMemory backfill aside).
+ */
+export function migrateSave(save: RawSaveSlot & { gameState: Partial<GameState> }): SaveSlot {
+  const version = save.schemaVersion ?? 0;
+  const base = save.gameState;
+  const narrativeMemory = base.narrativeMemory ?? { entities: {}, notes: [] };
+  let gameState: GameState = { ...(base as GameState), narrativeMemory };
+
+  let schemaVersion = version;
+  if (version < 2) {
+    const stats = initialStatsForRace(base.character?.race?.id ?? '');
+    const location = base.location ?? '';
+    const placeId = location ? slugPlaceId(location, 'unknown') : null;
+    gameState = {
+      ...gameState,
+      condition: stats.condition,
+      attributes: stats.attributes,
+      places: placeId ? { [placeId]: { name: location, kingdom: 'unknown', firstSeenTurn: 0 } } : {},
+      currentPlaceId: placeId,
+      growthLog: [],
+    };
+    schemaVersion = SAVE_SCHEMA_VERSION;
+  }
+
+  return {
+    gameState,
+    log: Array.isArray(save.log) ? save.log : [],
+    savedAt: save.savedAt ?? 0,
+    schemaVersion,
+  };
 }
 
 /**
@@ -90,15 +128,7 @@ export function loadSave(slotId: string): SaveSlot | null {
     const save = parsed as RawSaveSlot;
     if (!save.gameState) return null;
 
-    return {
-      gameState: {
-        ...(save.gameState as GameState),
-        narrativeMemory: save.gameState.narrativeMemory ?? { entities: {}, notes: [] },
-      },
-      log: Array.isArray(save.log) ? save.log : [],
-      savedAt: save.savedAt ?? 0,
-      schemaVersion: save.schemaVersion ?? 0,
-    };
+    return migrateSave({ ...save, gameState: save.gameState });
   } catch {
     return null;
   }

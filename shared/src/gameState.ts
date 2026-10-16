@@ -15,7 +15,9 @@
  */
 
 import type {
+  Kingdom,
   NewSkillGranted,
+  StatGrowth,
   SkillTier,
   UniqueSkillDetermination,
   UniqueSubAbility,
@@ -30,11 +32,24 @@ export interface RaceIntrinsic {
   description: string;
 }
 
+/** Starting pools and attributes for a race. */
+export interface RaceBaseline {
+  max_hp: number;
+  max_mp: number;
+  max_sp: number;
+  STR: number;
+  AGI: number;
+  INT: number;
+  WIL: number;
+}
+
 export interface Race {
   id: string;
   name: string;
   desc: string;
   intrinsic: [RaceIntrinsic, RaceIntrinsic];
+  /** Present on the RACES table; optional so saved characters from before v2 still type-check. */
+  baseline?: RaceBaseline;
 }
 
 // ─── Questionnaire ──────────────────────────────────────────────────────────
@@ -105,6 +120,35 @@ export const MAX_NARRATIVE_NOTES = 40;
 
 // ─── Game state ─────────────────────────────────────────────────────────────
 
+export interface Condition {
+  hp: number;
+  mp: number;
+  sp: number;
+  max_hp: number;
+  max_mp: number;
+  max_sp: number;
+}
+
+export interface Attributes {
+  STR: number;
+  AGI: number;
+  INT: number;
+  WIL: number;
+}
+
+export interface Place {
+  name: string;
+  kingdom: Kingdom;
+  firstSeenTurn: number;
+}
+
+export interface GrowthLogEntry {
+  turn: number;
+  stat: StatGrowth['stat'];
+  amount: number;
+  milestone: string;
+}
+
 export interface GameState {
   character: Character;
   skills: Skill[];
@@ -112,6 +156,11 @@ export interface GameState {
   currentScene: string;
   actionHistory: string[];
   narrativeMemory: NarrativeMemory;
+  condition: Condition;
+  attributes: Attributes;
+  places: Record<string, Place>;
+  currentPlaceId: string | null;
+  growthLog: GrowthLogEntry[];
 }
 
 // ─── Log ────────────────────────────────────────────────────────────────────
@@ -165,7 +214,7 @@ export const SAVE_PREFIX = 'sbc-save:';
 export const MAX_LOG_SAVED = 80;
 
 /** Current save schema version. Absent on saves written by the artifact. */
-export const SAVE_SCHEMA_VERSION = 1;
+export const SAVE_SCHEMA_VERSION = 2;
 
 export interface SaveSlot {
   gameState: GameState;

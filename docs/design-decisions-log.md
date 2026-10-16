@@ -519,6 +519,77 @@ and Triad reads Legion's layout without migration.
 - `/triad validate` reports ~58 schema failures, almost all in the Phase 1–6 plan frontmatter (which
   predates Legion's own plan schema). They are left as is, as part of that record.
 
+## World map & character stats (Phase 15, 2026-10-16)
+
+Design: `.planning/explorations/2026-10-16-world-map-and-stats-design.md`. **Approach B** (narrator-reported
+stats with game-side guard rails, a schematic six-kingdom map with game-owned place IDs), run before Phase 7
+so the save format moves to v2 once, before server saves exist. Rejected: A (place names fragment, leaves out
+attributes and growth) and C (an authored atlas in `WORLD_LORE`).
+
+**The ten developer decisions (binding):** (1) the World Voice reports changes in new contract fields and the
+frontend clamps them; (2) HP 0 is a narrative setback (captured, woke elsewhere, lost something, rescued),
+never death, and the save never ends; (3) a region map of the six kingdoms with discovered places pinned
+inside them; (4) a separate phase, Phase 12 keeps inventory and items; (5) HP, MP, SP plus STR, AGI, INT, WIL;
+(6) race baselines, raised rarely by the narrator at real milestones under a MUST NOT cap; (7) recovery is
+narrator-driven with the same guard rails as damage; (8) attributes are sent each turn as context and weighed
+by the narrator, no dice and no formulas; (9) a rare +1 attribute grant at real milestones, never on request;
+(10) Approach B, before Phase 7. Phase 12's defeat semantics now come from this phase.
+
+**Guard-rail numbers (`frontend/src/game/applyWorldUpdate.ts`) and why:**
+- Per-turn change is capped at ceil(40% of that pool's max). One narrated blow or heal can be dramatic but
+  cannot empty or fill a pool, so a mis-scaled delta from the model costs at most 40%.
+- Values clamp to 0..max. HP 0 with no `setback` floors at 1 and logs a clamp event (the no-death rule holds
+  even when the narrator forgets). A setback that lands at HP 0 restores HP to ceil(25% of max).
+- At most one `stat_growth` per turn (extras are logged and ignored). Pools +1..+5, attributes exactly +1,
+  attribute ceiling 20, and a milestone grants once (normalised text match against `growthLog`). "Rare" is
+  defined numerically: at most one accepted growth per 25 turns, checked offline by a 200-turn seeded invariant
+  test, not by a long live run.
+- Every clamp is recorded as raw vs applied (`clampEvents`), so the clamp rate is measurable.
+- An unknown `place_id` is dropped with a clamp event and a new place is minted as `slug(name)-kingdom`;
+  places are capped at 200.
+
+**Race baselines are a draft to tune by feel** (`frontend/src/data/races.ts`, e.g. Human 100/50/100 with
+STR/AGI/INT/WIL 10/10/10/12, Drakari 130/50/110 with 14/9/8/11). They were set to give each race a shape, not
+balanced by play. Expect to adjust after real sessions.
+
+**Kept narrative in v1:** Human Grit (needs an in-game day clock to be mechanical) and MP/SP at 0 (the
+narrator portrays exhaustion; the game blocks no skill use). Hosted metering is unaffected by stats.
+
+**Board quick-assess (6.2/10, no red flags) adopted:** accessibility and contrast criteria in the UI plan;
+v1 -> v2 round-trip migration tests with field-level equality; clamp telemetry; explicit behaviour for nulls,
+out-of-range values and unknown `place_id`; "rare" defined numerically. **Two recommendations declined:**
+(a) a canonical place list in `WORLD_LORE` is the rejected Approach C and would change the cached lore;
+(b) 200+ turns run live is a cost, replaced by the offline 200-turn invariant test plus a 20-turn live smoke
+run (CLAUDE.md #7 keeps lore and behaviour apart, and the five new MUST NOT bullets live in the prompt).
+
+**Cached prefix:** the new rules and five MUST NOT bullets invalidated the ~15.5k-token prefix once. CLAUDE.md
+now quotes ~16,665, a free `count_tokens` projection (system-only 14,844 plus the 1,821-token overhead). It
+does not count the JSON-schema growth and has not been read back from a live cache write, because no live
+call succeeds yet (below). World-engine and intro-scene stay on the same model.
+
+**Live results (2026-10-16, `.planning/experiments/2026-10-16-stats-live/RESULTS.md`): BLOCKED.** The live
+run found that the contract as built is rejected by the API: `400 The compiled grammar is too large`, so
+every `/api/world-engine` and `/api/intro-scene` call returns 502. Each of the three new `state_updates`
+fields compiles alone and any two compile together, but all three do not. With `kingdom` and `place_id`
+on `scene_set`, `condition_changes` + `stat_growth` already fails, while `condition_changes` + `setback`
+and `stat_growth` + `setback` still fit (bisect in `transcripts/grammar-bisect-output.txt`). The offline suite cannot see this because it mocks the model. The
+skill-scope suite (`/api/unique-skill`, no schema change) still passes 8/8 ($0.1507). The seven adversarial
+cases and the 20-turn smoke run have **no verdicts yet**; both harnesses are written and re-run unchanged
+once the contract fits. The fix (which field to drop or fold) is a contract decision left to the developer,
+and a live schema probe should become a regression check.
+
+**Resolution: sentinels, not null (developer decision, 2026-10-16).** The structured-output grammar has a size
+limit driven by the number of nullable (union) parameters; the probes in
+`.planning/experiments/2026-10-16-stats-live/transcripts/grammar-bisect-output.txt` passed once
+`condition_changes` and `setback` stopped being nullable. Both are now required and non-null:
+`condition_changes` always sends `{hp_delta, mp_delta, sp_delta, reason}` (0 = no change, `reason` `''` when all
+three are 0) and `setback` always sends `{kind, summary}` with `kind: 'none'` + `summary: ''` meaning no
+setback. `stat_growth` (array) and the nullable `kingdom` / `place_id` are unchanged. `applyWorldUpdate` treats a
+0 delta and `kind 'none'` exactly as it treated `null` before (the HP-floor rule included). **Rule for future
+contract additions (e.g. Phase 12 inventory):** prefer non-null sentinel fields over nullable ones, and run
+`.planning/experiments/2026-10-16-stats-live/grammar-probe.mjs` (live, near-free) before shipping. Cached prefix
+re-derived after this edit: system-only 14,844, so ~16,665.
+
 ## Architecture Constraints Discovered (artifact era — superseded)
 
 > **Historical.** Both constraints below were real inside the Claude.ai artifact and are no longer

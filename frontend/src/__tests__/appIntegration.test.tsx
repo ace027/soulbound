@@ -81,6 +81,11 @@ function makeGameState(): GameState {
     currentScene: 'Smoke drifts over the ridge.',
     actionHistory: ['look around'],
     narrativeMemory: { entities: {}, notes: [] },
+    condition: { hp: 100, mp: 50, sp: 100, max_hp: 100, max_mp: 50, max_sp: 100 },
+    attributes: { STR: 10, AGI: 10, INT: 10, WIL: 12 },
+    places: {},
+    currentPlaceId: null,
+    growthLog: [],
   };
 }
 
@@ -114,6 +119,9 @@ function makeTurnResponse(): WorldVoiceResponse {
       skill_evolutions: [],
       unique_sub_ability_unlocked: null,
       world_events: [],
+      condition_changes: { hp_delta: 0, mp_delta: 0, sp_delta: 0, reason: '' },
+      stat_growth: [],
+      setback: { kind: 'none', summary: '' },
     },
     narrative_memory_updates: { new_entities: [], note: 'The ridge remembers.' },
     gm_note: null,
@@ -462,8 +470,13 @@ describe('App — character creation seeds narrative memory from the intro scene
                     location: 'The Sortage, Ashenveil',
                     scene_summary: 'Sorting condemned correspondence at the burn-pit.',
                     description: null,
+                    kingdom: 'Ashenveil',
+                    place_id: null,
                   },
                 ],
+                condition_changes: { hp_delta: 0, mp_delta: 0, sp_delta: 0, reason: '' },
+                stat_growth: [],
+                setback: { kind: 'none', summary: '' },
               },
               narrative_memory_updates: {
                 new_entities: [

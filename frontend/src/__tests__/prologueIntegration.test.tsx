@@ -44,8 +44,11 @@ const INTRO: WorldVoiceResponse = WorldVoiceResponseSchema.parse({
     skill_evolutions: [],
     unique_sub_ability_unlocked: null,
     world_events: [
-      { type: 'scene_set', location: 'The Cold Road', scene_summary: 'A road under frost.', description: null },
+      { type: 'scene_set', location: 'The Cold Road', scene_summary: 'A road under frost.', description: null, kingdom: null, place_id: null },
     ],
+    condition_changes: { hp_delta: 0, mp_delta: 0, sp_delta: 0, reason: '' },
+    stat_growth: [],
+    setback: { kind: 'none', summary: '' },
   },
   narrative_memory_updates: { new_entities: [], note: 'The road is cold.' },
   gm_note: null,

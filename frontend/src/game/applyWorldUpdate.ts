@@ -57,7 +57,11 @@
  */
 
 import {
+  type Attributes,
+  type Condition,
   type GameState,
+  type GrowthLogEntry,
+  type Place,
   type LogEntry,
   type Skill,
   type SoulRewriteEntry,
@@ -65,6 +69,31 @@ import {
   type WorldVoiceResponse,
 } from '@soulbound/shared';
 import { mergeNarrativeMemory } from './narrativeMemory';
+import { slugPlaceId } from './places';
+
+/** Hard limits the game, not the narrator, enforces. */
+export const MAX_DELTA_FRACTION = 0.4;
+export const MAX_POOL_GROWTH = 5;
+export const ATTRIBUTE_CEILING = 20;
+export const MAX_PLACES = 200;
+
+export type ClampKind =
+  | 'delta_cap'
+  | 'range'
+  | 'hp_floor'
+  | 'growth_extra'
+  | 'growth_amount'
+  | 'growth_ceiling'
+  | 'growth_repeat'
+  | 'place_unknown_id'
+  | 'place_cap';
+
+export interface ClampEvent {
+  kind: ClampKind;
+  field: string;
+  raw: number | string;
+  applied: number | string | null;
+}
 
 export interface ApplyWorldUpdateResult {
   /** The next game state. Never mutates the input. */
@@ -79,6 +108,13 @@ export interface ApplyWorldUpdateResult {
    * appearing again.
    */
   newSkillIds: Set<string>;
+  /**
+   * Narration-style system lines (condition changes, growth, setback) for App
+   * to append after `logEntry`. Kept separate so `logEntry` stays one entry.
+   */
+  systemEntries: LogEntry[];
+  /** Every value the guard rails altered or ignored this turn. */
+  clampEvents: ClampEvent[];
 }
 
 export function applyWorldUpdate(
@@ -182,9 +218,102 @@ export function applyWorldUpdate(
     result.narrative_memory_updates,
   );
 
+  const clampEvents: ClampEvent[] = [];
+  const systemEntries: LogEntry[] = [];
+  const sys = (text: string) => systemEntries.push({ type: 'narration', text });
+  const turn = gameState.actionHistory.length + 1;
+
+  // ── Condition (guard rails: delta cap, range, HP floor) ──────────────────
+  const condition: Condition = { ...gameState.condition };
+  const cc = updates.condition_changes;
+  const pools = [
+    ['hp', 'HP', cc?.hp_delta],
+    ['mp', 'MP', cc?.mp_delta],
+    ['sp', 'SP', cc?.sp_delta],
+  ] as const;
+  for (const [pool, label, rawDelta] of pools) {
+    // 0 means no change (the contract never sends null).
+    if (rawDelta == null || !Number.isFinite(rawDelta) || rawDelta === 0) continue;
+    const max = condition[`max_${pool}`];
+    const cap = Math.ceil(MAX_DELTA_FRACTION * max);
+    let delta = rawDelta;
+    if (Math.abs(delta) > cap) {
+      delta = Math.sign(delta) * cap;
+      clampEvents.push({ kind: 'delta_cap', field: pool, raw: rawDelta, applied: delta });
+    }
+    const unclamped = condition[pool] + delta;
+    const next = Math.min(max, Math.max(0, unclamped));
+    if (next !== unclamped) {
+      clampEvents.push({ kind: 'range', field: pool, raw: unclamped, applied: next });
+    }
+    const change = next - condition[pool];
+    condition[pool] = next;
+    if (change !== 0) {
+      sys(`${change > 0 ? '+' : ''}${change} ${label}${cc?.reason ? ': ' + cc.reason : ''}`);
+    }
+  }
+  // kind 'none' is the "no setback" sentinel (the contract never sends null).
+  const rawSetback = updates.setback ?? null;
+  const setback = rawSetback && rawSetback.kind !== 'none' ? rawSetback : null;
+  if (condition.hp <= 0) {
+    if (setback) {
+      condition.hp = Math.ceil(0.25 * condition.max_hp);
+    } else {
+      condition.hp = 1;
+      clampEvents.push({ kind: 'hp_floor', field: 'hp', raw: 0, applied: 1 });
+    }
+  }
+  if (setback) sys(setback.summary);
+
+  // ── Stat growth (first entry only, one growth per turn) ──────────────────
+  const attributes: Attributes = { ...gameState.attributes };
+  const growthLog: GrowthLogEntry[] = [...gameState.growthLog];
+  const growth = updates.stat_growth ?? [];
+  growth.slice(1).forEach((g) => {
+    clampEvents.push({ kind: 'growth_extra', field: g.stat, raw: g.amount, applied: null });
+  });
+  const g = growth[0];
+  if (g) {
+    const isPool = g.stat === 'max_hp' || g.stat === 'max_mp' || g.stat === 'max_sp';
+    const milestoneKey = g.milestone.trim().toLowerCase();
+    let amount = g.amount;
+    let accepted = true;
+    if (!(amount > 0)) {
+      clampEvents.push({ kind: 'growth_amount', field: g.stat, raw: g.amount, applied: null });
+      accepted = false;
+    } else {
+      amount = isPool ? Math.min(MAX_POOL_GROWTH, Math.floor(amount)) : 1;
+      if (amount !== g.amount) {
+        clampEvents.push({ kind: 'growth_amount', field: g.stat, raw: g.amount, applied: amount });
+      }
+    }
+    if (accepted && !isPool && attributes[g.stat as keyof Attributes] >= ATTRIBUTE_CEILING) {
+      clampEvents.push({ kind: 'growth_ceiling', field: g.stat, raw: g.amount, applied: null });
+      accepted = false;
+    }
+    if (accepted && growthLog.some((e) => e.milestone.trim().toLowerCase() === milestoneKey)) {
+      clampEvents.push({ kind: 'growth_repeat', field: g.stat, raw: g.milestone, applied: null });
+      accepted = false;
+    }
+    if (accepted) {
+      if (isPool) {
+        const poolKey = g.stat.slice(4) as 'hp' | 'mp' | 'sp';
+        condition[`max_${poolKey}`] += amount;
+        condition[poolKey] += amount;
+      } else {
+        attributes[g.stat as keyof Attributes] += amount;
+      }
+      growthLog.push({ turn, stat: g.stat, amount, milestone: g.milestone });
+      sys(`+${amount} ${isPool ? g.stat.slice(4).toUpperCase() + ' max' : g.stat}: ${g.milestone}`);
+    }
+  }
+
   const newState: GameState = {
     ...gameState,
     skills: updatedSkills,
+    condition,
+    attributes,
+    growthLog,
     // Uncapped, as legacy has it. The backend caps actionHistory at 2000 and
     // the body at 512kb; 03-CONTEXT.md records that trip point as knowingly shipped.
     actionHistory: [...gameState.actionHistory, action],
@@ -196,6 +325,34 @@ export function applyWorldUpdate(
     // Note 5 again: `||`, so an empty-string location falls back.
     newState.location = sceneEvent.location || newState.location;
     newState.currentScene = sceneEvent.scene_summary || newState.currentScene;
+
+    // ── Places ─────────────────────────────────────────────────────────────
+    const places: Record<string, Place> = { ...gameState.places };
+    const kingdom = sceneEvent.kingdom ?? null;
+    let placeId: string | null = sceneEvent.place_id ?? null;
+    if (placeId !== null && !Object.prototype.hasOwnProperty.call(places, placeId)) {
+      clampEvents.push({ kind: 'place_unknown_id', field: 'place_id', raw: placeId, applied: null });
+      placeId = null;
+    }
+    if (placeId !== null) {
+      const known = places[placeId];
+      if (known.kingdom === 'unknown' && kingdom && kingdom !== 'unknown') {
+        places[placeId] = { ...known, kingdom };
+      }
+      newState.currentPlaceId = placeId;
+    } else if (newState.location) {
+      const id = slugPlaceId(newState.location, kingdom ?? 'unknown');
+      if (Object.prototype.hasOwnProperty.call(places, id)) {
+        newState.currentPlaceId = id;
+      } else if (Object.keys(places).length >= MAX_PLACES) {
+        clampEvents.push({ kind: 'place_cap', field: 'place_id', raw: id, applied: null });
+        newState.currentPlaceId = null;
+      } else {
+        places[id] = { name: newState.location, kingdom: kingdom ?? 'unknown', firstSeenTurn: turn };
+        newState.currentPlaceId = id;
+      }
+    }
+    newState.places = places;
   }
 
   const logEntry: LogEntry = {
@@ -207,5 +364,5 @@ export function applyWorldUpdate(
     gmNote: result.gm_note,
   };
 
-  return { state: newState, logEntry, newSkillIds: newNames };
+  return { state: newState, logEntry, newSkillIds: newNames, systemEntries, clampEvents };
 }

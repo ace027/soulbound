@@ -1,0 +1,20 @@
+FAIL    full - 400 {"type":"error","error":{"type":"invalid_request_error","message":"The compiled grammar is 
+OK      pre-phase (none of the 5 new fields)
+OK      +condition_changes only
+OK      +stat_growth only
+OK      +setback only
+OK      +kingdom,place_id only
+OK      cc+sg
+OK      cc+sb
+OK      sg+sb
+FAIL    cc+sg+sb (no we fields) - 400 {"type":"error","error":{"type":"invalid_request_error","message":"The c
+FAIL    we fields + cc + sg (setback dropped) - 400 {"type":"error","error":{"type":"invalid_request_error","m
+OK      we fields + cc + sb (stat_growth dropped)
+OK      we fields + sg + sb (condition_changes dropped)
+OK      we fields + cc
+OK      we fields + sg
+OK      we fields + sb
+FAIL    full, stat/kind enums -> string - 400 {"type":"error","error":{"type":"invalid_request_error","message
+FAIL    full, + kingdom string - 400 {"type":"error","error":{"type":"invalid_request_error","message":"The co
+FAIL    full, kingdom string, deltas z.number - 400 {"type":"error","error":{"type":"invalid_request_error","m
+FAIL    full, kingdom string, no sb kind - 400 {"type":"error","error":{"type":"invalid_request_error","messag
