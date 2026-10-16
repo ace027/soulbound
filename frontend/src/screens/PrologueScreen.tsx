@@ -191,14 +191,14 @@ export default function PrologueScreen({ onComplete, onReturnToTitle }: Prologue
           type="button"
           onClick={onReturnToTitle}
           style={{
-            background: 'none', border: 'none', color: '#6a5a40', padding: 0, marginBottom: 20,
+            background: 'none', border: 'none', color: '#9a8a6c', padding: 0, marginBottom: 20,
             fontFamily: "'Cinzel', serif", fontSize: 11, letterSpacing: '0.12em',
             textTransform: 'uppercase', cursor: 'pointer',
           }}
         >
           ← Return to title
         </button>
-        <p style={{ fontFamily: "'Cinzel', serif", fontSize: 11, color: '#7a1f1f', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 4 }}>
+        <p style={{ fontFamily: "'Cinzel', serif", fontSize: 11, color: '#d9534f', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 4 }}>
           The World Voice Speaks — The Threshold
         </p>
         <div
@@ -257,7 +257,7 @@ export default function PrologueScreen({ onComplete, onReturnToTitle }: Prologue
                 }}
               />
             </div>
-            <p id="prologue-hint" style={{ fontSize: 12, color: '#6a5a40', fontStyle: 'italic', marginBottom: 16 }}>
+            <p id="prologue-hint" style={{ fontSize: 12, color: '#9a8a6c', fontStyle: 'italic', marginBottom: 16 }}>
               A sentence or two is enough. Say or do anything.
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
