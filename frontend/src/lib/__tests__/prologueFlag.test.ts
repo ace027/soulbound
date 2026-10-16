@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { isPrologueEnabled, prologueCanon } from '../prologueFlag';
+import { isPrologueEnabled, prologueCanon, setPrologueFlag } from '../prologueFlag';
 
 afterEach(() => {
   window.history.pushState({}, '', '/');
@@ -21,6 +21,31 @@ describe('isPrologueEnabled', () => {
     expect(isPrologueEnabled()).toBe(false);
     window.history.pushState({}, '', '/?prologue=1');
     expect(isPrologueEnabled()).toBe(true);
+  });
+});
+
+describe('setPrologueFlag', () => {
+  it('adds and removes the param', () => {
+    setPrologueFlag(true);
+    expect(window.location.search).toBe('?prologue=1');
+    expect(isPrologueEnabled()).toBe(true);
+    setPrologueFlag(false);
+    expect(window.location.search).toBe('');
+    expect(isPrologueEnabled()).toBe(false);
+  });
+
+  it('keeps canon and other params, the path and the hash', () => {
+    window.history.pushState({}, '', '/play?canon=scene&x=2#top');
+    setPrologueFlag(true);
+    expect(window.location.pathname).toBe('/play');
+    expect(prologueCanon()).toBe('scene');
+    expect(new URLSearchParams(window.location.search).get('x')).toBe('2');
+    expect(window.location.hash).toBe('#top');
+    expect(isPrologueEnabled()).toBe(true);
+    setPrologueFlag(false);
+    expect(window.location.search).toBe('?canon=scene&x=2');
+    expect(window.location.pathname).toBe('/play');
+    expect(window.location.hash).toBe('#top');
   });
 });
 

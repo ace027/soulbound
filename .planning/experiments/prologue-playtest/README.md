@@ -34,13 +34,17 @@ The safety gate is met. On 2026-10-16 you recorded PASS for all 9 cases in `.pla
      - Details and cautions: main `README.md`, section "Expose the frontend on your LAN". Revert the port change after the playtest.
 5. The browser asks the tester for the passphrase once. Give it to them.
 
-URLs:
+Testers pick the path on the title screen: **"✦ Begin with the Prologue"** for the prologue, the main **"Begin … Chronicle"** button for the questionnaire. The buttons set or clear the flag without a reload, so both paths can be played in one browser session.
+
+The URLs still work as a fallback:
 
 | URL | Path | Use |
 |---|---|---|
-| `/?prologue=1` | Prologue, `traits` canon (default) | Tester |
-| `/` (no flag) | Questionnaire | Tester |
+| `/?prologue=1` | Prologue, `traits` canon (default) | Fallback |
+| `/` (no flag) | Questionnaire | Fallback |
 | `/?prologue=1&canon=scene` | Prologue, `scene` canon | Developer only, for comparison. Not covered by the safety gate. |
+
+`canon=scene` stays developer-only: open `/?canon=scene`, then press the prologue button, or use the full URL above. The main button keeps `canon` in the URL but only the prologue path reads it.
 
 The prologue state lives in the browser. Nothing is stored server-side, and a reload mid-prologue restarts it.
 
@@ -67,7 +71,7 @@ The tester creates **two characters per session, one per path**, with free choic
 ### For each character (do this twice)
 
 1. Note the backend log line count, `A` (see "Cost").
-2. The tester opens the right URL and creates the character: race, name, then the prologue or the questionnaire, the unique skill, and the intro scene. Time it from the title screen to the first world action. Note any abandon or restart.
+2. The tester starts from the title screen with the right button ("Begin with the Prologue" or the main "Begin … Chronicle" button) and creates the character: race, name, then the prologue or the questionnaire, the unique skill, and the intro scene. Time it from the title screen to the first world action. Note any abandon or restart.
 3. As soon as the intro scene is on screen, before the first world action, note the line count again, `B`. The intro scene is part of the character's cost, so `B` must be taken after it appears.
 4. The tester plays about **five world turns**. Do not ask anything before this point. Note whether they used the skill within those five turns, and how.
 5. Ask:

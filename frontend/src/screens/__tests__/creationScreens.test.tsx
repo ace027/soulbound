@@ -135,6 +135,28 @@ describe('TitleScreen', () => {
     expect(onNewGame).toHaveBeenCalledTimes(1);
   });
 
+  it('starts the prologue path from its own button, with or without saves', () => {
+    for (const saves of [[], [SAVE_A]]) {
+      const onNewGame = vi.fn();
+      const { unmount } = render(<TitleHarness saveIndex={saves} onNewGame={onNewGame} />);
+      fireEvent.click(screen.getByRole('button', { name: /Begin with the Prologue/ }));
+      expect(window.location.search).toBe('?prologue=1');
+      expect(onNewGame).toHaveBeenCalledTimes(1);
+      unmount();
+      window.history.replaceState({}, '', '/');
+    }
+  });
+
+  it('the main button clears the prologue flag', () => {
+    window.history.replaceState({}, '', '/?prologue=1');
+    const onNewGame = vi.fn();
+    render(<TitleHarness saveIndex={[]} onNewGame={onNewGame} />);
+    fireEvent.click(screen.getByRole('button', { name: /Begin Your Chronicle/ }));
+    expect(window.location.search).toBe('');
+    expect(onNewGame).toHaveBeenCalledTimes(1);
+    window.history.replaceState({}, '', '/');
+  });
+
   /**
    * CLAUDE.md #1 regression test. The native browser dialog silently failed
    * to render in

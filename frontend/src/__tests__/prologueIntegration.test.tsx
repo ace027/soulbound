@@ -94,9 +94,9 @@ function stubFetch(overrides: Partial<Record<string, (n: number) => Response | P
   };
 }
 
-async function chooseRaceAndName(name = 'Yulen Marr') {
+async function chooseRaceAndName(name = 'Yulen Marr', button = /Begin with the Prologue/) {
   render(<App />);
-  fireEvent.click(await screen.findByRole('button', { name: /Begin Your Chronicle/ }));
+  fireEvent.click(await screen.findByRole('button', { name: button }));
   fireEvent.change(await screen.findByPlaceholderText('What are you called?'), { target: { value: name } });
   fireEvent.click(screen.getByText('Shadeveil'));
   fireEvent.click(screen.getByRole('button', { name: /Enter the World Voice/i }));
@@ -222,7 +222,7 @@ describe('App with the flag off', () => {
   it('shows the questionnaire and never requests /api/prologue/', async () => {
     window.history.pushState({}, '', '/');
     const f = stubFetch();
-    await chooseRaceAndName();
+    await chooseRaceAndName('Yulen Marr', /Begin Your Chronicle/);
 
     expect(await screen.findByPlaceholderText('Write freely...')).toBeInTheDocument();
     expect(screen.queryByText(/The Threshold/)).not.toBeInTheDocument();

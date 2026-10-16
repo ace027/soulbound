@@ -22,6 +22,19 @@ export function isPrologueEnabled(search?: string): boolean {
   return new URLSearchParams(s).get('prologue') === '1';
 }
 
+/**
+ * Title-screen switch: sets or removes `prologue=1` via replaceState (no
+ * reload, nothing stored). Every other param, the path and the hash are kept.
+ * No-op without a window.
+ */
+export function setPrologueFlag(on: boolean): void {
+  if (typeof window === 'undefined') return;
+  const url = new URL(window.location.href);
+  if (on) url.searchParams.set('prologue', '1');
+  else url.searchParams.delete('prologue');
+  window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+}
+
 /** `'scene'` only for exactly `?canon=scene`; everything else is the default `'traits'`. */
 export function prologueCanon(search?: string): PrologueCanon {
   const s = readSearch(search);

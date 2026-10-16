@@ -1,5 +1,6 @@
 import type { SaveIndexEntry } from '@soulbound/shared';
 import { sharedBg } from './sharedBg';
+import { setPrologueFlag } from '../lib/prologueFlag';
 
 /**
  * Title screen with its inline save browser.
@@ -160,7 +161,7 @@ export default function TitleScreen({
 
         {/* New Game */}
         <button
-          onClick={() => onNewGame()}
+          onClick={() => { setPrologueFlag(false); onNewGame(); }}
           style={{
             width: "100%",
             background: hasSaves ? "#0f0d09" : "linear-gradient(135deg, #7a1f1f, #4a1010)",
@@ -173,6 +174,24 @@ export default function TitleScreen({
         >
           {hasSaves ? "+ Begin New Chronicle" : "✦ Begin Your Chronicle"}
         </button>
+
+        {/* Prologue (Phase 14 prototype) */}
+        <button
+          onClick={() => { setPrologueFlag(true); onNewGame(); }}
+          style={{
+            width: "100%", marginTop: 10,
+            background: "transparent",
+            border: "1px solid #2a2218",
+            color: "#d4a843",
+            fontFamily: "'Cinzel', serif", fontSize: 12, letterSpacing: "0.12em",
+            padding: "11px 24px", cursor: "pointer", textTransform: "uppercase",
+          }}
+        >
+          ✦ Begin with the Prologue
+        </button>
+        <p style={{ fontSize: 12, color: "#8a7a60", margin: "8px 0 0", textAlign: "center", lineHeight: 1.5 }}>
+          Preview: discover your soul through a short scene instead of the questions.
+        </p>
       </div>
     </div>
   );

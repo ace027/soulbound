@@ -497,7 +497,7 @@ describe('App — character creation seeds narrative memory from the intro scene
 
   async function createCharacter() {
     render(<App />);
-    fireEvent.click(await screen.findByText(/Begin/));
+    fireEvent.click(await screen.findByText(/Begin Your Chronicle/));
     fireEvent.change(await screen.findByPlaceholderText('What are you called?'), {
       target: { value: 'Yulen Marr' },
     });
@@ -589,7 +589,7 @@ describe('App — returning to title from character creation', () => {
   it('leaves the race screen for the title, where the saves are', async () => {
     seedSave([]);
     render(<App />);
-    fireEvent.click(await screen.findByText(/Begin/));
+    fireEvent.click(await screen.findByText(/Begin New Chronicle/));
     fireEvent.click(await screen.findByRole('button', { name: /Return to title/ }));
     expect(await screen.findByText('Ryn')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument();
@@ -597,7 +597,7 @@ describe('App — returning to title from character creation', () => {
 
   it('leaves the questionnaire and clears race, name and answers', async () => {
     render(<App />);
-    fireEvent.click(await screen.findByText(/Begin/));
+    fireEvent.click(await screen.findByText(/Begin Your Chronicle/));
     fireEvent.change(await screen.findByPlaceholderText('What are you called?'), {
       target: { value: 'Yulen Marr' },
     });
@@ -612,7 +612,7 @@ describe('App — returning to title from character creation', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Return to title/ }));
-    fireEvent.click(await screen.findByText(/Begin/));
+    fireEvent.click(await screen.findByText(/Begin Your Chronicle/));
 
     // Race screen starts blank: no name, and Continue gated because no race is chosen.
     const name = await screen.findByPlaceholderText('What are you called?');
