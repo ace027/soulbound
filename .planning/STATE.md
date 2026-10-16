@@ -144,6 +144,7 @@ on :3001 and `vite` on :5173, with Playwright driving the pre-installed Chromium
 
 ## Recent Decisions
 
+- **Quick (2026-10-16): playtester release notes.** `docs/release-notes/2026-10-16-playtest.md` gives a plain-language, one-screen summary of the prologue button, the stats, the map, save compatibility and known rough edges.
 - **Quick (2026-10-16): prologue start button.** The title screen has "✦ Begin with the Prologue" under the main Begin button. It sets `?prologue=1` with `history.replaceState`, and the main button clears it, so playtesters need no URL. The questionnaire stays the default, and nothing is stored.
 - **World map and character stats (developer, 2026-10-16)**: explored (`.planning/explorations/2026-10-16-world-map-and-stats-design.md`, Approach B) and added as **Phase 15**, which runs before Phase 7 (R37). Phase 12 now inherits defeat semantics from it (HP 0 is a setback, never death). Next: `/triad:plan 15`, once the Phase 14 playtest and canon decision are done or on the developer's call.
 - **Playtest rule clarified (developer, 2026-10-16)**: a session's pick is the one end-of-session question "Which path would you use next time?"; confused/misled is judged by the tester's answer or the developer's observation, on the prologue character only; harmful output or a skip request means the prologue is not preferred. Runbook rewritten: `.planning/experiments/prologue-playtest/README.md`.
