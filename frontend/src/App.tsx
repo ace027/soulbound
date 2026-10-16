@@ -89,6 +89,7 @@ import { deleteSave, listSaves, loadSave, newSlotId, writeSave } from './lib/sav
 import { initialStatsForRace } from './data/races';
 import { applyWorldUpdate } from './game/applyWorldUpdate';
 import { mergeNarrativeMemory } from './game/narrativeMemory';
+import { slugPlaceId } from './game/places';
 
 import TitleScreen from './screens/TitleScreen';
 import RaceScreen from './screens/RaceScreen';
@@ -261,8 +262,19 @@ export default function App() {
         // shown did not exist. See game/narrativeMemory.ts.
         narrativeMemory: mergeNarrativeMemory(undefined, intro.narrative_memory_updates),
         ...initialStatsForRace(selectedRace.id),
-        places: {},
-        currentPlaceId: null,
+        // Pin the opening location from the intro scene_set, same slug rule
+        // as applyWorldUpdate's place block (ledger starts empty, so the
+        // model-supplied place_id can never match and the slug path applies).
+        ...(sceneEvent?.location
+          ? (() => {
+              const kingdom = sceneEvent.kingdom ?? 'unknown';
+              const id = slugPlaceId(sceneEvent.location, kingdom);
+              return {
+                places: { [id]: { name: sceneEvent.location, kingdom, firstSeenTurn: 0 } },
+                currentPlaceId: id,
+              };
+            })()
+          : { places: {}, currentPlaceId: null }),
         growthLog: [],
       };
 

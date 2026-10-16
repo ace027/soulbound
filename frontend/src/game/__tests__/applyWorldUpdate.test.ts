@@ -463,6 +463,18 @@ describe('applyWorldUpdate — places', () => {
     expect(r.state.places['toll-bridge-unknown'].firstSeenTurn).toBe(1);
   });
 
+  it('truncates an over-long location to 80 chars for the place name', () => {
+    const r = applyWorldUpdate(state(), 'a', response({ world_events: [ev({ location: 'L'.repeat(300) })] }));
+    const names = Object.values(r.state.places).map((p) => p.name);
+    expect(names).toContain('L'.repeat(80));
+    expect(names.every((n) => n.length <= 80)).toBe(true);
+  });
+
+  it('truncates an over-long growth milestone to 200 chars', () => {
+    const r = applyWorldUpdate(state(), 'a', response({ stat_growth: [{ stat: 'STR', amount: 1, milestone: 'M'.repeat(500) } as never] }));
+    expect(r.state.growthLog.at(-1)?.milestone).toHaveLength(200);
+  });
+
   it('refuses a 201st place (place_cap) and nulls currentPlaceId', () => {
     const places = Object.fromEntries(Array.from({ length: 200 }, (_, i) => [`p${i}`, { name: `P${i}`, kingdom: 'unknown' as const, firstSeenTurn: 0 }]));
     const r = applyWorldUpdate(state({ places, currentPlaceId: 'p0' }), 'a', response({ world_events: [ev()] }));

@@ -303,8 +303,11 @@ export function applyWorldUpdate(
       } else {
         attributes[g.stat as keyof Attributes] += amount;
       }
-      growthLog.push({ turn, stat: g.stat, amount, milestone: g.milestone });
-      sys(`+${amount} ${isPool ? g.stat.slice(4).toUpperCase() + ' max' : g.stat}: ${g.milestone}`);
+      // Backend request schema bounds milestone at 200; truncate on write so
+      // a long model-authored string can't wedge every later /api/world-engine call.
+      const milestone = g.milestone.slice(0, 200);
+      growthLog.push({ turn, stat: g.stat, amount, milestone });
+      sys(`+${amount} ${isPool ? g.stat.slice(4).toUpperCase() + ' max' : g.stat}: ${milestone}`);
     }
   }
 
@@ -323,7 +326,8 @@ export function applyWorldUpdate(
   const sceneEvent = (updates.world_events ?? []).find((e) => e.type === 'scene_set');
   if (sceneEvent) {
     // Note 5 again: `||`, so an empty-string location falls back.
-    newState.location = sceneEvent.location || newState.location;
+    // Clamped to the request schema's max(400); an over-long value would 400 every later turn.
+    newState.location = (sceneEvent.location || newState.location).slice(0, 400);
     newState.currentScene = sceneEvent.scene_summary || newState.currentScene;
 
     // ── Places ─────────────────────────────────────────────────────────────
@@ -348,7 +352,7 @@ export function applyWorldUpdate(
         clampEvents.push({ kind: 'place_cap', field: 'place_id', raw: id, applied: null });
         newState.currentPlaceId = null;
       } else {
-        places[id] = { name: newState.location, kingdom: kingdom ?? 'unknown', firstSeenTurn: turn };
+        places[id] = { name: newState.location.slice(0, 80), kingdom: kingdom ?? 'unknown', firstSeenTurn: turn };
         newState.currentPlaceId = id;
       }
     }

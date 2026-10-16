@@ -517,6 +517,20 @@ describe('App — character creation seeds narrative memory from the intro scene
     await screen.findByPlaceholderText('What do you do?');
   }
 
+  it('pins the intro scene_set location as the current place', async () => {
+    mockCreationFetch();
+    await createCharacter();
+    const slot = await waitFor(() => {
+      const idx = JSON.parse(localStorage.getItem(SAVE_INDEX_KEY)!) as Array<{ id: string }>;
+      return JSON.parse(localStorage.getItem(SAVE_PREFIX + idx[0].id)!) as SaveSlot;
+    });
+    const gs = slot.gameState;
+    expect(gs.currentPlaceId).toBeTruthy();
+    const place = gs.places[gs.currentPlaceId!];
+    expect(place.name).toBe('The Sortage, Ashenveil');
+    expect(place.kingdom).toBe('Ashenveil');
+  });
+
   it('writes the intro scene\'s entities and note into the first autosave', async () => {
     mockCreationFetch();
     await createCharacter();
