@@ -1,895 +1,3969 @@
 {
-  "map_schema_version": 1,
-  "generated_at": "2026-09-25",
-  "analyzed_commit": "7e98d587a8ea1b1003fec46cd28b57540e02972e",
-  "symbol_count": 294,
-  "symbols": {
-    "ACCESS_CHECK_PATH": [
-      "shared/src/accessGate.ts"
-    ],
-    "ACCESS_HEADER": [
-      "shared/src/accessGate.ts"
-    ],
-    "ACCESS_SCHEME": [
-      "shared/src/accessGate.ts"
-    ],
-    "ACCESS_STORAGE_KEY": [
-      "shared/src/accessGate.ts"
-    ],
-    "ACCOUNT_PATH": [
-      "shared/src/accessGate.ts"
-    ],
-    "ALLOWED_HOSTS": [
-      "backend/src/config.ts"
-    ],
-    "AUTH_BASE_PATH": [
-      "backend/src/auth.ts"
-    ],
-    "AUTH_BODY_LIMIT_BYTES": [
-      "backend/src/server.ts"
-    ],
-    "AccessGate": [
-      "frontend/src/components/AccessGate.tsx"
-    ],
-    "AccessGateProps": [
-      "frontend/src/components/AccessGate.tsx"
-    ],
-    "AccessState": [
-      "frontend/src/lib/api.ts"
-    ],
-    "AccountPanel": [
-      "frontend/src/components/AccountPanel.tsx"
-    ],
-    "AccountPanelProps": [
-      "frontend/src/components/AccountPanel.tsx"
-    ],
-    "ActionBar": [
-      "frontend/src/components/ActionBar.tsx"
-    ],
-    "ActionBarProps": [
-      "frontend/src/components/ActionBar.tsx"
-    ],
-    "ApiClientError": [
-      "frontend/src/lib/api.ts"
-    ],
-    "ApiClientErrorCode": [
-      "frontend/src/lib/api.ts"
-    ],
-    "App": [
-      "frontend/src/App.tsx"
-    ],
-    "AppConfig": [
-      "backend/src/server.ts"
-    ],
-    "ApplyWorldUpdateResult": [
-      "frontend/src/game/applyWorldUpdate.ts"
-    ],
-    "AuthClient": [
-      "frontend/src/lib/authClient.ts"
-    ],
-    "AuthDeps": [
-      "backend/src/auth.ts"
-    ],
-    "BILLING_WEBHOOK_PATH": [
-      "backend/src/hostedGate.ts"
-    ],
-    "CONTRACT_FIELD_NAMES": [
-      "shared/src/worldVoice.ts"
-    ],
-    "COOKIE_MAX_AGE_SECONDS": [
-      "backend/src/invites.ts"
-    ],
-    "COOKIE_NAME": [
-      "backend/src/invites.ts"
-    ],
-    "CROSS_DEVICE_TEXT": [
-      "frontend/src/components/SignIn.tsx"
-    ],
-    "CallWorldVoiceArgs": [
-      "backend/src/anthropic.ts"
-    ],
-    "Character": [
-      "shared/src/gameState.ts"
-    ],
-    "CreatePoolOptions": [
-      "backend/src/db.ts"
-    ],
-    "DEBUG_IP_PATH": [
-      "backend/src/server.ts"
-    ],
-    "DELETE_WARNING_TEXT": [
-      "frontend/src/components/AccountPanel.tsx"
-    ],
-    "DELETION_GRACE_MS": [
-      "backend/src/account.ts"
-    ],
-    "DISABLED_PATHS": [
-      "backend/src/auth.ts"
-    ],
-    "DISCORD_CLIENT_ID": [
-      "backend/src/config.ts"
-    ],
-    "EMAIL_FROM": [
-      "backend/src/config.ts"
-    ],
-    "EMAIL_REQUIRED_MESSAGE": [
-      "backend/src/auth.ts"
-    ],
-    "EMAIL_UNVERIFIED_MESSAGE": [
-      "backend/src/auth.ts"
-    ],
-    "EMPTY_NARRATIVE_MEMORY": [
-      "frontend/src/game/narrativeMemory.ts"
-    ],
-    "EmailMessage": [
-      "backend/src/auth.ts"
-    ],
-    "ErrorContext": [
-      "backend/src/errorTracker.ts"
-    ],
-    "ErrorReporter": [
-      "backend/src/errorTracker.ts"
-    ],
-    "ErrorTrackerOptions": [
-      "backend/src/errorTracker.ts"
-    ],
-    "FRONTEND_ORIGIN": [
-      "backend/src/config.ts"
-    ],
-    "FromNodeHeaders": [
-      "backend/src/hostedGate.ts"
-    ],
-    "GENERIC_ERROR_TEXT": [
-      "frontend/src/components/SignIn.tsx"
-    ],
-    "GOOGLE_CLIENT_ID": [
-      "backend/src/config.ts"
-    ],
-    "GameState": [
-      "shared/src/gameState.ts"
-    ],
-    "GetSession": [
-      "backend/src/hostedGate.ts"
-    ],
-    "HOSTED_PUBLIC_URL": [
-      "backend/src/config.ts"
-    ],
-    "HOSTED_TESTS_DIR": [
-      "backend/vitest.config.ts"
-    ],
-    "HostedAccount": [
-      "frontend/src/components/hostedAccount.tsx"
-    ],
-    "HostedAccountContext": [
-      "frontend/src/components/hostedAccount.tsx"
-    ],
-    "HostedAccountSlot": [
-      "frontend/src/components/hostedAccount.tsx"
-    ],
-    "HostedAuth": [
-      "backend/src/auth.ts"
-    ],
-    "HostedBootOptions": [
-      "backend/src/server.ts"
-    ],
-    "HostedDeps": [
-      "backend/src/server.ts"
-    ],
-    "INVITE_CEILING_NOTICE": [
-      "backend/src/auth.ts"
-    ],
-    "INVITE_CODE_PATTERN": [
-      "shared/src/accessGate.ts"
-    ],
-    "INVITE_INVALID": [
-      "shared/src/accessGate.ts"
-    ],
-    "INVITE_INVALID_MESSAGE": [
-      "backend/src/auth.ts"
-    ],
-    "INVITE_INVALID_TEXT": [
-      "frontend/src/components/SignIn.tsx"
-    ],
-    "INVITE_PATH_SENDS_PER_HOUR": [
-      "backend/src/auth.ts"
-    ],
-    "INVITE_REDEEM_PATH": [
-      "shared/src/accessGate.ts"
-    ],
-    "INVITE_REQUIRED": [
-      "shared/src/accessGate.ts"
-    ],
-    "INVITE_REQUIRED_MESSAGE": [
-      "backend/src/auth.ts"
-    ],
-    "IntroSceneRequest": [
-      "frontend/src/lib/api.ts"
-    ],
-    "IntroSceneRequestBody": [
-      "backend/src/routes/introScene.ts"
-    ],
-    "IntroSceneRequestSchema": [
-      "backend/src/routes/introScene.ts"
-    ],
-    "InvitePayload": [
-      "backend/src/invites.ts"
-    ],
-    "InviteStore": [
-      "backend/src/auth.ts"
-    ],
-    "LINK_USED_TEXT": [
-      "frontend/src/components/SignIn.tsx"
-    ],
-    "LoadingScreen": [
-      "frontend/src/screens/LoadingScreen.tsx"
-    ],
-    "LoadingScreenProps": [
-      "frontend/src/screens/LoadingScreen.tsx"
-    ],
-    "LogEntry": [
-      "shared/src/gameState.ts"
-    ],
-    "MAGIC_LINK_EXPIRES_IN_SECONDS": [
-      "backend/src/auth.ts"
-    ],
-    "MAGIC_LINK_SENDS_PER_WINDOW": [
-      "backend/src/auth.ts"
-    ],
-    "MAGIC_LINK_WINDOW_MS": [
-      "backend/src/auth.ts"
-    ],
-    "MAX_LOG_SAVED": [
-      "shared/src/gameState.ts"
-    ],
-    "MAX_NARRATIVE_NOTES": [
-      "shared/src/gameState.ts"
-    ],
-    "MIGRATIONS_DIR": [
-      "backend/src/db.ts"
-    ],
-    "MIGRATIONS_TABLE": [
-      "backend/src/db.ts"
-    ],
-    "MIN_PASSPHRASE_LENGTH": [
-      "shared/src/accessGate.ts"
-    ],
-    "MOBILE_BREAKPOINT": [
-      "frontend/src/hooks/useIsMobile.ts"
-    ],
-    "MODE": [
-      "backend/src/config.ts"
-    ],
-    "MODELS": [
-      "backend/src/config.ts"
-    ],
-    "MODE_HEADER": [
-      "shared/src/accessGate.ts"
-    ],
-    "ModeGate": [
-      "frontend/src/components/ModeGate.tsx"
-    ],
-    "ModeGateProps": [
-      "frontend/src/components/ModeGate.tsx"
-    ],
-    "NarrativeEntity": [
-      "shared/src/worldVoice.ts"
-    ],
-    "NarrativeEntitySchema": [
-      "shared/src/worldVoice.ts"
-    ],
-    "NarrativeMemory": [
-      "shared/src/gameState.ts"
-    ],
-    "NarrativeMemoryUpdates": [
-      "shared/src/worldVoice.ts"
-    ],
-    "NarrativeMemoryUpdatesSchema": [
-      "shared/src/worldVoice.ts"
-    ],
-    "NewSkillGranted": [
-      "shared/src/worldVoice.ts"
-    ],
-    "NewSkillGrantedSchema": [
-      "shared/src/worldVoice.ts"
-    ],
-    "OAuthCredentials": [
-      "backend/src/auth.ts"
-    ],
-    "ORIGIN_REJECTED": [
-      "shared/src/accessGate.ts"
-    ],
-    "ORIGIN_REJECTED_MESSAGE": [
-      "backend/src/hostedGate.ts"
-    ],
-    "PASSPHRASE_REQUIRED": [
-      "shared/src/accessGate.ts"
-    ],
-    "PENDING_MIGRATIONS_MESSAGE": [
-      "backend/src/db.ts"
-    ],
-    "POOL_CONNECTION_TIMEOUT_MS": [
-      "backend/src/db.ts"
-    ],
-    "POOL_MAX_CONNECTIONS": [
-      "backend/src/db.ts"
-    ],
-    "PORT": [
-      "backend/src/config.ts"
-    ],
-    "PRINTABLE_ASCII": [
-      "frontend/src/lib/passphrase.ts"
-    ],
-    "PURGE_FIRST_RUN_DELAY_MS": [
-      "backend/src/account.ts"
-    ],
-    "PURGE_INTERVAL_MS": [
-      "backend/src/account.ts"
-    ],
-    "PURGE_LOCK_KEY": [
-      "backend/src/account.ts"
-    ],
-    "PendingCheckOptions": [
-      "backend/src/db.ts"
-    ],
-    "Phase": [
-      "frontend/src/App.tsx"
-    ],
-    "PurgeOptions": [
-      "backend/src/account.ts"
-    ],
-    "PurgeResult": [
-      "backend/src/account.ts"
-    ],
-    "PurgeScheduleOptions": [
-      "backend/src/account.ts"
-    ],
-    "QUESTIONS": [
-      "frontend/src/data/questions.ts"
-    ],
-    "Queryable": [
-      "backend/src/invites.ts"
-    ],
-    "Question": [
-      "shared/src/gameState.ts"
-    ],
-    "QuestionnaireAnswers": [
-      "shared/src/gameState.ts"
-    ],
-    "QuestionnaireScreen": [
-      "frontend/src/screens/QuestionnaireScreen.tsx"
-    ],
-    "QuestionnaireScreenProps": [
-      "frontend/src/screens/QuestionnaireScreen.tsx"
-    ],
-    "RACES": [
-      "frontend/src/data/races.ts"
-    ],
-    "RATE_LIMIT_PER_MINUTE": [
-      "backend/src/config.ts"
-    ],
-    "RECONCILE_SLACK_MINUTES": [
-      "backend/src/invites.ts"
-    ],
-    "RESERVATION_MINUTES": [
-      "backend/src/invites.ts"
-    ],
-    "Race": [
-      "shared/src/gameState.ts"
-    ],
-    "RaceIntrinsic": [
-      "shared/src/gameState.ts"
-    ],
-    "RaceScreen": [
-      "frontend/src/screens/RaceScreen.tsx"
-    ],
-    "RaceScreenProps": [
-      "frontend/src/screens/RaceScreen.tsx"
-    ],
-    "RateLimiterHandler": [
-      "backend/src/accessGate.ts"
-    ],
-    "Redactor": [
-      "backend/src/db.ts"
-    ],
-    "RunMigrationsOptions": [
-      "backend/src/migrate.ts"
-    ],
-    "SAVE_INDEX_KEY": [
-      "shared/src/gameState.ts"
-    ],
-    "SAVE_PREFIX": [
-      "shared/src/gameState.ts"
-    ],
-    "SAVE_SCHEMA_VERSION": [
-      "shared/src/gameState.ts"
-    ],
-    "SENTRY_DSN": [
-      "backend/src/config.ts"
-    ],
-    "SESSION_EXPIRES_IN_SECONDS": [
-      "backend/src/auth.ts"
-    ],
-    "SESSION_REFRESH_MS": [
-      "frontend/src/components/ModeGate.tsx"
-    ],
-    "SESSION_UPDATE_AGE_SECONDS": [
-      "backend/src/auth.ts"
-    ],
-    "SETUP_FILES": [
-      "backend/vitest.config.ts"
-    ],
-    "SHUTDOWN_TIMEOUT_MS": [
-      "backend/src/server.ts"
-    ],
-    "SIGN_IN_REQUIRED": [
-      "shared/src/accessGate.ts"
-    ],
-    "SIGN_IN_REQUIRED_MESSAGE": [
-      "backend/src/hostedGate.ts"
-    ],
-    "STATIC_DIR": [
-      "backend/src/config.ts"
-    ],
-    "SaveIndexEntry": [
-      "shared/src/gameState.ts"
-    ],
-    "SaveSlot": [
-      "shared/src/gameState.ts"
-    ],
-    "SendEmail": [
-      "backend/src/auth.ts"
-    ],
-    "SessionRevoker": [
-      "backend/src/account.ts"
-    ],
-    "SessionUser": [
-      "backend/src/hostedGate.ts"
-    ],
-    "SignIn": [
-      "frontend/src/components/SignIn.tsx"
-    ],
-    "SignInParams": [
-      "frontend/src/lib/authClient.ts"
-    ],
-    "SignInProps": [
-      "frontend/src/components/SignIn.tsx"
-    ],
-    "SimulationScreen": [
-      "frontend/src/screens/SimulationScreen.tsx"
-    ],
-    "SimulationScreenProps": [
-      "frontend/src/screens/SimulationScreen.tsx"
-    ],
-    "Skill": [
-      "shared/src/gameState.ts"
-    ],
-    "SkillCard": [
-      "frontend/src/components/SkillCard.tsx"
-    ],
-    "SkillCardProps": [
-      "frontend/src/components/SkillCard.tsx"
-    ],
-    "SkillEvolution": [
-      "shared/src/worldVoice.ts"
-    ],
-    "SkillEvolutionSchema": [
-      "shared/src/worldVoice.ts"
-    ],
-    "SkillMasteryChange": [
-      "shared/src/worldVoice.ts"
-    ],
-    "SkillMasteryChangeSchema": [
-      "shared/src/worldVoice.ts"
-    ],
-    "SkillTier": [
-      "shared/src/worldVoice.ts"
-    ],
-    "SkillTierSchema": [
-      "shared/src/worldVoice.ts"
-    ],
-    "SoulCodexContents": [
-      "frontend/src/components/SoulCodexContents.tsx"
-    ],
-    "SoulCodexContentsProps": [
-      "frontend/src/components/SoulCodexContents.tsx"
-    ],
-    "SoulRewriteEntry": [
-      "shared/src/gameState.ts"
-    ],
-    "SoulboundMode": [
-      "shared/src/accessGate.ts"
-    ],
-    "StateUpdates": [
-      "shared/src/worldVoice.ts"
-    ],
-    "StateUpdatesSchema": [
-      "shared/src/worldVoice.ts"
-    ],
-    "SubAbility": [
-      "shared/src/gameState.ts"
-    ],
-    "TIER_STYLE": [
-      "shared/src/gameState.ts"
-    ],
-    "TOO_MANY_REQUESTS": [
-      "shared/src/accessGate.ts"
-    ],
-    "TRUST_PROXY": [
-      "backend/src/config.ts"
-    ],
-    "TitleScreen": [
-      "frontend/src/screens/TitleScreen.tsx"
-    ],
-    "TitleScreenProps": [
-      "frontend/src/screens/TitleScreen.tsx"
-    ],
-    "TrackerTransport": [
-      "backend/src/errorTracker.ts"
-    ],
-    "UNIQUE_SKILL_JSON_SCHEMA": [
-      "shared/src/worldVoice.ts"
-    ],
-    "UNTRUSTED_TAGS": [
-      "backend/src/untrustedText.ts"
-    ],
-    "USER_RATE_LIMIT_PER_MINUTE": [
-      "backend/src/config.ts"
-    ],
-    "UniqueSkillDetermination": [
-      "shared/src/worldVoice.ts"
-    ],
-    "UniqueSkillDeterminationSchema": [
-      "shared/src/worldVoice.ts"
-    ],
-    "UniqueSkillOrigin": [
-      "shared/src/gameState.ts"
-    ],
-    "UniqueSkillRequest": [
-      "frontend/src/lib/api.ts"
-    ],
-    "UniqueSkillRequestBody": [
-      "backend/src/routes/uniqueSkill.ts"
-    ],
-    "UniqueSkillRequestSchema": [
-      "backend/src/routes/uniqueSkill.ts"
-    ],
-    "UniqueSubAbility": [
-      "shared/src/worldVoice.ts"
-    ],
-    "UniqueSubAbilitySchema": [
-      "shared/src/worldVoice.ts"
-    ],
-    "UntrustedTag": [
-      "backend/src/untrustedText.ts"
-    ],
-    "WORLD_LORE": [
-      "backend/src/data/worldLore.ts"
-    ],
-    "WORLD_SYSTEM_PROMPT": [
-      "backend/src/data/worldSystemPrompt.ts"
-    ],
-    "WORLD_VOICE_JSON_SCHEMA": [
-      "shared/src/worldVoice.ts"
-    ],
-    "WorldEngineRequest": [
-      "frontend/src/lib/api.ts"
-    ],
-    "WorldEngineRequestBody": [
-      "backend/src/routes/worldEngine.ts"
-    ],
-    "WorldEngineRequestSchema": [
-      "backend/src/routes/worldEngine.ts"
-    ],
-    "WorldEvent": [
-      "shared/src/worldVoice.ts"
-    ],
-    "WorldEventSchema": [
-      "shared/src/worldVoice.ts"
-    ],
-    "WorldLog": [
-      "frontend/src/components/WorldLog.tsx"
-    ],
-    "WorldLogProps": [
-      "frontend/src/components/WorldLog.tsx"
-    ],
-    "WorldVoiceCallError": [
-      "backend/src/anthropic.ts"
-    ],
-    "WorldVoiceErrorCode": [
-      "backend/src/anthropic.ts"
-    ],
-    "WorldVoiceResponse": [
-      "shared/src/worldVoice.ts"
-    ],
-    "WorldVoiceResponseSchema": [
-      "shared/src/worldVoice.ts"
-    ],
-    "WorldVoiceRoute": [
-      "backend/src/anthropic.ts"
-    ],
-    "allowedAuthPaths": [
-      "backend/src/auth.ts"
-    ],
-    "applyWorldUpdate": [
-      "frontend/src/game/applyWorldUpdate.ts"
-    ],
-    "assertNoPendingMigrations": [
-      "backend/src/db.ts"
-    ],
-    "assertWorldVoiceContract": [
-      "shared/src/worldVoice.ts"
-    ],
-    "buildApp": [
-      "backend/src/server.ts"
-    ],
-    "buildHostedDeps": [
-      "backend/src/server.ts"
-    ],
-    "buildSystemBlocks": [
-      "backend/src/anthropic.ts"
-    ],
-    "callWorldEngine": [
-      "frontend/src/lib/api.ts"
-    ],
-    "callWorldVoice": [
-      "backend/src/anthropic.ts"
-    ],
-    "cancelAccountDeletion": [
-      "backend/src/account.ts"
-    ],
-    "checkAccess": [
-      "frontend/src/lib/api.ts"
-    ],
-    "checkPassphrase": [
-      "backend/src/config.ts"
-    ],
-    "clearInviteCookie": [
-      "backend/src/invites.ts"
-    ],
-    "clearPassphrase": [
-      "frontend/src/lib/passphrase.ts"
-    ],
-    "closePoolOnSigterm": [
-      "backend/src/server.ts"
-    ],
-    "consumeInvite": [
-      "backend/src/invites.ts"
-    ],
-    "createAccessGate": [
-      "backend/src/accessGate.ts"
-    ],
-    "createAuth": [
-      "backend/src/auth.ts"
-    ],
-    "createInvite": [
-      "backend/src/invites.ts"
-    ],
-    "createPool": [
-      "backend/src/db.ts"
-    ],
-    "createRateLimiter": [
-      "backend/src/accessGate.ts"
-    ],
-    "createResendSender": [
-      "backend/src/auth.ts"
-    ],
-    "deleteAccount": [
-      "frontend/src/lib/api.ts"
-    ],
-    "deleteSave": [
-      "frontend/src/lib/saves.ts"
-    ],
-    "determineUniqueSkill": [
-      "frontend/src/lib/api.ts"
-    ],
-    "emitPassphraseRequired": [
-      "frontend/src/lib/passphrase.ts"
-    ],
-    "emitSignInRequired": [
-      "frontend/src/lib/api.ts"
-    ],
-    "exactWebhookPath": [
-      "backend/src/hostedGate.ts"
-    ],
-    "extractContractFieldPaths": [
-      "shared/src/worldVoice.ts"
-    ],
-    "extractPromptContractFieldPaths": [
-      "shared/src/worldVoice.ts"
-    ],
-    "fmtDate": [
-      "frontend/src/lib/saves.ts"
-    ],
-    "frameHeaders": [
-      "backend/src/hostedGate.ts"
-    ],
-    "generateIntroScene": [
-      "frontend/src/lib/api.ts"
-    ],
-    "generateInviteCode": [
-      "backend/src/invites.ts"
-    ],
-    "getAccessState": [
-      "frontend/src/lib/api.ts"
-    ],
-    "getAnthropicApiKey": [
-      "backend/src/config.ts"
-    ],
-    "getAuthClient": [
-      "frontend/src/lib/authClient.ts"
-    ],
-    "getHostedSecrets": [
-      "backend/src/config.ts"
-    ],
-    "getPassphrase": [
-      "frontend/src/lib/passphrase.ts"
-    ],
-    "googleEmailVerified": [
-      "backend/src/auth.ts"
-    ],
-    "hashCode": [
-      "backend/src/invites.ts"
-    ],
-    "initErrorTracker": [
-      "backend/src/errorTracker.ts"
-    ],
-    "inviteCookieKey": [
-      "backend/src/invites.ts"
-    ],
-    "inviteUsable": [
-      "backend/src/invites.ts"
-    ],
-    "ipKey": [
-      "backend/src/hostedGate.ts"
-    ],
-    "ipv6Slash64": [
-      "backend/src/hostedGate.ts"
-    ],
-    "isHostAllowed": [
-      "backend/src/server.ts"
-    ],
-    "listSaves": [
-      "frontend/src/lib/saves.ts"
-    ],
-    "loadSave": [
-      "frontend/src/lib/saves.ts"
-    ],
-    "main": [
-      "backend/src/migrate.ts",
-      "backend/src/scripts/createInvite.ts",
-      "backend/src/server.ts"
-    ],
-    "mergeNarrativeMemory": [
-      "frontend/src/game/narrativeMemory.ts"
-    ],
-    "messageForError": [
-      "frontend/src/components/SignIn.tsx"
-    ],
-    "modeHeader": [
-      "backend/src/hostedGate.ts"
-    ],
-    "newSlotId": [
-      "frontend/src/lib/saves.ts"
-    ],
-    "normalizeEmail": [
-      "backend/src/invites.ts"
-    ],
-    "onPassphraseRequired": [
-      "frontend/src/lib/passphrase.ts"
-    ],
-    "onSignInRequired": [
-      "frontend/src/lib/api.ts"
-    ],
-    "originCheck": [
-      "backend/src/hostedGate.ts"
-    ],
-    "parseArgs": [
-      "backend/src/scripts/createInvite.ts"
-    ],
-    "purgeDeletedAccounts": [
-      "backend/src/account.ts"
-    ],
-    "readInviteCookie": [
-      "backend/src/invites.ts"
-    ],
-    "reconcileInvites": [
-      "backend/src/invites.ts"
-    ],
-    "redact": [
-      "backend/src/config.ts"
-    ],
-    "redactError": [
-      "backend/src/db.ts"
-    ],
-    "redeemInvite": [
-      "backend/src/invites.ts",
-      "frontend/src/lib/api.ts"
-    ],
-    "refreshSession": [
-      "frontend/src/lib/authClient.ts"
-    ],
-    "renderIntroScenePrompt": [
-      "backend/src/routes/introScene.ts"
-    ],
-    "renderUniqueSkillPrompt": [
-      "backend/src/routes/uniqueSkill.ts"
-    ],
-    "renderWorldEnginePrompt": [
-      "backend/src/routes/worldEngine.ts"
-    ],
-    "requestAccountDeletion": [
-      "backend/src/account.ts"
-    ],
-    "reserveInvite": [
-      "backend/src/invites.ts"
-    ],
-    "router": [
-      "backend/src/routes/introScene.ts",
-      "backend/src/routes/uniqueSkill.ts",
-      "backend/src/routes/worldEngine.ts"
-    ],
-    "runMigrations": [
-      "backend/src/migrate.ts"
-    ],
-    "serializeInviteCookie": [
-      "backend/src/invites.ts"
-    ],
-    "sessionGate": [
-      "backend/src/hostedGate.ts"
-    ],
-    "setPassphrase": [
-      "frontend/src/lib/passphrase.ts"
-    ],
-    "sharedBg": [
-      "frontend/src/screens/sharedBg.ts"
-    ],
-    "signInWithEmail": [
-      "frontend/src/lib/authClient.ts"
-    ],
-    "signInWithProvider": [
-      "frontend/src/lib/authClient.ts"
-    ],
-    "signInviteCookie": [
-      "backend/src/invites.ts"
-    ],
-    "signOut": [
-      "frontend/src/lib/authClient.ts"
-    ],
-    "startPurgeSchedule": [
-      "backend/src/account.ts"
-    ],
-    "stripDelimiters": [
-      "backend/src/untrustedText.ts"
-    ],
-    "stubCallWorldEngine": [
-      "frontend/src/lib/apiStub.ts"
-    ],
-    "stubDetermineUniqueSkill": [
-      "frontend/src/lib/apiStub.ts"
-    ],
-    "stubGenerateIntroScene": [
-      "frontend/src/lib/apiStub.ts"
-    ],
-    "takeSignInParams": [
-      "frontend/src/lib/authClient.ts"
-    ],
-    "urlRedactor": [
-      "backend/src/db.ts"
-    ],
-    "useIsMobile": [
-      "frontend/src/hooks/useIsMobile.ts"
-    ],
-    "userLimiter": [
-      "backend/src/hostedGate.ts"
-    ],
-    "verifyInviteCookie": [
-      "backend/src/invites.ts"
-    ],
-    "wrapUntrusted": [
-      "backend/src/untrustedText.ts"
-    ],
-    "writeSave": [
-      "frontend/src/lib/saves.ts"
-    ]
-  }
+  "metadata": {
+    "map_schema_version": "2.0",
+    "generated_at": "2026-10-16T03:56:00Z",
+    "analyzed_commit": "f8b846e",
+    "source_file_count": 124,
+    "source_fingerprint": "4052132c96b0642a",
+    "scope": "project-root"
+  },
+  "entry_points": [],
+  "routes": [
+    {
+      "name": "GET /probe",
+      "path": "backend/src/__tests__/accessGate.test.ts",
+      "kind": "route",
+      "summary": "GET /probe",
+      "related_chunks": [
+        "map:backend-src-tests-accessgate-test:001",
+        "map:backend-src-tests-accessgate-test:002"
+      ]
+    },
+    {
+      "name": "GET /probe",
+      "path": "backend/src/__tests__/accessGate.test.ts",
+      "kind": "route",
+      "summary": "GET /probe",
+      "related_chunks": [
+        "map:backend-src-tests-accessgate-test:001",
+        "map:backend-src-tests-accessgate-test:002"
+      ]
+    },
+    {
+      "name": "GET /probe",
+      "path": "backend/src/__tests__/accessGate.test.ts",
+      "kind": "route",
+      "summary": "GET /probe",
+      "related_chunks": [
+        "map:backend-src-tests-accessgate-test:001",
+        "map:backend-src-tests-accessgate-test:002"
+      ]
+    },
+    {
+      "name": "GET /protected",
+      "path": "backend/src/__tests__/accessGate.test.ts",
+      "kind": "route",
+      "summary": "GET /protected",
+      "related_chunks": [
+        "map:backend-src-tests-accessgate-test:001",
+        "map:backend-src-tests-accessgate-test:002"
+      ]
+    },
+    {
+      "name": "POST /api/intro-scene",
+      "path": "backend/src/routes/introScene.ts",
+      "kind": "route",
+      "summary": "POST /api/intro-scene",
+      "related_chunks": [
+        "map:backend-src-routes-introscene:001",
+        "map:backend-src-routes-introscene:002"
+      ]
+    },
+    {
+      "name": "POST /api/prologue/beat",
+      "path": "backend/src/routes/prologue.ts",
+      "kind": "route",
+      "summary": "POST /api/prologue/beat",
+      "related_chunks": [
+        "map:backend-src-routes-prologue:001",
+        "map:backend-src-routes-prologue:002"
+      ]
+    },
+    {
+      "name": "POST /api/prologue/profile",
+      "path": "backend/src/routes/prologue.ts",
+      "kind": "route",
+      "summary": "POST /api/prologue/profile",
+      "related_chunks": [
+        "map:backend-src-routes-prologue:001",
+        "map:backend-src-routes-prologue:002"
+      ]
+    },
+    {
+      "name": "POST /api/unique-skill",
+      "path": "backend/src/routes/uniqueSkill.ts",
+      "kind": "route",
+      "summary": "POST /api/unique-skill",
+      "related_chunks": [
+        "map:backend-src-routes-uniqueskill:001",
+        "map:backend-src-routes-uniqueskill:002"
+      ]
+    },
+    {
+      "name": "POST /api/world-engine",
+      "path": "backend/src/routes/worldEngine.ts",
+      "kind": "route",
+      "summary": "POST /api/world-engine",
+      "related_chunks": [
+        "map:backend-src-routes-worldengine:001",
+        "map:backend-src-routes-worldengine:002"
+      ]
+    },
+    {
+      "name": "GET /api/health",
+      "path": "backend/src/server.ts",
+      "kind": "route",
+      "summary": "GET /api/health",
+      "related_chunks": [
+        "map:backend-src-server:001",
+        "map:backend-src-server:002",
+        "map:backend-src-server:003",
+        "map:backend-src-server:004",
+        "map:backend-src-server:005",
+        "map:backend-src-server:006",
+        "map:backend-src-server:007",
+        "map:backend-src-server:008"
+      ]
+    }
+  ],
+  "apis": [
+    {
+      "name": "createRateLimiter",
+      "path": "backend/src/accessGate.ts",
+      "kind": "function",
+      "line": 103,
+      "summary": "function createRateLimiter",
+      "related_chunks": [
+        "map:backend-src-accessgate:002"
+      ]
+    },
+    {
+      "name": "createAccessGate",
+      "path": "backend/src/accessGate.ts",
+      "kind": "function",
+      "line": 182,
+      "summary": "function createAccessGate",
+      "related_chunks": [
+        "map:backend-src-accessgate:003"
+      ]
+    },
+    {
+      "name": "requestAccountDeletion",
+      "path": "backend/src/account.ts",
+      "kind": "function",
+      "line": 56,
+      "summary": "function requestAccountDeletion",
+      "related_chunks": [
+        "map:backend-src-account:001"
+      ]
+    },
+    {
+      "name": "cancelAccountDeletion",
+      "path": "backend/src/account.ts",
+      "kind": "function",
+      "line": 70,
+      "summary": "function cancelAccountDeletion",
+      "related_chunks": [
+        "map:backend-src-account:002"
+      ]
+    },
+    {
+      "name": "purgeDeletedAccounts",
+      "path": "backend/src/account.ts",
+      "kind": "function",
+      "line": 113,
+      "summary": "function purgeDeletedAccounts",
+      "related_chunks": [
+        "map:backend-src-account:002"
+      ]
+    },
+    {
+      "name": "startPurgeSchedule",
+      "path": "backend/src/account.ts",
+      "kind": "function",
+      "line": 187,
+      "summary": "function startPurgeSchedule",
+      "related_chunks": [
+        "map:backend-src-account:003"
+      ]
+    },
+    {
+      "name": "buildSystemBlocks",
+      "path": "backend/src/anthropic.ts",
+      "kind": "function",
+      "line": 117,
+      "summary": "function buildSystemBlocks",
+      "related_chunks": [
+        "map:backend-src-anthropic:002"
+      ]
+    },
+    {
+      "name": "callWorldVoice",
+      "path": "backend/src/anthropic.ts",
+      "kind": "function",
+      "line": 488,
+      "summary": "function callWorldVoice",
+      "related_chunks": [
+        "map:backend-src-anthropic:005"
+      ]
+    },
+    {
+      "name": "allowedAuthPaths",
+      "path": "backend/src/auth.ts",
+      "kind": "function",
+      "line": 179,
+      "summary": "function allowedAuthPaths",
+      "related_chunks": [
+        "map:backend-src-auth:003"
+      ]
+    },
+    {
+      "name": "googleEmailVerified",
+      "path": "backend/src/auth.ts",
+      "kind": "function",
+      "line": 272,
+      "summary": "function googleEmailVerified",
+      "related_chunks": [
+        "map:backend-src-auth:004"
+      ]
+    },
+    {
+      "name": "createResendSender",
+      "path": "backend/src/auth.ts",
+      "kind": "function",
+      "line": 285,
+      "summary": "function createResendSender",
+      "related_chunks": [
+        "map:backend-src-auth:004"
+      ]
+    },
+    {
+      "name": "createAuth",
+      "path": "backend/src/auth.ts",
+      "kind": "function",
+      "line": 311,
+      "summary": "function createAuth",
+      "related_chunks": [
+        "map:backend-src-auth:004"
+      ]
+    },
+    {
+      "name": "getAnthropicApiKey",
+      "path": "backend/src/config.ts",
+      "kind": "function",
+      "line": 163,
+      "summary": "function getAnthropicApiKey",
+      "related_chunks": [
+        "map:backend-src-config:002"
+      ]
+    },
+    {
+      "name": "getHostedSecrets",
+      "path": "backend/src/config.ts",
+      "kind": "function",
+      "line": 576,
+      "summary": "function getHostedSecrets",
+      "related_chunks": [
+        "map:backend-src-config:003"
+      ]
+    },
+    {
+      "name": "checkPassphrase",
+      "path": "backend/src/config.ts",
+      "kind": "function",
+      "line": 608,
+      "summary": "function checkPassphrase",
+      "related_chunks": [
+        "map:backend-src-config:003"
+      ]
+    },
+    {
+      "name": "redact",
+      "path": "backend/src/config.ts",
+      "kind": "function",
+      "line": 664,
+      "summary": "function redact",
+      "related_chunks": [
+        "map:backend-src-config:004"
+      ]
+    },
+    {
+      "name": "urlRedactor",
+      "path": "backend/src/db.ts",
+      "kind": "function",
+      "line": 55,
+      "summary": "function urlRedactor",
+      "related_chunks": [
+        "map:backend-src-db:001"
+      ]
+    },
+    {
+      "name": "redactError",
+      "path": "backend/src/db.ts",
+      "kind": "function",
+      "line": 81,
+      "summary": "function redactError",
+      "related_chunks": [
+        "map:backend-src-db:002"
+      ]
+    },
+    {
+      "name": "createPool",
+      "path": "backend/src/db.ts",
+      "kind": "function",
+      "line": 121,
+      "summary": "function createPool",
+      "related_chunks": [
+        "map:backend-src-db:002"
+      ]
+    },
+    {
+      "name": "assertNoPendingMigrations",
+      "path": "backend/src/db.ts",
+      "kind": "function",
+      "line": 170,
+      "summary": "function assertNoPendingMigrations",
+      "related_chunks": [
+        "map:backend-src-db:003"
+      ]
+    },
+    {
+      "name": "initErrorTracker",
+      "path": "backend/src/errorTracker.ts",
+      "kind": "function",
+      "line": 201,
+      "summary": "function initErrorTracker",
+      "related_chunks": [
+        "map:backend-src-errortracker:003"
+      ]
+    },
+    {
+      "name": "frameHeaders",
+      "path": "backend/src/hostedGate.ts",
+      "kind": "function",
+      "line": 45,
+      "summary": "function frameHeaders",
+      "related_chunks": [
+        "map:backend-src-hostedgate:001"
+      ]
+    },
+    {
+      "name": "modeHeader",
+      "path": "backend/src/hostedGate.ts",
+      "kind": "function",
+      "line": 59,
+      "summary": "function modeHeader",
+      "related_chunks": [
+        "map:backend-src-hostedgate:001"
+      ]
+    },
+    {
+      "name": "exactWebhookPath",
+      "path": "backend/src/hostedGate.ts",
+      "kind": "function",
+      "line": 74,
+      "summary": "function exactWebhookPath",
+      "related_chunks": [
+        "map:backend-src-hostedgate:002"
+      ]
+    },
+    {
+      "name": "originCheck",
+      "path": "backend/src/hostedGate.ts",
+      "kind": "function",
+      "line": 102,
+      "summary": "function originCheck",
+      "related_chunks": [
+        "map:backend-src-hostedgate:002"
+      ]
+    },
+    {
+      "name": "sessionGate",
+      "path": "backend/src/hostedGate.ts",
+      "kind": "function",
+      "line": 157,
+      "summary": "function sessionGate",
+      "related_chunks": [
+        "map:backend-src-hostedgate:003"
+      ]
+    },
+    {
+      "name": "userLimiter",
+      "path": "backend/src/hostedGate.ts",
+      "kind": "function",
+      "line": 189,
+      "summary": "function userLimiter",
+      "related_chunks": [
+        "map:backend-src-hostedgate:003"
+      ]
+    },
+    {
+      "name": "ipv6Slash64",
+      "path": "backend/src/hostedGate.ts",
+      "kind": "function",
+      "line": 233,
+      "summary": "function ipv6Slash64",
+      "related_chunks": [
+        "map:backend-src-hostedgate:004"
+      ]
+    },
+    {
+      "name": "ipKey",
+      "path": "backend/src/hostedGate.ts",
+      "kind": "function",
+      "line": 251,
+      "summary": "function ipKey",
+      "related_chunks": [
+        "map:backend-src-hostedgate:004"
+      ]
+    },
+    {
+      "name": "generateInviteCode",
+      "path": "backend/src/invites.ts",
+      "kind": "function",
+      "line": 78,
+      "summary": "function generateInviteCode",
+      "related_chunks": [
+        "map:backend-src-invites:002"
+      ]
+    },
+    {
+      "name": "hashCode",
+      "path": "backend/src/invites.ts",
+      "kind": "function",
+      "line": 83,
+      "summary": "function hashCode",
+      "related_chunks": [
+        "map:backend-src-invites:002"
+      ]
+    },
+    {
+      "name": "createInvite",
+      "path": "backend/src/invites.ts",
+      "kind": "function",
+      "line": 91,
+      "summary": "function createInvite",
+      "related_chunks": [
+        "map:backend-src-invites:002"
+      ]
+    },
+    {
+      "name": "inviteCookieKey",
+      "path": "backend/src/invites.ts",
+      "kind": "function",
+      "line": 117,
+      "summary": "function inviteCookieKey",
+      "related_chunks": [
+        "map:backend-src-invites:002"
+      ]
+    },
+    {
+      "name": "signInviteCookie",
+      "path": "backend/src/invites.ts",
+      "kind": "function",
+      "line": 126,
+      "summary": "function signInviteCookie",
+      "related_chunks": [
+        "map:backend-src-invites:002"
+      ]
+    },
+    {
+      "name": "verifyInviteCookie",
+      "path": "backend/src/invites.ts",
+      "kind": "function",
+      "line": 140,
+      "summary": "function verifyInviteCookie",
+      "related_chunks": [
+        "map:backend-src-invites:003"
+      ]
+    },
+    {
+      "name": "serializeInviteCookie",
+      "path": "backend/src/invites.ts",
+      "kind": "function",
+      "line": 164,
+      "summary": "function serializeInviteCookie",
+      "related_chunks": [
+        "map:backend-src-invites:003"
+      ]
+    },
+    {
+      "name": "clearInviteCookie",
+      "path": "backend/src/invites.ts",
+      "kind": "function",
+      "line": 169,
+      "summary": "function clearInviteCookie",
+      "related_chunks": [
+        "map:backend-src-invites:003"
+      ]
+    },
+    {
+      "name": "readInviteCookie",
+      "path": "backend/src/invites.ts",
+      "kind": "function",
+      "line": 177,
+      "summary": "function readInviteCookie",
+      "related_chunks": [
+        "map:backend-src-invites:003"
+      ]
+    },
+    {
+      "name": "redeemInvite",
+      "path": "backend/src/invites.ts",
+      "kind": "function",
+      "line": 201,
+      "summary": "function redeemInvite",
+      "related_chunks": [
+        "map:backend-src-invites:004"
+      ]
+    },
+    {
+      "name": "inviteUsable",
+      "path": "backend/src/invites.ts",
+      "kind": "function",
+      "line": 231,
+      "summary": "function inviteUsable",
+      "related_chunks": [
+        "map:backend-src-invites:004"
+      ]
+    },
+    {
+      "name": "reserveInvite",
+      "path": "backend/src/invites.ts",
+      "kind": "function",
+      "line": 251,
+      "summary": "function reserveInvite",
+      "related_chunks": [
+        "map:backend-src-invites:004"
+      ]
+    },
+    {
+      "name": "consumeInvite",
+      "path": "backend/src/invites.ts",
+      "kind": "function",
+      "line": 274,
+      "summary": "function consumeInvite",
+      "related_chunks": [
+        "map:backend-src-invites:005"
+      ]
+    },
+    {
+      "name": "normalizeEmail",
+      "path": "backend/src/invites.ts",
+      "kind": "function",
+      "line": 287,
+      "summary": "function normalizeEmail",
+      "related_chunks": [
+        "map:backend-src-invites:005"
+      ]
+    },
+    {
+      "name": "reconcileInvites",
+      "path": "backend/src/invites.ts",
+      "kind": "function",
+      "line": 312,
+      "summary": "function reconcileInvites",
+      "related_chunks": [
+        "map:backend-src-invites:005"
+      ]
+    },
+    {
+      "name": "runMigrations",
+      "path": "backend/src/migrate.ts",
+      "kind": "function",
+      "line": 42,
+      "summary": "function runMigrations",
+      "related_chunks": [
+        "map:backend-src-migrate:001"
+      ]
+    },
+    {
+      "name": "main",
+      "path": "backend/src/migrate.ts",
+      "kind": "function",
+      "line": 65,
+      "summary": "function main",
+      "related_chunks": [
+        "map:backend-src-migrate:002"
+      ]
+    },
+    {
+      "name": "renderIntroScenePrompt",
+      "path": "backend/src/routes/introScene.ts",
+      "kind": "function",
+      "line": 102,
+      "summary": "function renderIntroScenePrompt",
+      "related_chunks": [
+        "map:backend-src-routes-introscene:002"
+      ]
+    },
+    {
+      "name": "isTrivialAction",
+      "path": "backend/src/routes/prologue.ts",
+      "kind": "function",
+      "line": 62,
+      "summary": "function isTrivialAction",
+      "related_chunks": [
+        "map:backend-src-routes-prologue:002"
+      ]
+    },
+    {
+      "name": "renderTranscript",
+      "path": "backend/src/routes/prologue.ts",
+      "kind": "function",
+      "line": 70,
+      "summary": "function renderTranscript",
+      "related_chunks": [
+        "map:backend-src-routes-prologue:002"
+      ]
+    },
+    {
+      "name": "renderBeatPrompt",
+      "path": "backend/src/routes/prologue.ts",
+      "kind": "function",
+      "line": 81,
+      "summary": "function renderBeatPrompt",
+      "related_chunks": [
+        "map:backend-src-routes-prologue:002"
+      ]
+    },
+    {
+      "name": "renderProfilePrompt",
+      "path": "backend/src/routes/prologue.ts",
+      "kind": "function",
+      "line": 92,
+      "summary": "function renderProfilePrompt",
+      "related_chunks": [
+        "map:backend-src-routes-prologue:002"
+      ]
+    },
+    {
+      "name": "renderUniqueSkillPrompt",
+      "path": "backend/src/routes/uniqueSkill.ts",
+      "kind": "function",
+      "line": 102,
+      "summary": "function renderUniqueSkillPrompt",
+      "related_chunks": [
+        "map:backend-src-routes-uniqueskill:002"
+      ]
+    },
+    {
+      "name": "renderWorldEnginePrompt",
+      "path": "backend/src/routes/worldEngine.ts",
+      "kind": "function",
+      "line": 178,
+      "summary": "function renderWorldEnginePrompt",
+      "related_chunks": [
+        "map:backend-src-routes-worldengine:002"
+      ]
+    },
+    {
+      "name": "parseArgs",
+      "path": "backend/src/scripts/createInvite.ts",
+      "kind": "function",
+      "line": 20,
+      "summary": "function parseArgs",
+      "related_chunks": [
+        "map:backend-src-scripts-createinvite:001"
+      ]
+    },
+    {
+      "name": "main",
+      "path": "backend/src/scripts/createInvite.ts",
+      "kind": "function",
+      "line": 30,
+      "summary": "function main",
+      "related_chunks": [
+        "map:backend-src-scripts-createinvite:001"
+      ]
+    },
+    {
+      "name": "isHostAllowed",
+      "path": "backend/src/server.ts",
+      "kind": "function",
+      "line": 282,
+      "summary": "function isHostAllowed",
+      "related_chunks": [
+        "map:backend-src-server:004"
+      ]
+    },
+    {
+      "name": "buildApp",
+      "path": "backend/src/server.ts",
+      "kind": "function",
+      "line": 361,
+      "summary": "function buildApp",
+      "related_chunks": [
+        "map:backend-src-server:005"
+      ]
+    },
+    {
+      "name": "buildHostedDeps",
+      "path": "backend/src/server.ts",
+      "kind": "function",
+      "line": 662,
+      "summary": "function buildHostedDeps",
+      "related_chunks": [
+        "map:backend-src-server:006"
+      ]
+    },
+    {
+      "name": "closePoolOnSigterm",
+      "path": "backend/src/server.ts",
+      "kind": "function",
+      "line": 731,
+      "summary": "function closePoolOnSigterm",
+      "related_chunks": [
+        "map:backend-src-server:007"
+      ]
+    },
+    {
+      "name": "main",
+      "path": "backend/src/server.ts",
+      "kind": "function",
+      "line": 759,
+      "summary": "function main",
+      "related_chunks": [
+        "map:backend-src-server:007"
+      ]
+    },
+    {
+      "name": "stripDelimiters",
+      "path": "backend/src/untrustedText.ts",
+      "kind": "function",
+      "line": 57,
+      "summary": "function stripDelimiters",
+      "related_chunks": [
+        "map:backend-src-untrustedtext:001"
+      ]
+    },
+    {
+      "name": "wrapUntrusted",
+      "path": "backend/src/untrustedText.ts",
+      "kind": "function",
+      "line": 78,
+      "summary": "function wrapUntrusted",
+      "related_chunks": [
+        "map:backend-src-untrustedtext:002"
+      ]
+    },
+    {
+      "name": "App",
+      "path": "frontend/src/App.tsx",
+      "kind": "function",
+      "line": 109,
+      "summary": "function App",
+      "related_chunks": [
+        "map:frontend-src-app:002"
+      ]
+    },
+    {
+      "name": "AccessGate",
+      "path": "frontend/src/components/AccessGate.tsx",
+      "kind": "function",
+      "line": 57,
+      "summary": "function AccessGate",
+      "related_chunks": [
+        "map:frontend-src-components-accessgate:001"
+      ]
+    },
+    {
+      "name": "AccountPanel",
+      "path": "frontend/src/components/AccountPanel.tsx",
+      "kind": "function",
+      "line": 49,
+      "summary": "function AccountPanel",
+      "related_chunks": [
+        "map:frontend-src-components-accountpanel:001"
+      ]
+    },
+    {
+      "name": "ActionBar",
+      "path": "frontend/src/components/ActionBar.tsx",
+      "kind": "function",
+      "line": 15,
+      "summary": "function ActionBar",
+      "related_chunks": [
+        "map:frontend-src-components-actionbar:001"
+      ]
+    },
+    {
+      "name": "ModeGate",
+      "path": "frontend/src/components/ModeGate.tsx",
+      "kind": "function",
+      "line": 55,
+      "summary": "function ModeGate",
+      "related_chunks": [
+        "map:frontend-src-components-modegate:001"
+      ]
+    },
+    {
+      "name": "messageForError",
+      "path": "frontend/src/components/SignIn.tsx",
+      "kind": "function",
+      "line": 59,
+      "summary": "function messageForError",
+      "related_chunks": [
+        "map:frontend-src-components-signin:001"
+      ]
+    },
+    {
+      "name": "SignIn",
+      "path": "frontend/src/components/SignIn.tsx",
+      "kind": "function",
+      "line": 116,
+      "summary": "function SignIn",
+      "related_chunks": [
+        "map:frontend-src-components-signin:002"
+      ]
+    },
+    {
+      "name": "SkillCard",
+      "path": "frontend/src/components/SkillCard.tsx",
+      "kind": "function",
+      "line": 18,
+      "summary": "function SkillCard",
+      "related_chunks": [
+        "map:frontend-src-components-skillcard:001"
+      ]
+    },
+    {
+      "name": "SoulCodexContents",
+      "path": "frontend/src/components/SoulCodexContents.tsx",
+      "kind": "function",
+      "line": 37,
+      "summary": "function SoulCodexContents",
+      "related_chunks": [
+        "map:frontend-src-components-soulcodexcontents:001"
+      ]
+    },
+    {
+      "name": "WorldLog",
+      "path": "frontend/src/components/WorldLog.tsx",
+      "kind": "function",
+      "line": 26,
+      "summary": "function WorldLog",
+      "related_chunks": [
+        "map:frontend-src-components-worldlog:001"
+      ]
+    },
+    {
+      "name": "HostedAccountSlot",
+      "path": "frontend/src/components/hostedAccount.tsx",
+      "kind": "function",
+      "line": 23,
+      "summary": "function HostedAccountSlot",
+      "related_chunks": [
+        "map:frontend-src-components-hostedaccount:001"
+      ]
+    },
+    {
+      "name": "applyWorldUpdate",
+      "path": "frontend/src/game/applyWorldUpdate.ts",
+      "kind": "function",
+      "line": 84,
+      "summary": "function applyWorldUpdate",
+      "related_chunks": [
+        "map:frontend-src-game-applyworldupdate:002"
+      ]
+    },
+    {
+      "name": "mergeNarrativeMemory",
+      "path": "frontend/src/game/narrativeMemory.ts",
+      "kind": "function",
+      "line": 71,
+      "summary": "function mergeNarrativeMemory",
+      "related_chunks": [
+        "map:frontend-src-game-narrativememory:002"
+      ]
+    },
+    {
+      "name": "useIsMobile",
+      "path": "frontend/src/hooks/useIsMobile.ts",
+      "kind": "function",
+      "line": 34,
+      "summary": "function useIsMobile",
+      "related_chunks": [
+        "map:frontend-src-hooks-useismobile:001"
+      ]
+    },
+    {
+      "name": "determineUniqueSkill",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "function",
+      "line": 335,
+      "summary": "function determineUniqueSkill",
+      "related_chunks": [
+        "map:frontend-src-lib-api:003"
+      ]
+    },
+    {
+      "name": "callWorldEngine",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "function",
+      "line": 364,
+      "summary": "function callWorldEngine",
+      "related_chunks": [
+        "map:frontend-src-lib-api:004"
+      ]
+    },
+    {
+      "name": "generateIntroScene",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "function",
+      "line": 376,
+      "summary": "function generateIntroScene",
+      "related_chunks": [
+        "map:frontend-src-lib-api:004"
+      ]
+    },
+    {
+      "name": "checkAccess",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "function",
+      "line": 407,
+      "summary": "function checkAccess",
+      "related_chunks": [
+        "map:frontend-src-lib-api:004"
+      ]
+    },
+    {
+      "name": "getAccessState",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "function",
+      "line": 450,
+      "summary": "function getAccessState",
+      "related_chunks": [
+        "map:frontend-src-lib-api:005"
+      ]
+    },
+    {
+      "name": "redeemInvite",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "function",
+      "line": 483,
+      "summary": "function redeemInvite",
+      "related_chunks": [
+        "map:frontend-src-lib-api:005"
+      ]
+    },
+    {
+      "name": "deleteAccount",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "function",
+      "line": 505,
+      "summary": "function deleteAccount",
+      "related_chunks": [
+        "map:frontend-src-lib-api:006"
+      ]
+    },
+    {
+      "name": "onSignInRequired",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "function",
+      "line": 530,
+      "summary": "function onSignInRequired",
+      "related_chunks": [
+        "map:frontend-src-lib-api:006"
+      ]
+    },
+    {
+      "name": "emitSignInRequired",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "function",
+      "line": 538,
+      "summary": "function emitSignInRequired",
+      "related_chunks": [
+        "map:frontend-src-lib-api:006"
+      ]
+    },
+    {
+      "name": "prologueBeat",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "function",
+      "line": 549,
+      "summary": "function prologueBeat",
+      "related_chunks": [
+        "map:frontend-src-lib-api:006"
+      ]
+    },
+    {
+      "name": "prologueProfile",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "function",
+      "line": 556,
+      "summary": "function prologueProfile",
+      "related_chunks": [
+        "map:frontend-src-lib-api:006"
+      ]
+    },
+    {
+      "name": "stubDetermineUniqueSkill",
+      "path": "frontend/src/lib/apiStub.ts",
+      "kind": "function",
+      "line": 68,
+      "summary": "function stubDetermineUniqueSkill",
+      "related_chunks": [
+        "map:frontend-src-lib-apistub:002"
+      ]
+    },
+    {
+      "name": "stubCallWorldEngine",
+      "path": "frontend/src/lib/apiStub.ts",
+      "kind": "function",
+      "line": 80,
+      "summary": "function stubCallWorldEngine",
+      "related_chunks": [
+        "map:frontend-src-lib-apistub:002"
+      ]
+    },
+    {
+      "name": "stubGenerateIntroScene",
+      "path": "frontend/src/lib/apiStub.ts",
+      "kind": "function",
+      "line": 96,
+      "summary": "function stubGenerateIntroScene",
+      "related_chunks": [
+        "map:frontend-src-lib-apistub:002"
+      ]
+    },
+    {
+      "name": "getAuthClient",
+      "path": "frontend/src/lib/authClient.ts",
+      "kind": "function",
+      "line": 35,
+      "summary": "function getAuthClient",
+      "related_chunks": [
+        "map:frontend-src-lib-authclient:001"
+      ]
+    },
+    {
+      "name": "signInWithEmail",
+      "path": "frontend/src/lib/authClient.ts",
+      "kind": "function",
+      "line": 45,
+      "summary": "function signInWithEmail",
+      "related_chunks": [
+        "map:frontend-src-lib-authclient:001"
+      ]
+    },
+    {
+      "name": "signInWithProvider",
+      "path": "frontend/src/lib/authClient.ts",
+      "kind": "function",
+      "line": 56,
+      "summary": "function signInWithProvider",
+      "related_chunks": [
+        "map:frontend-src-lib-authclient:001"
+      ]
+    },
+    {
+      "name": "signOut",
+      "path": "frontend/src/lib/authClient.ts",
+      "kind": "function",
+      "line": 67,
+      "summary": "function signOut",
+      "related_chunks": [
+        "map:frontend-src-lib-authclient:002"
+      ]
+    },
+    {
+      "name": "refreshSession",
+      "path": "frontend/src/lib/authClient.ts",
+      "kind": "function",
+      "line": 83,
+      "summary": "function refreshSession",
+      "related_chunks": [
+        "map:frontend-src-lib-authclient:002"
+      ]
+    },
+    {
+      "name": "takeSignInParams",
+      "path": "frontend/src/lib/authClient.ts",
+      "kind": "function",
+      "line": 112,
+      "summary": "function takeSignInParams",
+      "related_chunks": [
+        "map:frontend-src-lib-authclient:002"
+      ]
+    },
+    {
+      "name": "getPassphrase",
+      "path": "frontend/src/lib/passphrase.ts",
+      "kind": "function",
+      "line": 37,
+      "summary": "function getPassphrase",
+      "related_chunks": [
+        "map:frontend-src-lib-passphrase:001"
+      ]
+    },
+    {
+      "name": "setPassphrase",
+      "path": "frontend/src/lib/passphrase.ts",
+      "kind": "function",
+      "line": 51,
+      "summary": "function setPassphrase",
+      "related_chunks": [
+        "map:frontend-src-lib-passphrase:001"
+      ]
+    },
+    {
+      "name": "clearPassphrase",
+      "path": "frontend/src/lib/passphrase.ts",
+      "kind": "function",
+      "line": 60,
+      "summary": "function clearPassphrase",
+      "related_chunks": [
+        "map:frontend-src-lib-passphrase:001"
+      ]
+    },
+    {
+      "name": "onPassphraseRequired",
+      "path": "frontend/src/lib/passphrase.ts",
+      "kind": "function",
+      "line": 76,
+      "summary": "function onPassphraseRequired",
+      "related_chunks": [
+        "map:frontend-src-lib-passphrase:002"
+      ]
+    },
+    {
+      "name": "emitPassphraseRequired",
+      "path": "frontend/src/lib/passphrase.ts",
+      "kind": "function",
+      "line": 82,
+      "summary": "function emitPassphraseRequired",
+      "related_chunks": [
+        "map:frontend-src-lib-passphrase:002"
+      ]
+    },
+    {
+      "name": "isPrologueEnabled",
+      "path": "frontend/src/lib/prologueFlag.ts",
+      "kind": "function",
+      "line": 19,
+      "summary": "function isPrologueEnabled",
+      "related_chunks": [
+        "map:frontend-src-lib-prologueflag:001"
+      ]
+    },
+    {
+      "name": "prologueCanon",
+      "path": "frontend/src/lib/prologueFlag.ts",
+      "kind": "function",
+      "line": 26,
+      "summary": "function prologueCanon",
+      "related_chunks": [
+        "map:frontend-src-lib-prologueflag:001"
+      ]
+    },
+    {
+      "name": "listSaves",
+      "path": "frontend/src/lib/saves.ts",
+      "kind": "function",
+      "line": 54,
+      "summary": "function listSaves",
+      "related_chunks": [
+        "map:frontend-src-lib-saves:001"
+      ]
+    },
+    {
+      "name": "loadSave",
+      "path": "frontend/src/lib/saves.ts",
+      "kind": "function",
+      "line": 83,
+      "summary": "function loadSave",
+      "related_chunks": [
+        "map:frontend-src-lib-saves:002"
+      ]
+    },
+    {
+      "name": "writeSave",
+      "path": "frontend/src/lib/saves.ts",
+      "kind": "function",
+      "line": 114,
+      "summary": "function writeSave",
+      "related_chunks": [
+        "map:frontend-src-lib-saves:002"
+      ]
+    },
+    {
+      "name": "deleteSave",
+      "path": "frontend/src/lib/saves.ts",
+      "kind": "function",
+      "line": 142,
+      "summary": "function deleteSave",
+      "related_chunks": [
+        "map:frontend-src-lib-saves:002"
+      ]
+    },
+    {
+      "name": "newSlotId",
+      "path": "frontend/src/lib/saves.ts",
+      "kind": "function",
+      "line": 153,
+      "summary": "function newSlotId",
+      "related_chunks": [
+        "map:frontend-src-lib-saves:003"
+      ]
+    },
+    {
+      "name": "fmtDate",
+      "path": "frontend/src/lib/saves.ts",
+      "kind": "function",
+      "line": 158,
+      "summary": "function fmtDate",
+      "related_chunks": [
+        "map:frontend-src-lib-saves:003"
+      ]
+    },
+    {
+      "name": "LoadingScreen",
+      "path": "frontend/src/screens/LoadingScreen.tsx",
+      "kind": "function",
+      "line": 19,
+      "summary": "function LoadingScreen",
+      "related_chunks": [
+        "map:frontend-src-screens-loadingscreen:001"
+      ]
+    },
+    {
+      "name": "PrologueScreen",
+      "path": "frontend/src/screens/PrologueScreen.tsx",
+      "kind": "function",
+      "line": 59,
+      "summary": "function PrologueScreen",
+      "related_chunks": [
+        "map:frontend-src-screens-prologuescreen:001"
+      ]
+    },
+    {
+      "name": "QuestionnaireScreen",
+      "path": "frontend/src/screens/QuestionnaireScreen.tsx",
+      "kind": "function",
+      "line": 249,
+      "summary": "function QuestionnaireScreen",
+      "related_chunks": [
+        "map:frontend-src-screens-questionnairescreen:002"
+      ]
+    },
+    {
+      "name": "RaceScreen",
+      "path": "frontend/src/screens/RaceScreen.tsx",
+      "kind": "function",
+      "line": 37,
+      "summary": "function RaceScreen",
+      "related_chunks": [
+        "map:frontend-src-screens-racescreen:001"
+      ]
+    },
+    {
+      "name": "SimulationScreen",
+      "path": "frontend/src/screens/SimulationScreen.tsx",
+      "kind": "function",
+      "line": 80,
+      "summary": "function SimulationScreen",
+      "related_chunks": [
+        "map:frontend-src-screens-simulationscreen:002"
+      ]
+    },
+    {
+      "name": "TitleScreen",
+      "path": "frontend/src/screens/TitleScreen.tsx",
+      "kind": "function",
+      "line": 43,
+      "summary": "function TitleScreen",
+      "related_chunks": [
+        "map:frontend-src-screens-titlescreen:001"
+      ]
+    },
+    {
+      "name": "extractPromptContractFieldPaths",
+      "path": "shared/src/worldVoice.ts",
+      "kind": "function",
+      "line": 234,
+      "summary": "function extractPromptContractFieldPaths",
+      "related_chunks": [
+        "map:shared-src-worldvoice:004"
+      ]
+    },
+    {
+      "name": "assertWorldVoiceContract",
+      "path": "shared/src/worldVoice.ts",
+      "kind": "function",
+      "line": 326,
+      "summary": "function assertWorldVoiceContract",
+      "related_chunks": [
+        "map:shared-src-worldvoice:005"
+      ]
+    },
+    {
+      "name": "extractContractFieldPaths",
+      "path": "shared/src/worldVoice.ts",
+      "kind": "function",
+      "line": 365,
+      "summary": "function extractContractFieldPaths",
+      "related_chunks": [
+        "map:shared-src-worldvoice:005"
+      ]
+    }
+  ],
+  "modules": [
+    {
+      "name": "assert-no-skips.mjs",
+      "path": "backend/scripts/assert-no-skips.mjs",
+      "kind": "module",
+      "summary": "JavaScript module, 39 lines",
+      "related_chunks": [
+        "map:backend-scripts-assert-no-skips:001"
+      ]
+    },
+    {
+      "name": "accessGate.ts",
+      "path": "backend/src/accessGate.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 216 lines",
+      "related_chunks": [
+        "map:backend-src-accessgate:001",
+        "map:backend-src-accessgate:002",
+        "map:backend-src-accessgate:003"
+      ]
+    },
+    {
+      "name": "account.ts",
+      "path": "backend/src/account.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 237 lines",
+      "related_chunks": [
+        "map:backend-src-account:001",
+        "map:backend-src-account:002",
+        "map:backend-src-account:003"
+      ]
+    },
+    {
+      "name": "anthropic.ts",
+      "path": "backend/src/anthropic.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 564 lines",
+      "related_chunks": [
+        "map:backend-src-anthropic:001",
+        "map:backend-src-anthropic:002",
+        "map:backend-src-anthropic:003",
+        "map:backend-src-anthropic:004",
+        "map:backend-src-anthropic:005"
+      ]
+    },
+    {
+      "name": "auth.ts",
+      "path": "backend/src/auth.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 608 lines",
+      "related_chunks": [
+        "map:backend-src-auth:001",
+        "map:backend-src-auth:002",
+        "map:backend-src-auth:003",
+        "map:backend-src-auth:004",
+        "map:backend-src-auth:005"
+      ]
+    },
+    {
+      "name": "config.ts",
+      "path": "backend/src/config.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 974 lines",
+      "related_chunks": [
+        "map:backend-src-config:001",
+        "map:backend-src-config:002",
+        "map:backend-src-config:003",
+        "map:backend-src-config:004",
+        "map:backend-src-config:005",
+        "map:backend-src-config:006",
+        "map:backend-src-config:007"
+      ]
+    },
+    {
+      "name": "worldLore.ts",
+      "path": "backend/src/data/worldLore.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 85 lines",
+      "related_chunks": [
+        "map:backend-src-data-worldlore:001"
+      ]
+    },
+    {
+      "name": "worldSystemPrompt.ts",
+      "path": "backend/src/data/worldSystemPrompt.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 158 lines",
+      "related_chunks": [
+        "map:backend-src-data-worldsystemprompt:001",
+        "map:backend-src-data-worldsystemprompt:002"
+      ]
+    },
+    {
+      "name": "db.ts",
+      "path": "backend/src/db.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 204 lines",
+      "related_chunks": [
+        "map:backend-src-db:001",
+        "map:backend-src-db:002",
+        "map:backend-src-db:003"
+      ]
+    },
+    {
+      "name": "errorTracker.ts",
+      "path": "backend/src/errorTracker.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 261 lines",
+      "related_chunks": [
+        "map:backend-src-errortracker:001",
+        "map:backend-src-errortracker:002",
+        "map:backend-src-errortracker:003"
+      ]
+    },
+    {
+      "name": "hostedGate.ts",
+      "path": "backend/src/hostedGate.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 254 lines",
+      "related_chunks": [
+        "map:backend-src-hostedgate:001",
+        "map:backend-src-hostedgate:002",
+        "map:backend-src-hostedgate:003",
+        "map:backend-src-hostedgate:004"
+      ]
+    },
+    {
+      "name": "invites.ts",
+      "path": "backend/src/invites.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 350 lines",
+      "related_chunks": [
+        "map:backend-src-invites:001",
+        "map:backend-src-invites:002",
+        "map:backend-src-invites:003",
+        "map:backend-src-invites:004",
+        "map:backend-src-invites:005"
+      ]
+    },
+    {
+      "name": "migrate.ts",
+      "path": "backend/src/migrate.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 97 lines",
+      "related_chunks": [
+        "map:backend-src-migrate:001",
+        "map:backend-src-migrate:002"
+      ]
+    },
+    {
+      "name": "introScene.ts",
+      "path": "backend/src/routes/introScene.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 145 lines",
+      "related_chunks": [
+        "map:backend-src-routes-introscene:001",
+        "map:backend-src-routes-introscene:002"
+      ]
+    },
+    {
+      "name": "prologue.ts",
+      "path": "backend/src/routes/prologue.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 202 lines",
+      "related_chunks": [
+        "map:backend-src-routes-prologue:001",
+        "map:backend-src-routes-prologue:002"
+      ]
+    },
+    {
+      "name": "uniqueSkill.ts",
+      "path": "backend/src/routes/uniqueSkill.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 179 lines",
+      "related_chunks": [
+        "map:backend-src-routes-uniqueskill:001",
+        "map:backend-src-routes-uniqueskill:002"
+      ]
+    },
+    {
+      "name": "worldEngine.ts",
+      "path": "backend/src/routes/worldEngine.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 258 lines",
+      "related_chunks": [
+        "map:backend-src-routes-worldengine:001",
+        "map:backend-src-routes-worldengine:002"
+      ]
+    },
+    {
+      "name": "createInvite.ts",
+      "path": "backend/src/scripts/createInvite.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 70 lines",
+      "related_chunks": [
+        "map:backend-src-scripts-createinvite:001"
+      ]
+    },
+    {
+      "name": "trackerTest.ts",
+      "path": "backend/src/scripts/trackerTest.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 64 lines",
+      "related_chunks": [
+        "map:backend-src-scripts-trackertest:001"
+      ]
+    },
+    {
+      "name": "server.ts",
+      "path": "backend/src/server.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 893 lines",
+      "related_chunks": [
+        "map:backend-src-server:001",
+        "map:backend-src-server:002",
+        "map:backend-src-server:003",
+        "map:backend-src-server:004",
+        "map:backend-src-server:005",
+        "map:backend-src-server:006",
+        "map:backend-src-server:007",
+        "map:backend-src-server:008"
+      ]
+    },
+    {
+      "name": "untrustedText.ts",
+      "path": "backend/src/untrustedText.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 81 lines",
+      "related_chunks": [
+        "map:backend-src-untrustedtext:001",
+        "map:backend-src-untrustedtext:002"
+      ]
+    },
+    {
+      "name": "vitest.config.ts",
+      "path": "backend/vitest.config.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 37 lines",
+      "related_chunks": [
+        "map:backend-vitest-config:001"
+      ]
+    },
+    {
+      "name": "vitest.hosted.config.ts",
+      "path": "backend/vitest.hosted.config.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 34 lines",
+      "related_chunks": [
+        "map:backend-vitest-hosted-config:001"
+      ]
+    },
+    {
+      "name": "playwright.config.ts",
+      "path": "frontend/playwright.config.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 81 lines",
+      "related_chunks": [
+        "map:frontend-playwright-config:001"
+      ]
+    },
+    {
+      "name": "App.tsx",
+      "path": "frontend/src/App.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 391 lines",
+      "related_chunks": [
+        "map:frontend-src-app:001",
+        "map:frontend-src-app:002",
+        "map:frontend-src-app:003"
+      ]
+    },
+    {
+      "name": "AccessGate.tsx",
+      "path": "frontend/src/components/AccessGate.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 286 lines",
+      "related_chunks": [
+        "map:frontend-src-components-accessgate:001",
+        "map:frontend-src-components-accessgate:002"
+      ]
+    },
+    {
+      "name": "AccountPanel.tsx",
+      "path": "frontend/src/components/AccountPanel.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 158 lines",
+      "related_chunks": [
+        "map:frontend-src-components-accountpanel:001",
+        "map:frontend-src-components-accountpanel:002"
+      ]
+    },
+    {
+      "name": "ActionBar.tsx",
+      "path": "frontend/src/components/ActionBar.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 55 lines",
+      "related_chunks": [
+        "map:frontend-src-components-actionbar:001"
+      ]
+    },
+    {
+      "name": "ModeGate.tsx",
+      "path": "frontend/src/components/ModeGate.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 136 lines",
+      "related_chunks": [
+        "map:frontend-src-components-modegate:001"
+      ]
+    },
+    {
+      "name": "SignIn.tsx",
+      "path": "frontend/src/components/SignIn.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 381 lines",
+      "related_chunks": [
+        "map:frontend-src-components-signin:001",
+        "map:frontend-src-components-signin:002",
+        "map:frontend-src-components-signin:003",
+        "map:frontend-src-components-signin:004"
+      ]
+    },
+    {
+      "name": "SkillCard.tsx",
+      "path": "frontend/src/components/SkillCard.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 50 lines",
+      "related_chunks": [
+        "map:frontend-src-components-skillcard:001"
+      ]
+    },
+    {
+      "name": "SoulCodexContents.tsx",
+      "path": "frontend/src/components/SoulCodexContents.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 133 lines",
+      "related_chunks": [
+        "map:frontend-src-components-soulcodexcontents:001"
+      ]
+    },
+    {
+      "name": "WorldLog.tsx",
+      "path": "frontend/src/components/WorldLog.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 111 lines",
+      "related_chunks": [
+        "map:frontend-src-components-worldlog:001"
+      ]
+    },
+    {
+      "name": "hostedAccount.tsx",
+      "path": "frontend/src/components/hostedAccount.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 27 lines",
+      "related_chunks": [
+        "map:frontend-src-components-hostedaccount:001"
+      ]
+    },
+    {
+      "name": "questions.ts",
+      "path": "frontend/src/data/questions.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 32 lines",
+      "related_chunks": [
+        "map:frontend-src-data-questions:001"
+      ]
+    },
+    {
+      "name": "races.ts",
+      "path": "frontend/src/data/races.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 50 lines",
+      "related_chunks": [
+        "map:frontend-src-data-races:001"
+      ]
+    },
+    {
+      "name": "applyWorldUpdate.ts",
+      "path": "frontend/src/game/applyWorldUpdate.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 212 lines",
+      "related_chunks": [
+        "map:frontend-src-game-applyworldupdate:001",
+        "map:frontend-src-game-applyworldupdate:002"
+      ]
+    },
+    {
+      "name": "narrativeMemory.ts",
+      "path": "frontend/src/game/narrativeMemory.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 90 lines",
+      "related_chunks": [
+        "map:frontend-src-game-narrativememory:001",
+        "map:frontend-src-game-narrativememory:002"
+      ]
+    },
+    {
+      "name": "useIsMobile.ts",
+      "path": "frontend/src/hooks/useIsMobile.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 52 lines",
+      "related_chunks": [
+        "map:frontend-src-hooks-useismobile:001"
+      ]
+    },
+    {
+      "name": "api.ts",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 562 lines",
+      "related_chunks": [
+        "map:frontend-src-lib-api:001",
+        "map:frontend-src-lib-api:002",
+        "map:frontend-src-lib-api:003",
+        "map:frontend-src-lib-api:004",
+        "map:frontend-src-lib-api:005",
+        "map:frontend-src-lib-api:006"
+      ]
+    },
+    {
+      "name": "apiStub.ts",
+      "path": "frontend/src/lib/apiStub.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 117 lines",
+      "related_chunks": [
+        "map:frontend-src-lib-apistub:001",
+        "map:frontend-src-lib-apistub:002"
+      ]
+    },
+    {
+      "name": "authClient.ts",
+      "path": "frontend/src/lib/authClient.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 151 lines",
+      "related_chunks": [
+        "map:frontend-src-lib-authclient:001",
+        "map:frontend-src-lib-authclient:002"
+      ]
+    },
+    {
+      "name": "passphrase.ts",
+      "path": "frontend/src/lib/passphrase.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 85 lines",
+      "related_chunks": [
+        "map:frontend-src-lib-passphrase:001",
+        "map:frontend-src-lib-passphrase:002"
+      ]
+    },
+    {
+      "name": "prologueFlag.ts",
+      "path": "frontend/src/lib/prologueFlag.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 31 lines",
+      "related_chunks": [
+        "map:frontend-src-lib-prologueflag:001"
+      ]
+    },
+    {
+      "name": "saves.ts",
+      "path": "frontend/src/lib/saves.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 167 lines",
+      "related_chunks": [
+        "map:frontend-src-lib-saves:001",
+        "map:frontend-src-lib-saves:002",
+        "map:frontend-src-lib-saves:003"
+      ]
+    },
+    {
+      "name": "main.tsx",
+      "path": "frontend/src/main.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 47 lines",
+      "related_chunks": [
+        "map:frontend-src-main:001"
+      ]
+    },
+    {
+      "name": "LoadingScreen.tsx",
+      "path": "frontend/src/screens/LoadingScreen.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 27 lines",
+      "related_chunks": [
+        "map:frontend-src-screens-loadingscreen:001"
+      ]
+    },
+    {
+      "name": "PrologueScreen.tsx",
+      "path": "frontend/src/screens/PrologueScreen.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 316 lines",
+      "related_chunks": [
+        "map:frontend-src-screens-prologuescreen:001",
+        "map:frontend-src-screens-prologuescreen:002",
+        "map:frontend-src-screens-prologuescreen:003"
+      ]
+    },
+    {
+      "name": "QuestionnaireScreen.tsx",
+      "path": "frontend/src/screens/QuestionnaireScreen.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 256 lines",
+      "related_chunks": [
+        "map:frontend-src-screens-questionnairescreen:001",
+        "map:frontend-src-screens-questionnairescreen:002"
+      ]
+    },
+    {
+      "name": "RaceScreen.tsx",
+      "path": "frontend/src/screens/RaceScreen.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 117 lines",
+      "related_chunks": [
+        "map:frontend-src-screens-racescreen:001"
+      ]
+    },
+    {
+      "name": "SimulationScreen.tsx",
+      "path": "frontend/src/screens/SimulationScreen.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 171 lines",
+      "related_chunks": [
+        "map:frontend-src-screens-simulationscreen:001",
+        "map:frontend-src-screens-simulationscreen:002"
+      ]
+    },
+    {
+      "name": "TitleScreen.tsx",
+      "path": "frontend/src/screens/TitleScreen.tsx",
+      "kind": "module",
+      "summary": "TypeScript module, 180 lines",
+      "related_chunks": [
+        "map:frontend-src-screens-titlescreen:001",
+        "map:frontend-src-screens-titlescreen:002"
+      ]
+    },
+    {
+      "name": "sharedBg.ts",
+      "path": "frontend/src/screens/sharedBg.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 18 lines",
+      "related_chunks": [
+        "map:frontend-src-screens-sharedbg:001"
+      ]
+    },
+    {
+      "name": "vite.config.ts",
+      "path": "frontend/vite.config.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 23 lines",
+      "related_chunks": [
+        "map:frontend-vite-config:001"
+      ]
+    },
+    {
+      "name": "vitest.config.ts",
+      "path": "frontend/vitest.config.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 41 lines",
+      "related_chunks": [
+        "map:frontend-vitest-config:001"
+      ]
+    },
+    {
+      "name": "accessGate.ts",
+      "path": "shared/src/accessGate.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 66 lines",
+      "related_chunks": [
+        "map:shared-src-accessgate:001",
+        "map:shared-src-accessgate:002"
+      ]
+    },
+    {
+      "name": "gameState.ts",
+      "path": "shared/src/gameState.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 202 lines",
+      "related_chunks": [
+        "map:shared-src-gamestate:001",
+        "map:shared-src-gamestate:002",
+        "map:shared-src-gamestate:003",
+        "map:shared-src-gamestate:004"
+      ]
+    },
+    {
+      "name": "index.ts",
+      "path": "shared/src/index.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 5 lines",
+      "related_chunks": [
+        "map:shared-src-index:001"
+      ]
+    },
+    {
+      "name": "prologue.ts",
+      "path": "shared/src/prologue.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 154 lines",
+      "related_chunks": [
+        "map:shared-src-prologue:001",
+        "map:shared-src-prologue:002",
+        "map:shared-src-prologue:003"
+      ]
+    },
+    {
+      "name": "worldVoice.ts",
+      "path": "shared/src/worldVoice.ts",
+      "kind": "module",
+      "summary": "TypeScript module, 387 lines",
+      "related_chunks": [
+        "map:shared-src-worldvoice:001",
+        "map:shared-src-worldvoice:002",
+        "map:shared-src-worldvoice:003",
+        "map:shared-src-worldvoice:004",
+        "map:shared-src-worldvoice:005"
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "name": "accessGate.test.ts",
+      "path": "backend/src/__tests__/accessGate.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-accessgate-test:001",
+        "map:backend-src-tests-accessgate-test:002"
+      ]
+    },
+    {
+      "name": "anthropic.test.ts",
+      "path": "backend/src/__tests__/anthropic.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-anthropic-test:001",
+        "map:backend-src-tests-anthropic-test:002",
+        "map:backend-src-tests-anthropic-test:003",
+        "map:backend-src-tests-anthropic-test:004",
+        "map:backend-src-tests-anthropic-test:005"
+      ]
+    },
+    {
+      "name": "config.test.ts",
+      "path": "backend/src/__tests__/config.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-config-test:001",
+        "map:backend-src-tests-config-test:002",
+        "map:backend-src-tests-config-test:003"
+      ]
+    },
+    {
+      "name": "contract.test.ts",
+      "path": "backend/src/__tests__/contract.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-contract-test:001"
+      ]
+    },
+    {
+      "name": "dependencies.test.ts",
+      "path": "backend/src/__tests__/dependencies.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-dependencies-test:001"
+      ]
+    },
+    {
+      "name": "errorTracker.test.ts",
+      "path": "backend/src/__tests__/errorTracker.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-errortracker-test:001",
+        "map:backend-src-tests-errortracker-test:002"
+      ]
+    },
+    {
+      "name": "introScene.prompt.txt",
+      "path": "backend/src/__tests__/fixtures/introScene.prompt.txt",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": []
+    },
+    {
+      "name": "prologueNarrator.prompt.txt",
+      "path": "backend/src/__tests__/fixtures/prologueNarrator.prompt.txt",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": []
+    },
+    {
+      "name": "prologueProfile.prompt.txt",
+      "path": "backend/src/__tests__/fixtures/prologueProfile.prompt.txt",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": []
+    },
+    {
+      "name": "uniqueSkill.prompt.txt",
+      "path": "backend/src/__tests__/fixtures/uniqueSkill.prompt.txt",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": []
+    },
+    {
+      "name": "worldEngine.empty.prompt.txt",
+      "path": "backend/src/__tests__/fixtures/worldEngine.empty.prompt.txt",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": []
+    },
+    {
+      "name": "worldEngine.full.prompt.txt",
+      "path": "backend/src/__tests__/fixtures/worldEngine.full.prompt.txt",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": []
+    },
+    {
+      "name": "googleEmailVerified.test.ts",
+      "path": "backend/src/__tests__/googleEmailVerified.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-googleemailverified-test:001"
+      ]
+    },
+    {
+      "name": "hostedApp.ts",
+      "path": "backend/src/__tests__/helpers/hostedApp.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-helpers-hostedapp:001",
+        "map:backend-src-tests-helpers-hostedapp:002"
+      ]
+    },
+    {
+      "name": "withTestDb.ts",
+      "path": "backend/src/__tests__/helpers/withTestDb.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-helpers-withtestdb:001"
+      ]
+    },
+    {
+      "name": "account.test.ts",
+      "path": "backend/src/__tests__/hosted/account.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-hosted-account-test:001",
+        "map:backend-src-tests-hosted-account-test:002"
+      ]
+    },
+    {
+      "name": "alsPropagation.test.ts",
+      "path": "backend/src/__tests__/hosted/alsPropagation.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-hosted-alspropagation-test:001",
+        "map:backend-src-tests-hosted-alspropagation-test:002"
+      ]
+    },
+    {
+      "name": "auth.test.ts",
+      "path": "backend/src/__tests__/hosted/auth.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-hosted-auth-test:001",
+        "map:backend-src-tests-hosted-auth-test:002",
+        "map:backend-src-tests-hosted-auth-test:003",
+        "map:backend-src-tests-hosted-auth-test:004",
+        "map:backend-src-tests-hosted-auth-test:005",
+        "map:backend-src-tests-hosted-auth-test:006",
+        "map:backend-src-tests-hosted-auth-test:007",
+        "map:backend-src-tests-hosted-auth-test:008"
+      ]
+    },
+    {
+      "name": "db.test.ts",
+      "path": "backend/src/__tests__/hosted/db.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-hosted-db-test:001",
+        "map:backend-src-tests-hosted-db-test:002"
+      ]
+    },
+    {
+      "name": "debugIp.test.ts",
+      "path": "backend/src/__tests__/hosted/debugIp.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-hosted-debugip-test:001",
+        "map:backend-src-tests-hosted-debugip-test:002"
+      ]
+    },
+    {
+      "name": "hostedOrder.test.ts",
+      "path": "backend/src/__tests__/hosted/hostedOrder.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-hosted-hostedorder-test:001",
+        "map:backend-src-tests-hosted-hostedorder-test:002",
+        "map:backend-src-tests-hosted-hostedorder-test:003",
+        "map:backend-src-tests-hosted-hostedorder-test:004"
+      ]
+    },
+    {
+      "name": "invites.test.ts",
+      "path": "backend/src/__tests__/hosted/invites.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-hosted-invites-test:001",
+        "map:backend-src-tests-hosted-invites-test:002",
+        "map:backend-src-tests-hosted-invites-test:003"
+      ]
+    },
+    {
+      "name": "prologueHosted.test.ts",
+      "path": "backend/src/__tests__/hosted/prologueHosted.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-hosted-prologuehosted-test:001"
+      ]
+    },
+    {
+      "name": "purge.test.ts",
+      "path": "backend/src/__tests__/hosted/purge.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-hosted-purge-test:001",
+        "map:backend-src-tests-hosted-purge-test:002",
+        "map:backend-src-tests-hosted-purge-test:003"
+      ]
+    },
+    {
+      "name": "reviewCycle1.test.ts",
+      "path": "backend/src/__tests__/hosted/reviewCycle1.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-hosted-reviewcycle1-test:001",
+        "map:backend-src-tests-hosted-reviewcycle1-test:002"
+      ]
+    },
+    {
+      "name": "hostedConfig.test.ts",
+      "path": "backend/src/__tests__/hostedConfig.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-hostedconfig-test:001",
+        "map:backend-src-tests-hostedconfig-test:002",
+        "map:backend-src-tests-hostedconfig-test:003"
+      ]
+    },
+    {
+      "name": "inviteCookie.test.ts",
+      "path": "backend/src/__tests__/inviteCookie.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-invitecookie-test:001"
+      ]
+    },
+    {
+      "name": "ipv6.test.ts",
+      "path": "backend/src/__tests__/ipv6.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-ipv6-test:001"
+      ]
+    },
+    {
+      "name": "prologueConfig.test.ts",
+      "path": "backend/src/__tests__/prologueConfig.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-prologueconfig-test:001"
+      ]
+    },
+    {
+      "name": "prologueContract.test.ts",
+      "path": "backend/src/__tests__/prologueContract.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-prologuecontract-test:001",
+        "map:backend-src-tests-prologuecontract-test:002"
+      ]
+    },
+    {
+      "name": "prologueHandoff.test.ts",
+      "path": "backend/src/__tests__/prologueHandoff.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-prologuehandoff-test:001",
+        "map:backend-src-tests-prologuehandoff-test:002"
+      ]
+    },
+    {
+      "name": "prologuePrompts.test.ts",
+      "path": "backend/src/__tests__/prologuePrompts.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-prologueprompts-test:001",
+        "map:backend-src-tests-prologueprompts-test:002"
+      ]
+    },
+    {
+      "name": "prologueRoutes.test.ts",
+      "path": "backend/src/__tests__/prologueRoutes.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-prologueroutes-test:001",
+        "map:backend-src-tests-prologueroutes-test:002",
+        "map:backend-src-tests-prologueroutes-test:003",
+        "map:backend-src-tests-prologueroutes-test:004"
+      ]
+    },
+    {
+      "name": "prompts.test.ts",
+      "path": "backend/src/__tests__/prompts.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-prompts-test:001",
+        "map:backend-src-tests-prompts-test:002",
+        "map:backend-src-tests-prompts-test:003"
+      ]
+    },
+    {
+      "name": "redact.test.ts",
+      "path": "backend/src/__tests__/redact.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-redact-test:001"
+      ]
+    },
+    {
+      "name": "routes.test.ts",
+      "path": "backend/src/__tests__/routes.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-routes-test:001",
+        "map:backend-src-tests-routes-test:002",
+        "map:backend-src-tests-routes-test:003",
+        "map:backend-src-tests-routes-test:004",
+        "map:backend-src-tests-routes-test:005",
+        "map:backend-src-tests-routes-test:006",
+        "map:backend-src-tests-routes-test:007",
+        "map:backend-src-tests-routes-test:008",
+        "map:backend-src-tests-routes-test:009"
+      ]
+    },
+    {
+      "name": "selfhostHeaders.test.ts",
+      "path": "backend/src/__tests__/selfhostHeaders.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-selfhostheaders-test:001"
+      ]
+    },
+    {
+      "name": "selfhostNoPg.test.ts",
+      "path": "backend/src/__tests__/selfhostNoPg.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-selfhostnopg-test:001",
+        "map:backend-src-tests-selfhostnopg-test:002"
+      ]
+    },
+    {
+      "name": "server.test.ts",
+      "path": "backend/src/__tests__/server.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-server-test:001",
+        "map:backend-src-tests-server-test:002"
+      ]
+    },
+    {
+      "name": "clearHostedEnv.ts",
+      "path": "backend/src/__tests__/setup/clearHostedEnv.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-setup-clearhostedenv:001"
+      ]
+    },
+    {
+      "name": "requireTestDb.ts",
+      "path": "backend/src/__tests__/setup/requireTestDb.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-setup-requiretestdb:001"
+      ]
+    },
+    {
+      "name": "shutdownDrift.test.ts",
+      "path": "backend/src/__tests__/shutdownDrift.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-shutdowndrift-test:001"
+      ]
+    },
+    {
+      "name": "untrustedText.test.ts",
+      "path": "backend/src/__tests__/untrustedText.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:backend-src-tests-untrustedtext-test:001"
+      ]
+    },
+    {
+      "name": "hosted.spec.ts",
+      "path": "frontend/e2e/hosted.spec.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-e2e-hosted-spec:001",
+        "map:frontend-e2e-hosted-spec:002",
+        "map:frontend-e2e-hosted-spec:003"
+      ]
+    },
+    {
+      "name": "pageFrame.spec.ts",
+      "path": "frontend/e2e/pageFrame.spec.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-e2e-pageframe-spec:001"
+      ]
+    },
+    {
+      "name": "prologue.spec.ts",
+      "path": "frontend/e2e/prologue.spec.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-e2e-prologue-spec:001",
+        "map:frontend-e2e-prologue-spec:002",
+        "map:frontend-e2e-prologue-spec:003"
+      ]
+    },
+    {
+      "name": "smoke.spec.ts",
+      "path": "frontend/e2e/smoke.spec.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-e2e-smoke-spec:001",
+        "map:frontend-e2e-smoke-spec:002",
+        "map:frontend-e2e-smoke-spec:003",
+        "map:frontend-e2e-smoke-spec:004",
+        "map:frontend-e2e-smoke-spec:005"
+      ]
+    },
+    {
+      "name": "appIntegration.test.tsx",
+      "path": "frontend/src/__tests__/appIntegration.test.tsx",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-tests-appintegration-test:001",
+        "map:frontend-src-tests-appintegration-test:002",
+        "map:frontend-src-tests-appintegration-test:003",
+        "map:frontend-src-tests-appintegration-test:004"
+      ]
+    },
+    {
+      "name": "constraints.test.ts",
+      "path": "frontend/src/__tests__/constraints.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-tests-constraints-test:001"
+      ]
+    },
+    {
+      "name": "harness.test.ts",
+      "path": "frontend/src/__tests__/harness.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-tests-harness-test:001"
+      ]
+    },
+    {
+      "name": "prologueIntegration.test.tsx",
+      "path": "frontend/src/__tests__/prologueIntegration.test.tsx",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-tests-prologueintegration-test:001",
+        "map:frontend-src-tests-prologueintegration-test:002"
+      ]
+    },
+    {
+      "name": "accessGate.test.tsx",
+      "path": "frontend/src/components/__tests__/accessGate.test.tsx",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-components-tests-accessgate-test:001",
+        "map:frontend-src-components-tests-accessgate-test:002",
+        "map:frontend-src-components-tests-accessgate-test:003"
+      ]
+    },
+    {
+      "name": "codexAccount.test.tsx",
+      "path": "frontend/src/components/__tests__/codexAccount.test.tsx",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-components-tests-codexaccount-test:001"
+      ]
+    },
+    {
+      "name": "components.test.tsx",
+      "path": "frontend/src/components/__tests__/components.test.tsx",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-components-tests-components-test:001",
+        "map:frontend-src-components-tests-components-test:002",
+        "map:frontend-src-components-tests-components-test:003"
+      ]
+    },
+    {
+      "name": "modeGate.test.tsx",
+      "path": "frontend/src/components/__tests__/modeGate.test.tsx",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-components-tests-modegate-test:001",
+        "map:frontend-src-components-tests-modegate-test:002",
+        "map:frontend-src-components-tests-modegate-test:003",
+        "map:frontend-src-components-tests-modegate-test:004"
+      ]
+    },
+    {
+      "name": "applyWorldUpdate.test.ts",
+      "path": "frontend/src/game/__tests__/applyWorldUpdate.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-game-tests-applyworldupdate-test:001",
+        "map:frontend-src-game-tests-applyworldupdate-test:002"
+      ]
+    },
+    {
+      "name": "narrativeMemory.test.ts",
+      "path": "frontend/src/game/__tests__/narrativeMemory.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-game-tests-narrativememory-test:001"
+      ]
+    },
+    {
+      "name": "useIsMobile.test.ts",
+      "path": "frontend/src/hooks/__tests__/useIsMobile.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-hooks-tests-useismobile-test:001"
+      ]
+    },
+    {
+      "name": "api.test.ts",
+      "path": "frontend/src/lib/__tests__/api.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-lib-tests-api-test:001",
+        "map:frontend-src-lib-tests-api-test:002",
+        "map:frontend-src-lib-tests-api-test:003",
+        "map:frontend-src-lib-tests-api-test:004",
+        "map:frontend-src-lib-tests-api-test:005"
+      ]
+    },
+    {
+      "name": "hostedApi.test.ts",
+      "path": "frontend/src/lib/__tests__/hostedApi.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-lib-tests-hostedapi-test:001",
+        "map:frontend-src-lib-tests-hostedapi-test:002"
+      ]
+    },
+    {
+      "name": "passphrase.test.ts",
+      "path": "frontend/src/lib/__tests__/passphrase.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-lib-tests-passphrase-test:001",
+        "map:frontend-src-lib-tests-passphrase-test:002"
+      ]
+    },
+    {
+      "name": "prologueApi.test.ts",
+      "path": "frontend/src/lib/__tests__/prologueApi.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-lib-tests-prologueapi-test:001"
+      ]
+    },
+    {
+      "name": "prologueFlag.test.ts",
+      "path": "frontend/src/lib/__tests__/prologueFlag.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-lib-tests-prologueflag-test:001"
+      ]
+    },
+    {
+      "name": "saves.test.ts",
+      "path": "frontend/src/lib/__tests__/saves.test.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-lib-tests-saves-test:001",
+        "map:frontend-src-lib-tests-saves-test:002",
+        "map:frontend-src-lib-tests-saves-test:003"
+      ]
+    },
+    {
+      "name": "creationScreens.test.tsx",
+      "path": "frontend/src/screens/__tests__/creationScreens.test.tsx",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-screens-tests-creationscreens-test:001",
+        "map:frontend-src-screens-tests-creationscreens-test:002",
+        "map:frontend-src-screens-tests-creationscreens-test:003"
+      ]
+    },
+    {
+      "name": "prologueScreen.test.tsx",
+      "path": "frontend/src/screens/__tests__/prologueScreen.test.tsx",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-screens-tests-prologuescreen-test:001",
+        "map:frontend-src-screens-tests-prologuescreen-test:002",
+        "map:frontend-src-screens-tests-prologuescreen-test:003",
+        "map:frontend-src-screens-tests-prologuescreen-test:004"
+      ]
+    },
+    {
+      "name": "questionnaireFlag.test.tsx",
+      "path": "frontend/src/screens/__tests__/questionnaireFlag.test.tsx",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-screens-tests-questionnaireflag-test:001"
+      ]
+    },
+    {
+      "name": "questionnaireReview.test.tsx",
+      "path": "frontend/src/screens/__tests__/questionnaireReview.test.tsx",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-screens-tests-questionnairereview-test:001",
+        "map:frontend-src-screens-tests-questionnairereview-test:002"
+      ]
+    },
+    {
+      "name": "simulationScreen.test.tsx",
+      "path": "frontend/src/screens/__tests__/simulationScreen.test.tsx",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-screens-tests-simulationscreen-test:001",
+        "map:frontend-src-screens-tests-simulationscreen-test:002"
+      ]
+    },
+    {
+      "name": "setup.ts",
+      "path": "frontend/src/test/setup.ts",
+      "kind": "test",
+      "summary": "test file",
+      "related_chunks": [
+        "map:frontend-src-test-setup:001"
+      ]
+    }
+  ],
+  "config": [
+    {
+      "name": ".env.example",
+      "path": ".env.example",
+      "kind": "config",
+      "summary": "configuration file",
+      "related_chunks": []
+    },
+    {
+      "name": "ci.yml",
+      "path": ".github/workflows/ci.yml",
+      "kind": "config",
+      "summary": "configuration file",
+      "related_chunks": []
+    },
+    {
+      "name": "release.yml",
+      "path": ".github/workflows/release.yml",
+      "kind": "config",
+      "summary": "configuration file",
+      "related_chunks": []
+    },
+    {
+      "name": "Dockerfile",
+      "path": "backend/Dockerfile",
+      "kind": "config",
+      "summary": "configuration file",
+      "related_chunks": []
+    },
+    {
+      "name": "tsconfig.json",
+      "path": "backend/tsconfig.json",
+      "kind": "config",
+      "summary": "configuration file",
+      "related_chunks": []
+    },
+    {
+      "name": "vitest.config.ts",
+      "path": "backend/vitest.config.ts",
+      "kind": "config",
+      "summary": "configuration file",
+      "related_chunks": []
+    },
+    {
+      "name": "vitest.hosted.config.ts",
+      "path": "backend/vitest.hosted.config.ts",
+      "kind": "config",
+      "summary": "configuration file",
+      "related_chunks": []
+    },
+    {
+      "name": "docker-compose.yml",
+      "path": "docker-compose.yml",
+      "kind": "config",
+      "summary": "configuration file",
+      "related_chunks": []
+    },
+    {
+      "name": "Dockerfile",
+      "path": "frontend/Dockerfile",
+      "kind": "config",
+      "summary": "configuration file",
+      "related_chunks": []
+    },
+    {
+      "name": "playwright.config.ts",
+      "path": "frontend/playwright.config.ts",
+      "kind": "config",
+      "summary": "configuration file",
+      "related_chunks": []
+    },
+    {
+      "name": "tsconfig.json",
+      "path": "frontend/tsconfig.json",
+      "kind": "config",
+      "summary": "configuration file",
+      "related_chunks": []
+    },
+    {
+      "name": "vite.config.ts",
+      "path": "frontend/vite.config.ts",
+      "kind": "config",
+      "summary": "configuration file",
+      "related_chunks": []
+    },
+    {
+      "name": "vitest.config.ts",
+      "path": "frontend/vitest.config.ts",
+      "kind": "config",
+      "summary": "configuration file",
+      "related_chunks": []
+    },
+    {
+      "name": "tsconfig.json",
+      "path": "shared/tsconfig.json",
+      "kind": "config",
+      "summary": "configuration file",
+      "related_chunks": []
+    },
+    {
+      "name": "tsconfig.base.json",
+      "path": "tsconfig.base.json",
+      "kind": "config",
+      "summary": "configuration file",
+      "related_chunks": []
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "@anthropic-ai",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "@playwright",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "@sentry",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "@soulbound",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "@testing-library",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "@vitejs",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "better-auth",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "express",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "node-pg-migrate",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "node:async_hooks",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "node:crypto",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "node:fs",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "node:http",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "node:net",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "node:os",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "node:path",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "node:url",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "node:util",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "pg",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "react",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "react-dom",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "vite",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "vitest",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    },
+    {
+      "name": "zod",
+      "path": "",
+      "kind": "external",
+      "summary": "external import",
+      "related_chunks": []
+    }
+  ],
+  "ownership": [
+    {
+      "name": "tests",
+      "path": "backend/src/__tests__",
+      "kind": "area",
+      "summary": "tests code",
+      "related_chunks": []
+    },
+    {
+      "name": "routes",
+      "path": "backend/src/routes",
+      "kind": "area",
+      "summary": "routes code",
+      "related_chunks": []
+    },
+    {
+      "name": "components",
+      "path": "frontend/src/components",
+      "kind": "area",
+      "summary": "components code",
+      "related_chunks": []
+    },
+    {
+      "name": "pages",
+      "path": "frontend/src/screens",
+      "kind": "area",
+      "summary": "pages code",
+      "related_chunks": []
+    },
+    {
+      "name": "utils",
+      "path": "frontend/src/lib",
+      "kind": "area",
+      "summary": "utils code",
+      "related_chunks": []
+    },
+    {
+      "name": "hooks",
+      "path": "frontend/src/hooks",
+      "kind": "area",
+      "summary": "hooks code",
+      "related_chunks": []
+    },
+    {
+      "name": "scripts",
+      "path": "scripts",
+      "kind": "area",
+      "summary": "scripts code",
+      "related_chunks": []
+    },
+    {
+      "name": "docs",
+      "path": "docs",
+      "kind": "area",
+      "summary": "docs code",
+      "related_chunks": []
+    }
+  ],
+  "risk_areas": [
+    {
+      "name": "frontend/src/screens/sharedBg.ts",
+      "path": "frontend/src/screens/sharedBg.ts",
+      "kind": "untested",
+      "summary": "untested, fan-in 9, risk 90.2",
+      "related_chunks": [
+        "map:frontend-src-screens-sharedbg:001"
+      ]
+    },
+    {
+      "name": "frontend/src/lib/authClient.ts",
+      "path": "frontend/src/lib/authClient.ts",
+      "kind": "untested",
+      "summary": "untested, fan-in 6, risk 61.5",
+      "related_chunks": [
+        "map:frontend-src-lib-authclient:001",
+        "map:frontend-src-lib-authclient:002"
+      ]
+    },
+    {
+      "name": "frontend/src/screens/QuestionnaireScreen.tsx",
+      "path": "frontend/src/screens/QuestionnaireScreen.tsx",
+      "kind": "untested",
+      "summary": "untested, fan-in 4, risk 42.6",
+      "related_chunks": [
+        "map:frontend-src-screens-questionnairescreen:001",
+        "map:frontend-src-screens-questionnairescreen:002"
+      ]
+    },
+    {
+      "name": "frontend/src/components/hostedAccount.tsx",
+      "path": "frontend/src/components/hostedAccount.tsx",
+      "kind": "untested",
+      "summary": "untested, fan-in 4, risk 40.3",
+      "related_chunks": [
+        "map:frontend-src-components-hostedaccount:001"
+      ]
+    },
+    {
+      "name": "frontend/src/components/SoulCodexContents.tsx",
+      "path": "frontend/src/components/SoulCodexContents.tsx",
+      "kind": "untested",
+      "summary": "untested, fan-in 3, risk 31.3",
+      "related_chunks": [
+        "map:frontend-src-components-soulcodexcontents:001"
+      ]
+    }
+  ],
+  "classes": [
+    {
+      "name": "HostedAppOptions",
+      "path": "backend/src/__tests__/helpers/hostedApp.ts",
+      "kind": "interface",
+      "line": 25,
+      "summary": "interface HostedAppOptions",
+      "related_chunks": [
+        "map:backend-src-tests-helpers-hostedapp:001"
+      ]
+    },
+    {
+      "name": "Result",
+      "path": "backend/src/__tests__/helpers/hostedApp.ts",
+      "kind": "interface",
+      "line": 43,
+      "summary": "interface Result",
+      "related_chunks": [
+        "map:backend-src-tests-helpers-hostedapp:001"
+      ]
+    },
+    {
+      "name": "RequestOptions",
+      "path": "backend/src/__tests__/helpers/hostedApp.ts",
+      "kind": "interface",
+      "line": 50,
+      "summary": "interface RequestOptions",
+      "related_chunks": [
+        "map:backend-src-tests-helpers-hostedapp:001"
+      ]
+    },
+    {
+      "name": "HostedApp",
+      "path": "backend/src/__tests__/helpers/hostedApp.ts",
+      "kind": "interface",
+      "line": 60,
+      "summary": "interface HostedApp",
+      "related_chunks": [
+        "map:backend-src-tests-helpers-hostedapp:001"
+      ]
+    },
+    {
+      "name": "TestDb",
+      "path": "backend/src/__tests__/helpers/withTestDb.ts",
+      "kind": "interface",
+      "line": 24,
+      "summary": "interface TestDb",
+      "related_chunks": [
+        "map:backend-src-tests-helpers-withtestdb:001"
+      ]
+    },
+    {
+      "name": "WithTestDbOptions",
+      "path": "backend/src/__tests__/helpers/withTestDb.ts",
+      "kind": "interface",
+      "line": 33,
+      "summary": "interface WithTestDbOptions",
+      "related_chunks": [
+        "map:backend-src-tests-helpers-withtestdb:001"
+      ]
+    },
+    {
+      "name": "RateLimiterHandler",
+      "path": "backend/src/accessGate.ts",
+      "kind": "interface",
+      "line": 61,
+      "summary": "interface RateLimiterHandler",
+      "related_chunks": [
+        "map:backend-src-accessgate:002"
+      ]
+    },
+    {
+      "name": "SessionRevoker",
+      "path": "backend/src/account.ts",
+      "kind": "interface",
+      "line": 46,
+      "summary": "interface SessionRevoker",
+      "related_chunks": [
+        "map:backend-src-account:001"
+      ]
+    },
+    {
+      "name": "PurgeResult",
+      "path": "backend/src/account.ts",
+      "kind": "interface",
+      "line": 74,
+      "summary": "interface PurgeResult",
+      "related_chunks": [
+        "map:backend-src-account:002"
+      ]
+    },
+    {
+      "name": "PurgeOptions",
+      "path": "backend/src/account.ts",
+      "kind": "interface",
+      "line": 83,
+      "summary": "interface PurgeOptions",
+      "related_chunks": [
+        "map:backend-src-account:002"
+      ]
+    },
+    {
+      "name": "PurgeScheduleOptions",
+      "path": "backend/src/account.ts",
+      "kind": "interface",
+      "line": 166,
+      "summary": "interface PurgeScheduleOptions",
+      "related_chunks": [
+        "map:backend-src-account:003"
+      ]
+    },
+    {
+      "name": "WorldVoiceErrorCode",
+      "path": "backend/src/anthropic.ts",
+      "kind": "type",
+      "line": 175,
+      "summary": "type WorldVoiceErrorCode",
+      "related_chunks": [
+        "map:backend-src-anthropic:002"
+      ]
+    },
+    {
+      "name": "WorldVoiceCallError",
+      "path": "backend/src/anthropic.ts",
+      "kind": "class",
+      "line": 193,
+      "summary": "class WorldVoiceCallError",
+      "related_chunks": [
+        "map:backend-src-anthropic:003"
+      ]
+    },
+    {
+      "name": "WorldVoiceRoute",
+      "path": "backend/src/anthropic.ts",
+      "kind": "type",
+      "line": 407,
+      "summary": "type WorldVoiceRoute",
+      "related_chunks": [
+        "map:backend-src-anthropic:004"
+      ]
+    },
+    {
+      "name": "CallWorldVoiceArgs",
+      "path": "backend/src/anthropic.ts",
+      "kind": "interface",
+      "line": 409,
+      "summary": "interface CallWorldVoiceArgs",
+      "related_chunks": [
+        "map:backend-src-anthropic:004"
+      ]
+    },
+    {
+      "name": "EmailMessage",
+      "path": "backend/src/auth.ts",
+      "kind": "interface",
+      "line": 56,
+      "summary": "interface EmailMessage",
+      "related_chunks": [
+        "map:backend-src-auth:001"
+      ]
+    },
+    {
+      "name": "SendEmail",
+      "path": "backend/src/auth.ts",
+      "kind": "type",
+      "line": 64,
+      "summary": "type SendEmail",
+      "related_chunks": [
+        "map:backend-src-auth:002"
+      ]
+    },
+    {
+      "name": "InviteStore",
+      "path": "backend/src/auth.ts",
+      "kind": "interface",
+      "line": 67,
+      "summary": "interface InviteStore",
+      "related_chunks": [
+        "map:backend-src-auth:002"
+      ]
+    },
+    {
+      "name": "OAuthCredentials",
+      "path": "backend/src/auth.ts",
+      "kind": "interface",
+      "line": 72,
+      "summary": "interface OAuthCredentials",
+      "related_chunks": [
+        "map:backend-src-auth:002"
+      ]
+    },
+    {
+      "name": "AuthDeps",
+      "path": "backend/src/auth.ts",
+      "kind": "interface",
+      "line": 77,
+      "summary": "interface AuthDeps",
+      "related_chunks": [
+        "map:backend-src-auth:002"
+      ]
+    },
+    {
+      "name": "HostedAuth",
+      "path": "backend/src/auth.ts",
+      "kind": "type",
+      "line": 607,
+      "summary": "type HostedAuth",
+      "related_chunks": [
+        "map:backend-src-auth:005"
+      ]
+    },
+    {
+      "name": "Redactor",
+      "path": "backend/src/db.ts",
+      "kind": "type",
+      "line": 29,
+      "summary": "type Redactor",
+      "related_chunks": [
+        "map:backend-src-db:001"
+      ]
+    },
+    {
+      "name": "CreatePoolOptions",
+      "path": "backend/src/db.ts",
+      "kind": "interface",
+      "line": 104,
+      "summary": "interface CreatePoolOptions",
+      "related_chunks": [
+        "map:backend-src-db:002"
+      ]
+    },
+    {
+      "name": "PendingCheckOptions",
+      "path": "backend/src/db.ts",
+      "kind": "interface",
+      "line": 149,
+      "summary": "interface PendingCheckOptions",
+      "related_chunks": [
+        "map:backend-src-db:003"
+      ]
+    },
+    {
+      "name": "TrackerTransport",
+      "path": "backend/src/errorTracker.ts",
+      "kind": "type",
+      "line": 54,
+      "summary": "type TrackerTransport",
+      "related_chunks": [
+        "map:backend-src-errortracker:001"
+      ]
+    },
+    {
+      "name": "ErrorContext",
+      "path": "backend/src/errorTracker.ts",
+      "kind": "interface",
+      "line": 56,
+      "summary": "interface ErrorContext",
+      "related_chunks": [
+        "map:backend-src-errortracker:001"
+      ]
+    },
+    {
+      "name": "ErrorReporter",
+      "path": "backend/src/errorTracker.ts",
+      "kind": "interface",
+      "line": 63,
+      "summary": "interface ErrorReporter",
+      "related_chunks": [
+        "map:backend-src-errortracker:002"
+      ]
+    },
+    {
+      "name": "ErrorTrackerOptions",
+      "path": "backend/src/errorTracker.ts",
+      "kind": "interface",
+      "line": 70,
+      "summary": "interface ErrorTrackerOptions",
+      "related_chunks": [
+        "map:backend-src-errortracker:002"
+      ]
+    },
+    {
+      "name": "SessionUser",
+      "path": "backend/src/hostedGate.ts",
+      "kind": "interface",
+      "line": 119,
+      "summary": "interface SessionUser",
+      "related_chunks": [
+        "map:backend-src-hostedgate:002"
+      ]
+    },
+    {
+      "name": "GetSession",
+      "path": "backend/src/hostedGate.ts",
+      "kind": "type",
+      "line": 130,
+      "summary": "type GetSession",
+      "related_chunks": [
+        "map:backend-src-hostedgate:002"
+      ]
+    },
+    {
+      "name": "FromNodeHeaders",
+      "path": "backend/src/hostedGate.ts",
+      "kind": "type",
+      "line": 136,
+      "summary": "type FromNodeHeaders",
+      "related_chunks": [
+        "map:backend-src-hostedgate:003"
+      ]
+    },
+    {
+      "name": "Queryable",
+      "path": "backend/src/invites.ts",
+      "kind": "interface",
+      "line": 30,
+      "summary": "interface Queryable",
+      "related_chunks": [
+        "map:backend-src-invites:001"
+      ]
+    },
+    {
+      "name": "InvitePayload",
+      "path": "backend/src/invites.ts",
+      "kind": "interface",
+      "line": 69,
+      "summary": "interface InvitePayload",
+      "related_chunks": [
+        "map:backend-src-invites:002"
+      ]
+    },
+    {
+      "name": "RunMigrationsOptions",
+      "path": "backend/src/migrate.ts",
+      "kind": "interface",
+      "line": 24,
+      "summary": "interface RunMigrationsOptions",
+      "related_chunks": [
+        "map:backend-src-migrate:001"
+      ]
+    },
+    {
+      "name": "IntroSceneRequestBody",
+      "path": "backend/src/routes/introScene.ts",
+      "kind": "type",
+      "line": 79,
+      "summary": "type IntroSceneRequestBody",
+      "related_chunks": [
+        "map:backend-src-routes-introscene:002"
+      ]
+    },
+    {
+      "name": "UniqueSkillRequestBody",
+      "path": "backend/src/routes/uniqueSkill.ts",
+      "kind": "type",
+      "line": 80,
+      "summary": "type UniqueSkillRequestBody",
+      "related_chunks": [
+        "map:backend-src-routes-uniqueskill:002"
+      ]
+    },
+    {
+      "name": "WorldEngineRequestBody",
+      "path": "backend/src/routes/worldEngine.ts",
+      "kind": "type",
+      "line": 150,
+      "summary": "type WorldEngineRequestBody",
+      "related_chunks": [
+        "map:backend-src-routes-worldengine:002"
+      ]
+    },
+    {
+      "name": "HostedDeps",
+      "path": "backend/src/server.ts",
+      "kind": "interface",
+      "line": 77,
+      "summary": "interface HostedDeps",
+      "related_chunks": [
+        "map:backend-src-server:002"
+      ]
+    },
+    {
+      "name": "AppConfig",
+      "path": "backend/src/server.ts",
+      "kind": "interface",
+      "line": 132,
+      "summary": "interface AppConfig",
+      "related_chunks": [
+        "map:backend-src-server:002"
+      ]
+    },
+    {
+      "name": "HostedBootOptions",
+      "path": "backend/src/server.ts",
+      "kind": "interface",
+      "line": 634,
+      "summary": "interface HostedBootOptions",
+      "related_chunks": [
+        "map:backend-src-server:006"
+      ]
+    },
+    {
+      "name": "UntrustedTag",
+      "path": "backend/src/untrustedText.ts",
+      "kind": "type",
+      "line": 28,
+      "summary": "type UntrustedTag",
+      "related_chunks": [
+        "map:backend-src-untrustedtext:001"
+      ]
+    },
+    {
+      "name": "Phase",
+      "path": "frontend/src/App.tsx",
+      "kind": "type",
+      "line": 98,
+      "summary": "type Phase",
+      "related_chunks": [
+        "map:frontend-src-app:002"
+      ]
+    },
+    {
+      "name": "AccessGateProps",
+      "path": "frontend/src/components/AccessGate.tsx",
+      "kind": "interface",
+      "line": 53,
+      "summary": "interface AccessGateProps",
+      "related_chunks": [
+        "map:frontend-src-components-accessgate:001"
+      ]
+    },
+    {
+      "name": "AccountPanelProps",
+      "path": "frontend/src/components/AccountPanel.tsx",
+      "kind": "interface",
+      "line": 28,
+      "summary": "interface AccountPanelProps",
+      "related_chunks": [
+        "map:frontend-src-components-accountpanel:001"
+      ]
+    },
+    {
+      "name": "ActionBarProps",
+      "path": "frontend/src/components/ActionBar.tsx",
+      "kind": "interface",
+      "line": 7,
+      "summary": "interface ActionBarProps",
+      "related_chunks": [
+        "map:frontend-src-components-actionbar:001"
+      ]
+    },
+    {
+      "name": "ModeGateProps",
+      "path": "frontend/src/components/ModeGate.tsx",
+      "kind": "interface",
+      "line": 49,
+      "summary": "interface ModeGateProps",
+      "related_chunks": [
+        "map:frontend-src-components-modegate:001"
+      ]
+    },
+    {
+      "name": "SignInProps",
+      "path": "frontend/src/components/SignIn.tsx",
+      "kind": "interface",
+      "line": 66,
+      "summary": "interface SignInProps",
+      "related_chunks": [
+        "map:frontend-src-components-signin:002"
+      ]
+    },
+    {
+      "name": "SkillCardProps",
+      "path": "frontend/src/components/SkillCard.tsx",
+      "kind": "interface",
+      "line": 13,
+      "summary": "interface SkillCardProps",
+      "related_chunks": [
+        "map:frontend-src-components-skillcard:001"
+      ]
+    },
+    {
+      "name": "SoulCodexContentsProps",
+      "path": "frontend/src/components/SoulCodexContents.tsx",
+      "kind": "interface",
+      "line": 27,
+      "summary": "interface SoulCodexContentsProps",
+      "related_chunks": [
+        "map:frontend-src-components-soulcodexcontents:001"
+      ]
+    },
+    {
+      "name": "WorldLogProps",
+      "path": "frontend/src/components/WorldLog.tsx",
+      "kind": "interface",
+      "line": 18,
+      "summary": "interface WorldLogProps",
+      "related_chunks": [
+        "map:frontend-src-components-worldlog:001"
+      ]
+    },
+    {
+      "name": "HostedAccount",
+      "path": "frontend/src/components/hostedAccount.tsx",
+      "kind": "interface",
+      "line": 16,
+      "summary": "interface HostedAccount",
+      "related_chunks": [
+        "map:frontend-src-components-hostedaccount:001"
+      ]
+    },
+    {
+      "name": "ApplyWorldUpdateResult",
+      "path": "frontend/src/game/applyWorldUpdate.ts",
+      "kind": "interface",
+      "line": 69,
+      "summary": "interface ApplyWorldUpdateResult",
+      "related_chunks": [
+        "map:frontend-src-game-applyworldupdate:002"
+      ]
+    },
+    {
+      "name": "ApiClientErrorCode",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "type",
+      "line": 75,
+      "summary": "type ApiClientErrorCode",
+      "related_chunks": [
+        "map:frontend-src-lib-api:002"
+      ]
+    },
+    {
+      "name": "ApiClientError",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "class",
+      "line": 87,
+      "summary": "class ApiClientError",
+      "related_chunks": [
+        "map:frontend-src-lib-api:002"
+      ]
+    },
+    {
+      "name": "UniqueSkillRequest",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "interface",
+      "line": 297,
+      "summary": "interface UniqueSkillRequest",
+      "related_chunks": [
+        "map:frontend-src-lib-api:003"
+      ]
+    },
+    {
+      "name": "WorldEngineRequest",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "interface",
+      "line": 312,
+      "summary": "interface WorldEngineRequest",
+      "related_chunks": [
+        "map:frontend-src-lib-api:003"
+      ]
+    },
+    {
+      "name": "IntroSceneRequest",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "interface",
+      "line": 318,
+      "summary": "interface IntroSceneRequest",
+      "related_chunks": [
+        "map:frontend-src-lib-api:003"
+      ]
+    },
+    {
+      "name": "AccessState",
+      "path": "frontend/src/lib/api.ts",
+      "kind": "interface",
+      "line": 438,
+      "summary": "interface AccessState",
+      "related_chunks": [
+        "map:frontend-src-lib-api:005"
+      ]
+    },
+    {
+      "name": "AuthClient",
+      "path": "frontend/src/lib/authClient.ts",
+      "kind": "type",
+      "line": 30,
+      "summary": "type AuthClient",
+      "related_chunks": [
+        "map:frontend-src-lib-authclient:001"
+      ]
+    },
+    {
+      "name": "SignInParams",
+      "path": "frontend/src/lib/authClient.ts",
+      "kind": "interface",
+      "line": 95,
+      "summary": "interface SignInParams",
+      "related_chunks": [
+        "map:frontend-src-lib-authclient:002"
+      ]
+    },
+    {
+      "name": "LoadingScreenProps",
+      "path": "frontend/src/screens/LoadingScreen.tsx",
+      "kind": "interface",
+      "line": 15,
+      "summary": "interface LoadingScreenProps",
+      "related_chunks": [
+        "map:frontend-src-screens-loadingscreen:001"
+      ]
+    },
+    {
+      "name": "PrologueScreenProps",
+      "path": "frontend/src/screens/PrologueScreen.tsx",
+      "kind": "interface",
+      "line": 32,
+      "summary": "interface PrologueScreenProps",
+      "related_chunks": [
+        "map:frontend-src-screens-prologuescreen:001"
+      ]
+    },
+    {
+      "name": "QuestionnaireScreenProps",
+      "path": "frontend/src/screens/QuestionnaireScreen.tsx",
+      "kind": "interface",
+      "line": 45,
+      "summary": "interface QuestionnaireScreenProps",
+      "related_chunks": [
+        "map:frontend-src-screens-questionnairescreen:001"
+      ]
+    },
+    {
+      "name": "RaceScreenProps",
+      "path": "frontend/src/screens/RaceScreen.tsx",
+      "kind": "interface",
+      "line": 23,
+      "summary": "interface RaceScreenProps",
+      "related_chunks": [
+        "map:frontend-src-screens-racescreen:001"
+      ]
+    },
+    {
+      "name": "SimulationScreenProps",
+      "path": "frontend/src/screens/SimulationScreen.tsx",
+      "kind": "interface",
+      "line": 64,
+      "summary": "interface SimulationScreenProps",
+      "related_chunks": [
+        "map:frontend-src-screens-simulationscreen:002"
+      ]
+    },
+    {
+      "name": "TitleScreenProps",
+      "path": "frontend/src/screens/TitleScreen.tsx",
+      "kind": "interface",
+      "line": 33,
+      "summary": "interface TitleScreenProps",
+      "related_chunks": [
+        "map:frontend-src-screens-titlescreen:001"
+      ]
+    },
+    {
+      "name": "SoulboundMode",
+      "path": "shared/src/accessGate.ts",
+      "kind": "type",
+      "line": 41,
+      "summary": "type SoulboundMode",
+      "related_chunks": [
+        "map:shared-src-accessgate:001"
+      ]
+    },
+    {
+      "name": "RaceIntrinsic",
+      "path": "shared/src/gameState.ts",
+      "kind": "interface",
+      "line": 28,
+      "summary": "interface RaceIntrinsic",
+      "related_chunks": [
+        "map:shared-src-gamestate:001"
+      ]
+    },
+    {
+      "name": "Race",
+      "path": "shared/src/gameState.ts",
+      "kind": "interface",
+      "line": 33,
+      "summary": "interface Race",
+      "related_chunks": [
+        "map:shared-src-gamestate:001"
+      ]
+    },
+    {
+      "name": "Question",
+      "path": "shared/src/gameState.ts",
+      "kind": "interface",
+      "line": 44,
+      "summary": "interface Question",
+      "related_chunks": [
+        "map:shared-src-gamestate:001"
+      ]
+    },
+    {
+      "name": "QuestionnaireAnswers",
+      "path": "shared/src/gameState.ts",
+      "kind": "type",
+      "line": 51,
+      "summary": "type QuestionnaireAnswers",
+      "related_chunks": [
+        "map:shared-src-gamestate:001"
+      ]
+    },
+    {
+      "name": "SubAbility",
+      "path": "shared/src/gameState.ts",
+      "kind": "interface",
+      "line": 59,
+      "summary": "interface SubAbility",
+      "related_chunks": [
+        "map:shared-src-gamestate:001"
+      ]
+    },
+    {
+      "name": "Skill",
+      "path": "shared/src/gameState.ts",
+      "kind": "interface",
+      "line": 65,
+      "summary": "interface Skill",
+      "related_chunks": [
+        "map:shared-src-gamestate:002"
+      ]
+    },
+    {
+      "name": "UniqueSkillOrigin",
+      "path": "shared/src/gameState.ts",
+      "kind": "interface",
+      "line": 80,
+      "summary": "interface UniqueSkillOrigin",
+      "related_chunks": [
+        "map:shared-src-gamestate:002"
+      ]
+    },
+    {
+      "name": "Character",
+      "path": "shared/src/gameState.ts",
+      "kind": "interface",
+      "line": 88,
+      "summary": "interface Character",
+      "related_chunks": [
+        "map:shared-src-gamestate:002"
+      ]
+    },
+    {
+      "name": "NarrativeMemory",
+      "path": "shared/src/gameState.ts",
+      "kind": "interface",
+      "line": 99,
+      "summary": "interface NarrativeMemory",
+      "related_chunks": [
+        "map:shared-src-gamestate:002"
+      ]
+    },
+    {
+      "name": "GameState",
+      "path": "shared/src/gameState.ts",
+      "kind": "interface",
+      "line": 108,
+      "summary": "interface GameState",
+      "related_chunks": [
+        "map:shared-src-gamestate:002"
+      ]
+    },
+    {
+      "name": "SoulRewriteEntry",
+      "path": "shared/src/gameState.ts",
+      "kind": "interface",
+      "line": 119,
+      "summary": "interface SoulRewriteEntry",
+      "related_chunks": [
+        "map:shared-src-gamestate:002"
+      ]
+    },
+    {
+      "name": "LogEntry",
+      "path": "shared/src/gameState.ts",
+      "kind": "interface",
+      "line": 126,
+      "summary": "interface LogEntry",
+      "related_chunks": [
+        "map:shared-src-gamestate:003"
+      ]
+    },
+    {
+      "name": "SaveSlot",
+      "path": "shared/src/gameState.ts",
+      "kind": "interface",
+      "line": 170,
+      "summary": "interface SaveSlot",
+      "related_chunks": [
+        "map:shared-src-gamestate:003"
+      ]
+    },
+    {
+      "name": "SaveIndexEntry",
+      "path": "shared/src/gameState.ts",
+      "kind": "interface",
+      "line": 181,
+      "summary": "interface SaveIndexEntry",
+      "related_chunks": [
+        "map:shared-src-gamestate:003"
+      ]
+    },
+    {
+      "name": "PrologueCanon",
+      "path": "shared/src/prologue.ts",
+      "kind": "type",
+      "line": 45,
+      "summary": "type PrologueCanon",
+      "related_chunks": [
+        "map:shared-src-prologue:001"
+      ]
+    },
+    {
+      "name": "PrologueHistoryEntry",
+      "path": "shared/src/prologue.ts",
+      "kind": "type",
+      "line": 53,
+      "summary": "type PrologueHistoryEntry",
+      "related_chunks": [
+        "map:shared-src-prologue:001"
+      ]
+    },
+    {
+      "name": "PrologueBeatResponse",
+      "path": "shared/src/prologue.ts",
+      "kind": "type",
+      "line": 143,
+      "summary": "type PrologueBeatResponse",
+      "related_chunks": [
+        "map:shared-src-prologue:002"
+      ]
+    },
+    {
+      "name": "PrologueProfile",
+      "path": "shared/src/prologue.ts",
+      "kind": "type",
+      "line": 153,
+      "summary": "type PrologueProfile",
+      "related_chunks": [
+        "map:shared-src-prologue:003"
+      ]
+    },
+    {
+      "name": "SkillTier",
+      "path": "shared/src/worldVoice.ts",
+      "kind": "type",
+      "line": 45,
+      "summary": "type SkillTier",
+      "related_chunks": [
+        "map:shared-src-worldvoice:001"
+      ]
+    },
+    {
+      "name": "SkillMasteryChange",
+      "path": "shared/src/worldVoice.ts",
+      "kind": "type",
+      "line": 57,
+      "summary": "type SkillMasteryChange",
+      "related_chunks": [
+        "map:shared-src-worldvoice:001"
+      ]
+    },
+    {
+      "name": "NewSkillGranted",
+      "path": "shared/src/worldVoice.ts",
+      "kind": "type",
+      "line": 69,
+      "summary": "type NewSkillGranted",
+      "related_chunks": [
+        "map:shared-src-worldvoice:002"
+      ]
+    },
+    {
+      "name": "SkillEvolution",
+      "path": "shared/src/worldVoice.ts",
+      "kind": "type",
+      "line": 85,
+      "summary": "type SkillEvolution",
+      "related_chunks": [
+        "map:shared-src-worldvoice:002"
+      ]
+    },
+    {
+      "name": "UniqueSubAbility",
+      "path": "shared/src/worldVoice.ts",
+      "kind": "type",
+      "line": 98,
+      "summary": "type UniqueSubAbility",
+      "related_chunks": [
+        "map:shared-src-worldvoice:002"
+      ]
+    },
+    {
+      "name": "WorldEvent",
+      "path": "shared/src/worldVoice.ts",
+      "kind": "type",
+      "line": 112,
+      "summary": "type WorldEvent",
+      "related_chunks": [
+        "map:shared-src-worldvoice:002"
+      ]
+    },
+    {
+      "name": "StateUpdates",
+      "path": "shared/src/worldVoice.ts",
+      "kind": "type",
+      "line": 123,
+      "summary": "type StateUpdates",
+      "related_chunks": [
+        "map:shared-src-worldvoice:003"
+      ]
+    },
+    {
+      "name": "NarrativeEntity",
+      "path": "shared/src/worldVoice.ts",
+      "kind": "type",
+      "line": 134,
+      "summary": "type NarrativeEntity",
+      "related_chunks": [
+        "map:shared-src-worldvoice:003"
+      ]
+    },
+    {
+      "name": "NarrativeMemoryUpdates",
+      "path": "shared/src/worldVoice.ts",
+      "kind": "type",
+      "line": 141,
+      "summary": "type NarrativeMemoryUpdates",
+      "related_chunks": [
+        "map:shared-src-worldvoice:003"
+      ]
+    },
+    {
+      "name": "WorldVoiceResponse",
+      "path": "shared/src/worldVoice.ts",
+      "kind": "type",
+      "line": 152,
+      "summary": "type WorldVoiceResponse",
+      "related_chunks": [
+        "map:shared-src-worldvoice:003"
+      ]
+    },
+    {
+      "name": "UniqueSkillDetermination",
+      "path": "shared/src/worldVoice.ts",
+      "kind": "type",
+      "line": 169,
+      "summary": "type UniqueSkillDetermination",
+      "related_chunks": [
+        "map:shared-src-worldvoice:003"
+      ]
+    }
+  ]
 }
