@@ -103,13 +103,61 @@ export type UniqueSubAbility = z.infer<typeof UniqueSubAbilitySchema>;
 // kept permissive enough that other event types can be emitted with a
 // description without failing strict schema validation.
 
+export const KingdomSchema = z.enum([
+  'Kaldrath',
+  'Verdance',
+  'Ashenveil',
+  'Aurelis',
+  'Tidemark',
+  'Sundrach',
+  'unknown',
+]);
+export type Kingdom = z.infer<typeof KingdomSchema>;
+
+/** The six real kingdoms (no 'unknown'). */
+export const KINGDOMS = [
+  'Kaldrath',
+  'Verdance',
+  'Ashenveil',
+  'Aurelis',
+  'Tidemark',
+  'Sundrach',
+] as const;
+
 export const WorldEventSchema = z.strictObject({
   type: z.string(),
   location: z.string().nullable(),
   scene_summary: z.string().nullable(),
   description: z.string().nullable(),
+  /** scene_set only: which kingdom the scene is in. Null on other event types. */
+  kingdom: KingdomSchema.nullable(),
+  /** scene_set only: the listed id when returning to a known place, null for a new place. */
+  place_id: z.string().nullable(),
 });
 export type WorldEvent = z.infer<typeof WorldEventSchema>;
+
+// ─── state_updates.condition_changes / stat_growth / setback ────────────────
+
+export const ConditionChangesSchema = z.strictObject({
+  hp_delta: z.number().int().nullable(),
+  mp_delta: z.number().int().nullable(),
+  sp_delta: z.number().int().nullable(),
+  reason: z.string().nullable(),
+});
+export type ConditionChanges = z.infer<typeof ConditionChangesSchema>;
+
+export const StatGrowthSchema = z.strictObject({
+  stat: z.enum(['max_hp', 'max_mp', 'max_sp', 'STR', 'AGI', 'INT', 'WIL']),
+  amount: z.number().int(),
+  milestone: z.string(),
+});
+export type StatGrowth = z.infer<typeof StatGrowthSchema>;
+
+export const SetbackSchema = z.strictObject({
+  kind: z.enum(['captured', 'woke_elsewhere', 'lost_something', 'rescued']),
+  summary: z.string(),
+});
+export type Setback = z.infer<typeof SetbackSchema>;
 
 // ─── state_updates ──────────────────────────────────────────────────────────
 
@@ -119,6 +167,9 @@ export const StateUpdatesSchema = z.strictObject({
   skill_evolutions: z.array(SkillEvolutionSchema),
   unique_sub_ability_unlocked: UniqueSubAbilitySchema.nullable(),
   world_events: z.array(WorldEventSchema),
+  condition_changes: ConditionChangesSchema.nullable(),
+  stat_growth: z.array(StatGrowthSchema),
+  setback: SetbackSchema.nullable(),
 });
 export type StateUpdates = z.infer<typeof StateUpdatesSchema>;
 
@@ -193,7 +244,7 @@ export const UNIQUE_SKILL_JSON_SCHEMA = toStrictJsonSchema(
 );
 
 /**
- * The nine field names CLAUDE.md constraint #4 names, as authored.
+ * The twelve field names CLAUDE.md constraint #4 names, as authored.
  *
  * This is the reference list all three arms of the contract check agree on:
  * the Zod schemas above, the derived JSON Schema, and the RESPONSE FORMAT
@@ -215,6 +266,9 @@ export const CONTRACT_FIELD_NAMES = [
   'state_updates.skill_evolutions',
   'state_updates.unique_sub_ability_unlocked',
   'state_updates.world_events',
+  'state_updates.condition_changes',
+  'state_updates.stat_growth',
+  'state_updates.setback',
   'narrative_memory_updates.new_entities',
   'narrative_memory_updates.note',
   'gm_note',
@@ -313,7 +367,7 @@ export function extractPromptContractFieldPaths(promptText: string): string[] {
 
 /**
  * THE contract check: asserts the live prompt, the derived JSON Schema, and
- * CONTRACT_FIELD_NAMES all name the same nine fields.
+ * CONTRACT_FIELD_NAMES all name the same twelve fields.
  *
  * This is what CLAUDE.md constraint #4 actually requires — that the prompt and
  * the parser cannot drift apart. Comparing the schema against

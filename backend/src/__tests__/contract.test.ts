@@ -44,6 +44,7 @@ import {
   CONTRACT_FIELD_NAMES,
   extractContractFieldPaths,
   WORLD_VOICE_JSON_SCHEMA,
+  WorldVoiceResponseSchema,
 } from '@soulbound/shared';
 import { WORLD_SYSTEM_PROMPT } from '../data/worldSystemPrompt.js';
 
@@ -112,5 +113,67 @@ describe('assertWorldVoiceContract', () => {
     expect(WORLD_SYSTEM_PROMPT).toContain('"gm_note":');
     expect(WORLD_SYSTEM_PROMPT).toContain('    "world_events": [],\n');
     expect(WORLD_SYSTEM_PROMPT).toContain('"skill_evolutions": [],');
+  });
+});
+
+describe('Phase 15 contract fields (stats, setback, places)', () => {
+  const full = {
+    narration: 'n',
+    state_updates: {
+      skill_mastery_changes: [],
+      new_skills_granted: [],
+      skill_evolutions: [],
+      unique_sub_ability_unlocked: null,
+      world_events: [
+        {
+          type: 'scene_set',
+          location: 'Inn',
+          scene_summary: 's',
+          description: null,
+          kingdom: 'Verdance',
+          place_id: null,
+        },
+      ],
+      condition_changes: { hp_delta: -2, mp_delta: null, sp_delta: -1, reason: 'a blow' },
+      stat_growth: [{ stat: 'WIL', amount: 1, milestone: 'held firm' }],
+      setback: { kind: 'rescued', summary: 'dragged out' },
+    },
+    narrative_memory_updates: { new_entities: [], note: null },
+    gm_note: null,
+  };
+  const clone = () => structuredClone(full) as typeof full & Record<string, any>;
+
+  it('a full valid response with non-null values parses', () => {
+    expect(WorldVoiceResponseSchema.safeParse(full).success).toBe(true);
+  });
+
+  it.each(['condition_changes', 'stat_growth', 'setback'])('missing state_updates.%s fails', (key) => {
+    const bad = clone();
+    delete bad.state_updates[key];
+    expect(WorldVoiceResponseSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it.each(['kingdom', 'place_id'])('a world event missing %s fails', (key) => {
+    const bad = clone();
+    delete bad.state_updates.world_events[0][key];
+    expect(WorldVoiceResponseSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it('an unknown kingdom string fails', () => {
+    const bad = clone();
+    bad.state_updates.world_events[0].kingdom = 'Atlantis';
+    expect(WorldVoiceResponseSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it('a non-integer hp_delta fails', () => {
+    const bad = clone();
+    bad.state_updates.condition_changes.hp_delta = 1.5;
+    expect(WorldVoiceResponseSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it('CONTRACT_FIELD_NAMES lists the three new fields', () => {
+    for (const f of ['condition_changes', 'stat_growth', 'setback']) {
+      expect(CONTRACT_FIELD_NAMES).toContain(`state_updates.${f}`);
+    }
   });
 });

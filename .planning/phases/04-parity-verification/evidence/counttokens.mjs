@@ -12,7 +12,7 @@ system.forEach((b, i) =>
 );
 
 const r = await client.messages.countTokens({
-  model: 'claude-opus-5',
+  model: 'claude-sonnet-5-5', // the cached pair's model (MODELS.worldEngine), not the retired opus-5
   system,
   messages: [{ role: 'user', content: 'probe' }],
 });

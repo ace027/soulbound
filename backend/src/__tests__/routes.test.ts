@@ -236,6 +236,9 @@ const validWorldVoicePayload = {
     skill_evolutions: [],
     unique_sub_ability_unlocked: null,
     world_events: [],
+    condition_changes: null,
+    stat_growth: [],
+    setback: null,
   },
   narrative_memory_updates: { new_entities: [], note: null },
   gm_note: null,
@@ -472,6 +475,56 @@ describe('World Voice routes (mocked SDK boundary)', () => {
         }),
       });
 
+      expect(res.status).toBe(400);
+      expect(res.bodyJson).toMatchObject({ error: { code: 'INVALID_REQUEST' } });
+      expect(createSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('world-engine stats and places caps (Phase 15)', () => {
+    const okCondition = { hp: 5, mp: 5, sp: 5, max_hp: 10, max_mp: 10, max_sp: 10 };
+    const place = { name: 'Inn', kingdom: 'Verdance', firstSeenTurn: 0 };
+    const post = (extra: Record<string, unknown>) =>
+      httpRequest(port, {
+        method: 'POST',
+        path: '/api/world-engine',
+        body: JSON.stringify({
+          ...worldEngineRequestBody,
+          gameState: { ...worldEngineRequestBody.gameState, ...extra },
+        }),
+      });
+
+    it('accepts a request carrying valid new fields', async () => {
+      createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5-5', validWorldVoicePayload));
+      const res = await post({
+        condition: okCondition,
+        attributes: { STR: 1, AGI: 2, INT: 3, WIL: 4 },
+        places: { inn: place },
+        currentPlaceId: 'inn',
+        growthLog: [{ turn: 1, stat: 'STR', amount: 1, milestone: 'x' }],
+      });
+      expect(res.status).toBe(200);
+    });
+
+    it('a request without any new field still succeeds (v1 clients)', async () => {
+      createSpy.mockResolvedValueOnce(makeMessage('claude-sonnet-5-5', validWorldVoicePayload));
+      const res = await post({});
+      expect(res.status).toBe(200);
+    });
+
+    const tooMany: Record<string, unknown> = {};
+    for (let i = 0; i < 201; i++) tooMany[`p${i}`] = place;
+    const overCap: Array<[string, Record<string, unknown>]> = [
+      ['hp 10000', { condition: { ...okCondition, hp: 10_000 } }],
+      ['201 places', { places: tooMany }],
+      ['101-char place id', { places: { ['a'.repeat(101)]: place } }],
+      [
+        'growthLog of 201',
+        { growthLog: Array.from({ length: 201 }, () => ({ turn: 1, stat: 'STR', amount: 1, milestone: 'x' })) },
+      ],
+    ];
+    it.each(overCap)('rejects over-cap %s with 400 INVALID_REQUEST', async (_label, extra) => {
+      const res = await post(extra);
       expect(res.status).toBe(400);
       expect(res.bodyJson).toMatchObject({ error: { code: 'INVALID_REQUEST' } });
       expect(createSpy).not.toHaveBeenCalled();

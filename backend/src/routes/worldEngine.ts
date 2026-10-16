@@ -27,7 +27,7 @@
 
 import { Router, type NextFunction, type Request, type Response } from 'express';
 import { z } from 'zod';
-import { SkillTierSchema, WorldVoiceResponseSchema } from '@soulbound/shared';
+import { KingdomSchema, SkillTierSchema, WorldVoiceResponseSchema } from '@soulbound/shared';
 import { callWorldVoice } from '../anthropic.js';
 import { stripDelimiters, wrapUntrusted } from '../untrustedText.js';
 
@@ -118,6 +118,43 @@ const NarrativeMemoryRequestSchema = z
   })
   .passthrough();
 
+// ─── Stats and places (Phase 15, all OPTIONAL so v1 clients still validate) ───
+// Every string is interpolated into the prompt, so each carries a `.max()`.
+
+const stat = (max: number) => z.number().int().min(0).max(max);
+
+const ConditionRequestSchema = z
+  .object({
+    hp: stat(9999),
+    mp: stat(9999),
+    sp: stat(9999),
+    max_hp: stat(9999),
+    max_mp: stat(9999),
+    max_sp: stat(9999),
+  })
+  .passthrough();
+
+const AttributesRequestSchema = z
+  .object({ STR: stat(99), AGI: stat(99), INT: stat(99), WIL: stat(99) })
+  .passthrough();
+
+const PlaceRequestSchema = z
+  .object({
+    name: z.string().max(80),
+    kingdom: KingdomSchema,
+    firstSeenTurn: z.number().int().min(0),
+  })
+  .passthrough();
+
+const GrowthLogEntryRequestSchema = z
+  .object({
+    turn: z.number().int(),
+    stat: z.enum(['max_hp', 'max_mp', 'max_sp', 'STR', 'AGI', 'INT', 'WIL']),
+    amount: z.number().int(),
+    milestone: z.string().max(200),
+  })
+  .passthrough();
+
 const GameStateRequestSchema = z
   .object({
     character: CharacterRequestSchema,
@@ -139,6 +176,16 @@ const GameStateRequestSchema = z
     currentScene: z.string().max(SCENE_MAX),
     actionHistory: z.array(z.string().max(ACTION_MAX)).max(2_000),
     narrativeMemory: NarrativeMemoryRequestSchema.optional(),
+    condition: ConditionRequestSchema.optional(),
+    attributes: AttributesRequestSchema.optional(),
+    places: z
+      .record(z.string().max(100), PlaceRequestSchema)
+      .refine((record) => Object.keys(record).length <= 200, {
+        message: 'gameState.places has too many entries (max 200)',
+      })
+      .optional(),
+    currentPlaceId: z.string().max(100).nullable().optional(),
+    growthLog: z.array(GrowthLogEntryRequestSchema).max(200).optional(),
   })
   .passthrough();
 
@@ -175,6 +222,52 @@ function renderAnswer(answer: string | undefined): string {
   return answer ? wrapUntrusted('player_answer', answer) : 'unknown';
 }
 
+const KNOWN_PLACES_MAX = 40;
+const GROWTH_SHOWN = 10;
+
+/** Condition, attributes, place and growth lines; empty string when none are present. */
+function renderStatsBlock(gameState: WorldEngineRequestBody['gameState']): string {
+  const lines: string[] = [];
+  const c = gameState.condition;
+  if (c) lines.push(`Condition: HP ${c.hp}/${c.max_hp}, MP ${c.mp}/${c.max_mp}, SP ${c.sp}/${c.max_sp}`);
+  const a = gameState.attributes;
+  if (a) lines.push(`Attributes: STR ${a.STR}, AGI ${a.AGI}, INT ${a.INT}, WIL ${a.WIL}`);
+
+  const places = gameState.places;
+  if (places) {
+    const current = gameState.currentPlaceId != null ? places[gameState.currentPlaceId] : undefined;
+    lines.push(
+      current
+        ? `Current place: ${stripDelimiters(current.name)} [id: ${stripDelimiters(gameState.currentPlaceId as string)}, kingdom: ${current.kingdom}]`
+        : 'Current place: not yet on the map',
+    );
+    // Most recent first, by firstSeenTurn; the current place is always kept.
+    const currentId = current ? (gameState.currentPlaceId as string) : null;
+    const others = Object.keys(places)
+      .filter((id) => id !== currentId)
+      .sort((x, y) => (places[y]?.firstSeenTurn ?? 0) - (places[x]?.firstSeenTurn ?? 0));
+    const shown = currentId
+      ? [currentId, ...others.slice(0, KNOWN_PLACES_MAX - 1)]
+      : others.slice(0, KNOWN_PLACES_MAX);
+    if (shown.length) {
+      lines.push('Known places (reuse the id when the player returns):');
+      for (const id of shown) {
+        const p = places[id];
+        if (p) lines.push(`- ${stripDelimiters(id)}: ${stripDelimiters(p.name)} (${p.kingdom})`);
+      }
+    }
+  }
+
+  const log = gameState.growthLog;
+  if (log) {
+    lines.push(`Stat growth so far: ${log.length} grant${log.length === 1 ? '' : 's'}`);
+    for (const g of log.slice(-GROWTH_SHOWN)) {
+      lines.push(`- turn ${g.turn}: ${g.stat} +${g.amount} (${stripDelimiters(g.milestone)})`);
+    }
+  }
+  return lines.length ? lines.join('\n') + '\n' : '';
+}
+
 export function renderWorldEnginePrompt({ action, gameState }: WorldEngineRequestBody): string {
   const uniqueSkill = gameState.skills.find((s) => s.tier === 'Unique');
   const answers = gameState.character.answers || {};
@@ -185,7 +278,7 @@ Name: ${wrapUntrusted('player_name', gameState.character.name)}
 Race: ${stripDelimiters(gameState.character.race.name)}
 Location: ${stripDelimiters(gameState.location)}
 Scene: ${stripDelimiters(gameState.currentScene)}
- 
+${renderStatsBlock(gameState)} 
 SKILLS:
 ${gameState.skills.map(s => `- [${s.tier}] ${stripDelimiters(s.name)} (Mastery: ${s.mastery}/100)${s.sub_abilities?.length ? " | Unlocked sub-abilities: " + s.sub_abilities.map(sa => stripDelimiters(sa.name)).join(", ") : ""}`).join("\n")}
  
