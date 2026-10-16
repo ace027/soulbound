@@ -16,6 +16,7 @@
 - [ ] **Phase 12: Condition & Inventory** — own design pass first, then contract + balance rules
 - [ ] **Phase 13: Launch Hardening & Conversion** — ToS/privacy, CSP, friends to paid, public-beta waitlist
 - [x] **Phase 14: Prologue Prototype** — opt-in behaviour-based character creation; **runs before Phase 7** (developer decision 2026-10-01). Built and review-passed; safety-gate reading, playtest and canon decision still the developer's
+- [ ] **Phase 15: World Map & Character Stats** — HP/MP/SP, attributes, setbacks at HP 0, a six-kingdom map of discovered places; **runs before Phase 7** (developer decision 2026-10-16)
 
 ## Phase Details
 
@@ -189,7 +190,7 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 **Requirements**: R34
 **Recommended Agents**: AI Engineer, QA Verification Specialist
 **Success Criteria**:
-- **Design first:** a `/triad:explore` design is approved first, covering defeat semantics, item and tier rules, and what the World Voice may change.
+- **Design first:** a `/triad:explore` design is approved first, covering item and tier rules and what the World Voice may change. **Defeat semantics come from Phase 15** (HP 0 means a setback, never death; developer decision 2026-10-16); this phase may extend the setback kinds (for example item loss) but not reverse them.
 - **Contract:** the contract and MUST NOT additions land together.
 - **Testing:** the adversarial turn tests are re-run; old saves still load.
 **Plans**: TBD
@@ -228,6 +229,22 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 
 **Status**: built and review-passed (2 cycles, `14-REVIEW.md`), not closed. Success criterion 1 (safe to test) is met: the developer passed all nine gate cases 2026-10-16. Criteria 5 (playtest) and 6 (decision recorded) wait on the developer. Criteria 2-4 are covered by the plans' verification. See 14-CONTEXT.md.
 
+### Phase 15: World Map & Character Stats
+**Runs before Phase 7** by developer decision (2026-10-16), so the save format moves to v2 once, before server saves exist; numbered 15 so Phases 7-13 keep their numbers. Design: `.planning/explorations/2026-10-16-world-map-and-stats-design.md` (Approach B).
+**Goal**: The player always knows where they are in Vaeltharion and what condition they are in, and both respond to the story. The World Voice reports the changes, and the game enforces the limits.
+**Requirements**: R37
+**Recommended Agents**: AI Engineer, Backend Architect, Frontend Developer, QA Verification Specialist
+**Success Criteria**:
+- **Contract:** `condition_changes`, `stat_growth`, `setback`, and `kingdom` and `place_id` on `scene_set` land as required-nullable fields, with the prompt, the shared schemas, the request schema and the frontend parser in the same change (CLAUDE.md #4).
+- **Guard rails:** values are clamped to 0..max; the change per turn is capped; at most one growth per turn, once per milestone, under an attribute ceiling; HP 0 with no setback is floored at 1. All of this is covered by unit tests.
+- **No death:** HP 0 always produces a setback, and the save continues.
+- **Map:** six kingdom nodes from a frontend layout asset (`WORLD_LORE` unchanged); discovered places pinned by game-owned IDs; returning to a place reuses its ID.
+- **Saves:** schema v2 with a tested v1 → v2 migration; old saves load with race baselines.
+- **Rules:** five MUST NOT additions (design doc → Feature Scope); the cached-prefix token count is re-derived with `count_tokens` and updated in CLAUDE.md.
+- **UI:** desktop Codex condition strip plus a map overlay; mobile third tab plus meters above the ActionBar; CLAUDE.md #3 respected.
+- **Testing:** the adversarial turn tests are re-run; a live run of about 20 turns shows deltas move, growth stays rare and HP 0 leads to a setback.
+**Plans**: TBD (about 5: contract; state, migration and guard rails; prompt and rules; UI; adversarial and live verification)
+
 ## Progress
 
 | Phase | Plans | Completed | Status |
@@ -246,4 +263,5 @@ All eight phases come from `.planning/explorations/2026-09-24-hosted-multiplayer
 | 12. Condition & Inventory | TBD | 0 | Pending (design pass first) |
 | 13. Launch Hardening & Conversion | TBD | 0 | Pending |
 | 14. Prologue Prototype | 6 | 6 | Built and review-passed 2026-10-01 (2 cycles) — safety gate PASSED 2026-10-16; playtest and canon decision pending (developer) — **runs before Phase 7** |
+| 15. World Map & Character Stats | TBD | 0 | Pending (runs before 7) |
 | **Total** | **46 + TBD** | **46** | Phases 1-6 shipped (6: live checks pending); 14 built, not closed (runs before 7); 7-13 pending |

@@ -99,7 +99,12 @@ Initially the developer and their playtester. Then self-hosting deployers who su
   - An opt-in (`?prologue=1`) behaviour-based character creation: a fixed four-beat scene, narrated reactively by a new system-free route, distilled into the five `answers` keys; the existing unique-skill, intro-scene and world-engine paths are unchanged.
   - The questionnaire remains the default; success is the playtester preferring the prologue.
   - Safety gate of seven live cases before any tester sees it. Runs before Phase 7.
-  - **Status (2026-10-01):** built, all six plans executed. The routes, the flagged screen and the playtest kit exist; the questionnaire is still the default. **Safety gate: UNREAD** (nine cases run live, $0.3425 of the $0.50 cap, no verdicts recorded). Not ready for testers. Waiting on the developer: read the gate sheet and record verdicts, run the three playtest sessions, decide the canon and whether to replace, add or stop.
+  - **Status (2026-10-01):** built, all six plans executed. The routes, the flagged screen and the playtest kit exist; the questionnaire is still the default. **Safety gate: PASSED** (all nine cases, developer 2026-10-16). Waiting on the developer: run the three playtest sessions, decide the canon and whether to replace, add or stop.
+- **R37** — World map and character stats (design: `.planning/explorations/2026-10-16-world-map-and-stats-design.md`):
+  - HP, MP and SP (stamina) plus attributes STR, AGI, INT and WIL, with race baselines. The World Voice reports changes and rare milestone growth; the game clamps and caps them. Attributes inform the narration and never guarantee outcomes.
+  - HP 0 is a narrative setback, never death. Stats never grant, evolve or unlock skills.
+  - A schematic six-kingdom map with discovered places under game-owned IDs; `WORLD_LORE` is unchanged.
+  - Save schema v2. Runs before Phase 7 (Phase 15).
 - **R35** — "Ready to invite friends" gate: an 11-item checklist, including rotating the Anthropic key, with each item demonstrated on the live host before invites (see design doc → Launch & operations).
 
 ### Out of Scope
