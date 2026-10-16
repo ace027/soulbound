@@ -8,7 +8,7 @@
 **Source Fingerprint:** 4052132c96b0642a
 **Scope:** project-root
 **Root:** /home/user/soulbound
-**Confidence:** MEDIUM
+**Confidence:** MEDIUM. The helper read 14 key files directly. The rest of the map comes from the tool's computed facts and file headers.
 
 ```yaml
 map_schema_version: "2.0"
@@ -21,7 +21,12 @@ scope: project-root
 ```
 
 ## Architecture Overview
-_Pending: Architecture Overview is written by the model from the data below (map action narrate)._
+- Browser (React 19 + Vite, `frontend/`) calls only relative `/api/*` through `frontend/src/lib/api.ts`. It never holds the Anthropic key.
+- Express backend (`backend/src/server.ts`, `buildApp()`) runs the Host allow-list, rate limiter and access gate, then JSON parsing, then the routers. Self-host uses `accessGate.ts` (passphrase). Hosted (`SOULBOUND_MODE=hosted`) uses the pinned chain in `hostedGate.ts`.
+- Routers in `backend/src/routes/` (uniqueSkill, introScene, worldEngine, prologue) all send model calls through one chokepoint, `callWorldVoice()` in `backend/src/anthropic.ts`.
+- `backend/src/config.ts` holds `MODELS` and `EFFORT`, and reads the key once at load. Secrets sit behind a redacting `Secret` wrapper.
+- `shared/src/worldVoice.ts` is the Zod response contract, used for both runtime parsing and the JSON schema. `shared/src/gameState.ts` holds the shared state types.
+- Frontend flow: `api.ts` parses the response, `game/applyWorldUpdate.ts` (pure) folds it into state, `App.tsx` owns the state graph, and `lib/saves.ts` persists to localStorage.
 
 ## Language Distribution
 | Extension | File Count | % of Codebase |
@@ -47,13 +52,40 @@ _Pending: Architecture Overview is written by the model from the data below (map
 _None detected_
 
 ## Functionality Inventory
-_Pending: Functionality Inventory is written by the model from the data below (map action narrate)._
+| Feature | Entry | Key files |
+|---|---|---|
+| Character creation: race, questionnaire, Unique Skill, intro scene | POST /api/unique-skill, POST /api/intro-scene | screens/QuestionnaireScreen.tsx, backend/src/routes/uniqueSkill.ts, routes/introScene.ts |
+| Live simulation turn | POST /api/world-engine | routes/worldEngine.ts, screens/SimulationScreen.tsx, App.tsx (handleAction), game/applyWorldUpdate.ts |
+| Skill tiers, mastery, sub-abilities, Soul Rewrite | World Voice response | game/applyWorldUpdate.ts, shared/src/worldVoice.ts, backend/src/data/worldSystemPrompt.ts |
+| Saves (localStorage, self-host) | none (client-side) | frontend/src/lib/saves.ts |
+| Prologue (opt-in `?prologue=1`) | POST /api/prologue/beat, /profile | backend/src/routes/prologue.ts, frontend/src/screens/PrologueScreen.tsx |
+| Soul Codex sidebar | none (UI) | components/SoulCodexContents.tsx, screens/SimulationScreen.tsx |
+| Self-host access gate | every /api/* except /api/health | backend/src/accessGate.ts |
+| Hosted accounts, invites, sessions, account deletion | /api/auth/*, invite redeem, DELETE /api/account | backend/src/hostedGate.ts, auth.ts, invites.ts, account.ts, frontend/src/lib/authClient.ts, components/hostedAccount.tsx |
+| Health check | GET /api/health | backend/src/server.ts |
 
 ## Module Ownership
-_Pending: Module Ownership is written by the model from the data below (map action narrate)._
+| Module | Responsibility | Suggested agent |
+|---|---|---|
+| backend/src/server.ts, routes/* | Express pipeline, routers, error handling | engineering-backend-architect |
+| backend/src/anthropic.ts, config.ts MODELS, data/worldSystemPrompt.ts, data/worldLore.ts | Model calls, cache blocks, prompt and lore | engineering-ai-engineer |
+| backend/src/hostedGate.ts, accessGate.ts, auth.ts, invites.ts, account.ts | Auth, gates, invites, rate limits | engineering-security-engineer |
+| backend/Dockerfile, compose, render.yaml, scripts/ | Build, deploy, test DB | engineering-infrastructure-devops |
+| backend/src/__tests__/** | API and gate tests | testing-api-tester |
+| shared/src/worldVoice.ts, gameState.ts | Response contract and state types | engineering-senior-developer |
+| frontend/src/App.tsx, lib/api.ts, lib/saves.ts, game/applyWorldUpdate.ts | State, API client, saves, game rules | engineering-frontend-developer |
+| frontend/src/screens/*, components/*, hooks/* | Layout and screens | design-ui-designer |
+| frontend/src/screens/sharedBg.ts, lib/authClient.ts (untested) | Shared background, auth client | engineering-frontend-developer |
 
 ## Risk Areas
-_Pending: Risk Areas is written by the model from the data below (map action narrate)._
+- `lib/api.ts` has the highest fan-in (12). Its content-type check guards against the 200-HTML trap, so changes ripple widely.
+- Untested but critical: `sharedBg.ts` (fan-in 9), `authClient.ts` (6), `QuestionnaireScreen.tsx` (4), `hostedAccount.tsx`, `SoulCodexContents.tsx`.
+- Largest files: config.ts (974 lines), server.ts (893), auth.ts (608), anthropic.ts (564), api.ts (562).
+- `backend/src/routes/worldEngine.ts` imports `zod` at runtime, but only `shared/package.json` declares it, not `backend/package.json`. It works only because npm hoists it to the root.
+- The 18 secret-exposure warnings are all in backend test files (`backend/src/__tests__/`). They are dummy fixture values, not real credentials.
+- The prompt cache is byte-sensitive. Any per-request variation in `buildSystemBlocks()` silently destroys caching.
+- The hosted middleware order is pinned by `hostedOrder.test.ts`. Moving a step breaks it.
+- Two packages are a major version behind (the map tool did not name them).
 
 ## Technical Debt Signals
 **TODO/FIXME/HACK/XXX density**: 0 per source file — LOW
@@ -107,7 +139,14 @@ _None detected_
 | Potentially unmaintained | not checked (needs registry publish dates) | - |
 
 ## Agent Guidance
-_Pending: Agent Guidance is written by the model from the data below (map action narrate)._
+- Hard constraints (CLAUDE.md): no window.confirm/alert/prompt (use inline confirm). Saves stay on localStorage in self-host. Flex scroll regions need min-height: 0 on every ancestor, and a Fragment must never be the scroll container.
+- World Voice field names (narration, state_updates.*, narrative_memory_updates.*, gm_note) must change in the prompt and the parser together. max_tokens must be 2000 or more.
+- The MUST NOT rules are game-balance rules. Additions are fine. Removals or softenings need developer sign-off.
+- determineUniqueSkill sends no system block at all. Do not give it one without confirmation.
+- World engine and intro scene must share one model, pinned by backend/src/__tests__/config.test.ts. Models live only in config.ts MODELS.
+- Lore facts go in WORLD_LORE; behaviour rules go in WORLD_SYSTEM_PROMPT's MUST NOT list.
+- Tests sit in `__tests__/` directories (70 files, Vitest). Hosted tests use backend/vitest.hosted.config.ts and need a test DB.
+- Do not touch self-host code or tests while doing hosted work, and do not move hosted middleware steps. Flag these instead. Do not paste or log secrets.
 
 ## Dependency Graph
 **Files analyzed**: 124 | **Internal edges**: 90 | **External deps**: 24
@@ -239,10 +278,20 @@ _Pending: Agent Guidance is written by the model from the data below (map action
 - MEDIUM: shared/src/accessGate.ts has a long literal assigned to a key/secret/token name (value not shown)
 
 ## Setup / Runbook
-_Pending: Setup / Runbook is written by the model from the data below (map action narrate)._
+- Install: `npm ci` (root, workspaces shared, backend, frontend).
+- Dev: `npm run dev` (all workspaces). Backend needs ANTHROPIC_API_KEY exported or passed via `--env-file`. Docker: `docker compose up` reads `.env`.
+- Test: `npm test` (root). Backend: `npm test -w backend`. Hosted: `npm run test:hosted -w backend`. Frontend: `npm test -w frontend`. Frontend e2e: `npm run test:e2e -w frontend`.
+- Build: `npm run build` (root; build shared first when typechecking one workspace alone). Backend is `tsc`. Frontend is `tsc --noEmit && vite build`.
+- Run: `npm run start -w backend` (node dist/server.js). Migrate (hosted): `npm run migrate -w backend`.
 
 ## Pattern Library
-_Pending: Pattern Library is written by the model from the data below (map action narrate)._
+- Single model-call chokepoint: backend/src/anthropic.ts (callWorldVoice, buildSystemBlocks).
+- Zod as the shared contract: shared/src/worldVoice.ts.
+- Lazy config import so the server can start without a key: backend/src/anthropic.ts (loadConfig).
+- Redacting secret wrapper: backend/src/config.ts (Secret, redact).
+- Pure game-rule extraction for testability: frontend/src/game/applyWorldUpdate.ts.
+- Typed fetch with status and content-type checks: frontend/src/lib/api.ts.
+- Import-not-redeclare storage keys: frontend/src/lib/saves.ts.
 
 ## Monorepo Structure
 | Package | Path |
