@@ -232,7 +232,7 @@ export default function PrologueScreen({ onComplete, onReturnToTitle }: Prologue
         </p>
 
         {error !== null && (
-          <p role="alert" style={{ ...WRAP, fontSize: 14, color: '#c0392b', lineHeight: 1.6, marginBottom: 16 }}>
+          <p role="alert" style={{ ...WRAP, fontSize: 14, color: '#e8736a', lineHeight: 1.6, marginBottom: 16 }}>
             {error}
           </p>
         )}
