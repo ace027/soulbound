@@ -1,0 +1,8 @@
+# sample, not real usage
+[anthropic:usage] {"route":"prologueBeat","model":"claude-sonnet-5-5","input_tokens":900,"output_tokens":450,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}
+[anthropic:usage] {"route":"prologueBeat","model":"claude-sonnet-5-5","input_tokens":1100,"output_tokens":450,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}
+[anthropic:usage] {"route":"prologueBeat","model":"claude-sonnet-5-5","input_tokens":1300,"output_tokens":450,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}
+[anthropic:usage] {"route":"prologueBeat","model":"claude-sonnet-5-5","input_tokens":1500,"output_tokens":450,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}
+[anthropic:usage] {"route":"prologueProfile","model":"claude-sonnet-5-5","input_tokens":1800,"output_tokens":700,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}
+[anthropic:usage] {"route":"uniqueSkill","model":"claude-opus-5-5","input_tokens":600,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}
+[anthropic:usage] {"route":"introScene","model":"claude-sonnet-5-5","input_tokens":300,"output_tokens":900,"cache_creation_input_tokens":15523,"cache_read_input_tokens":0}
