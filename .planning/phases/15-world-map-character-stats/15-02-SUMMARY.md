@@ -67,7 +67,7 @@
 | # | Severity | Type | Decision | Status | Resolution |
 |---|----------|------|----------|--------|------------|
 | 1 | warning | out-of-scope file | Approve adding the five new GameState fixture fields to `frontend/src/components/__tests__/codexAccount.test.tsx`, or have Triad apply that one-line fixture fix. It is the only thing keeping `npm run build` from passing. | pending | INVALID: type "out-of-scope file" is not one of architecture, dependency, scope, schema, api, deletion, infrastructure, quality |
-| 2 | blocker | quality | Resolve: src/components/__tests__/codexAccount.test.tsx(30,7): error TS2739: Type '{ character: { name: string; race: { id: string; name: string; desc: string; intrinsic: [{ name: string; description: string; | pending |  |
+| 2 | blocker | quality | Resolve: src/components/__tests__/codexAccount.test.tsx(30,7): error TS2739: Type '{ character: { name: string; race: { id: string; name: string; desc: string; intrinsic: [{ name: string; description: string; | approved | Developer approved (2026-10-16) adding codexAccount.test.tsx to 15-02 files_modified so the agent adds the five new GameState fixture fields on resume. |
 
 - #1 context: The frontend build runs `tsc` over the test files, and that fixture is a typed GameState at line 30.
 - #2 context: Verification failed (npm run build); a BLOCKER is not auto-fixed.
