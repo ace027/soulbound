@@ -1,8 +1,10 @@
-import type { RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { GameState, LogEntry } from '@soulbound/shared';
 import WorldLog from '../components/WorldLog';
 import ActionBar from '../components/ActionBar';
 import SoulCodexContents from '../components/SoulCodexContents';
+import ConditionStrip from '../components/ConditionStrip';
+import WorldMap from '../components/WorldMap';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { sharedBg } from './sharedBg';
 import type { Phase } from '../App';
@@ -60,7 +62,20 @@ import type { Phase } from '../App';
  * `WorldLog`'s own root (legacy 659) and `SoulCodexContents`'s own root
  * (legacy 570) already carry `minHeight: 0` — fixed by plan 03-06 and by
  * legacy itself, respectively. Not touched here.
+ *
+ * ── Phase 15 (world map and condition) ─────────────────────────────────
+ *
+ * - Mobile gains a third tab, Map, showing `WorldMap` full height, and the
+ *   World tab pins the compact `ConditionStrip` between WorldLog and
+ *   ActionBar.
+ * - Desktop: the Codex's Map button opens `WorldMap` as a non-modal dialog
+ *   over the WorldLog (the ActionBar stays usable). Escape or Close dismisses
+ *   it; focus moves to Close on open and back to the Map button on close.
+ *   The WorldLog and the overlay share a real `position: relative` div with
+ *   `flex: 1` + `minHeight: 0`, so the scroll chain stays intact.
  */
+export type MobileTab = 'World' | 'Codex' | 'Map';
+
 export interface SimulationScreenProps {
   gameState: GameState;
   log: LogEntry[];
@@ -70,8 +85,8 @@ export interface SimulationScreenProps {
   savingStatus: '' | 'saving' | 'saved';
   handleManualSave: () => void;
   setPhase: (phase: Phase) => void;
-  mobileTab: 'World' | 'Codex';
-  setMobileTab: (tab: 'World' | 'Codex') => void;
+  mobileTab: MobileTab;
+  setMobileTab: (tab: MobileTab) => void;
   input: string;
   setInput: (value: string) => void;
   handleAction: () => void;
@@ -94,6 +109,35 @@ export default function SimulationScreen({
 }: SimulationScreenProps) {
   const uniqueSkill = gameState.skills.find(s => s.tier === "Unique");
   const isMobile = useIsMobile();
+  const [mapOpen, setMapOpen] = useState(false);
+  const mapButtonRef = useRef<HTMLButtonElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const overlayOpen = mapOpen && !isMobile;
+  const wasOpen = useRef(false);
+
+  // Focus into the overlay on open, back to the Map button on close.
+  useEffect(() => {
+    if (overlayOpen) {
+      closeButtonRef.current?.focus();
+    } else if (wasOpen.current) {
+      mapButtonRef.current?.focus();
+    }
+    wasOpen.current = overlayOpen;
+  }, [overlayOpen]);
+
+  // Escape closes the overlay wherever focus is.
+  useEffect(() => {
+    if (!overlayOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMapOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [overlayOpen]);
+
+  const mapView = (
+    <WorldMap places={gameState.places} currentPlaceId={gameState.currentPlaceId} location={gameState.location} />
+  );
 
   // ── MOBILE LAYOUT ────────────────────────────────────────────────────
   if (isMobile) {
@@ -101,10 +145,11 @@ export default function SimulationScreen({
       <div style={{ ...sharedBg, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
         {/* Tab Bar */}
         <div style={{ display: "flex", background: "#0a0805", borderBottom: "1px solid #2a2218", flexShrink: 0 }}>
-          {(["World", "Codex"] as const).map(tab => (
+          {(["World", "Codex", "Map"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setMobileTab(tab)}
+              aria-pressed={mobileTab === tab}
               style={{
                 flex: 1, padding: "12px 8px",
                 background: mobileTab === tab ? "#0f0d09" : "transparent",
@@ -115,7 +160,7 @@ export default function SimulationScreen({
                 textTransform: "uppercase", cursor: "pointer",
               }}
             >
-              {tab === "World" ? "✦ World" : "☽ Codex"}
+              {tab === "World" ? "✦ World" : tab === "Codex" ? "☽ Codex" : "◈ Map"}
             </button>
           ))}
         </div>
@@ -128,7 +173,14 @@ export default function SimulationScreen({
             // against a Fragment standing in for a flex/scroll container.
             <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
               <WorldLog isMobile={isMobile} log={log} gameState={gameState} isThinking={isThinking} logEndRef={logEndRef} />
+              <ConditionStrip condition={gameState.condition} attributes={gameState.attributes} variant="compact" />
               <ActionBar isMobile={isMobile} input={input} setInput={setInput} handleAction={handleAction} isThinking={isThinking} />
+            </div>
+          ) : mobileTab === "Map" ? (
+            // Real div wrapper (CLAUDE.md #3) so WorldMap's scroll root has a
+            // flex: 1 + minHeight: 0 parent.
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+              {mapView}
             </div>
           ) : (
             <SoulCodexContents
@@ -157,12 +209,47 @@ export default function SimulationScreen({
           savingStatus={savingStatus}
           handleManualSave={handleManualSave}
           setPhase={setPhase}
+          onOpenMap={() => setMapOpen(true)}
+          mapButtonRef={mapButtonRef}
         />
       </div>
 
       {/* RIGHT PANEL — CLAUDE.md #3 fix: minHeight: 0 added (legacy 1432). */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}>
-        <WorldLog isMobile={isMobile} log={log} gameState={gameState} isThinking={isThinking} logEndRef={logEndRef} />
+        {/* WorldLog + map overlay share a positioned real div (Phase 15). */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, position: "relative" }}>
+          <WorldLog isMobile={isMobile} log={log} gameState={gameState} isThinking={isThinking} logEndRef={logEndRef} />
+          {overlayOpen && (
+            <div
+              role="dialog"
+              aria-labelledby="world-map-title"
+              style={{
+                position: "absolute", inset: 0, zIndex: 5,
+                display: "flex", flexDirection: "column", minHeight: 0,
+                background: "#0a0805", borderLeft: "1px solid #2a2218",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderBottom: "1px solid #2a2218", flexShrink: 0 }}>
+                <h2 id="world-map-title" style={{ fontFamily: "'Cinzel', serif", fontSize: 13, color: "#d4a843", letterSpacing: "0.2em", textTransform: "uppercase", margin: 0, fontWeight: "normal" }}>
+                  Map of Vaeltharion
+                </h2>
+                <button
+                  ref={closeButtonRef}
+                  type="button"
+                  onClick={() => setMapOpen(false)}
+                  style={{
+                    background: "#14110d", border: "1px solid #2a2218", color: "#c8b890",
+                    fontFamily: "'Cinzel', serif", fontSize: 10, letterSpacing: "0.1em",
+                    padding: "4px 10px", cursor: "pointer", textTransform: "uppercase",
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+              {mapView}
+            </div>
+          )}
+        </div>
         <ActionBar isMobile={isMobile} input={input} setInput={setInput} handleAction={handleAction} isThinking={isThinking} />
       </div>
     </div>

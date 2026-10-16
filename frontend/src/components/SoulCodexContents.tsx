@@ -1,5 +1,7 @@
+import type { RefObject } from 'react';
 import type { GameState, Skill } from '@soulbound/shared';
 import SkillCard from './SkillCard';
+import ConditionStrip from './ConditionStrip';
 import { HostedAccountSlot } from './hostedAccount';
 import type { Phase } from '../App';
 
@@ -23,6 +25,10 @@ import type { Phase } from '../App';
  * All Skills. It renders the hosted Account section only inside
  * `HostedAccountContext`, which `ModeGate` provides in hosted mode; in
  * self-host it renders nothing, so this component's DOM is unchanged.
+ *
+ * Phase 15 additions: the full `ConditionStrip` after the header, and an
+ * optional Map button in the Location block (desktop passes `onOpenMap`;
+ * mobile has a Map tab instead, so the button is absent there).
  */
 export interface SoulCodexContentsProps {
   gameState: GameState;
@@ -32,6 +38,10 @@ export interface SoulCodexContentsProps {
   savingStatus: '' | 'saving' | 'saved';
   handleManualSave: () => void;
   setPhase: (phase: Phase) => void;
+  /** Desktop only (Phase 15): renders the Map button that opens the map overlay. */
+  onOpenMap?: () => void;
+  /** Focus returns here when the map overlay closes. */
+  mapButtonRef?: RefObject<HTMLButtonElement | null>;
 }
 
 export default function SoulCodexContents({
@@ -41,6 +51,8 @@ export default function SoulCodexContents({
   savingStatus,
   handleManualSave,
   setPhase,
+  onOpenMap,
+  mapButtonRef,
 }: SoulCodexContentsProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "auto" }}>
@@ -73,9 +85,29 @@ export default function SoulCodexContents({
         <p style={{ fontSize: 12, color: "#8a7a60", margin: 0 }}>{gameState.character.race.name}</p>
       </div>
 
+      {/* Condition (Phase 15) */}
+      <ConditionStrip condition={gameState.condition} attributes={gameState.attributes} variant="full" />
+
       {/* Location */}
       <div style={{ padding: "8px 16px", borderBottom: "1px solid #1a1610", flexShrink: 0 }}>
-        <p style={{ fontFamily: "'Cinzel', serif", fontSize: 9, color: "#6a5a40", letterSpacing: "0.15em", textTransform: "uppercase", margin: "0 0 2px" }}>Location</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, margin: "0 0 2px" }}>
+          <p style={{ fontFamily: "'Cinzel', serif", fontSize: 9, color: "#6a5a40", letterSpacing: "0.15em", textTransform: "uppercase", margin: 0 }}>Location</p>
+          {onOpenMap && (
+            <button
+              ref={mapButtonRef}
+              type="button"
+              onClick={onOpenMap}
+              aria-haspopup="dialog"
+              style={{
+                background: "#14110d", border: "1px solid #2a2218", color: "#c8b890",
+                fontFamily: "'Cinzel', serif", fontSize: 9, letterSpacing: "0.1em",
+                padding: "3px 8px", cursor: "pointer", textTransform: "uppercase",
+              }}
+            >
+              <span aria-hidden="true">◈ </span>Map
+            </button>
+          )}
+        </div>
         <p style={{ fontSize: 12, color: "#a09070", margin: 0, lineHeight: 1.4 }}>{gameState.location}</p>
       </div>
 
