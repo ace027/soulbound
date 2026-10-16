@@ -110,7 +110,7 @@ function errMessage(e: unknown): string {
 
 export default function App() {
   // ── State: 16 useState (legacy 787-802) ──────────────────────────────────
-  const [phase, setPhase] = useState<Phase>('title'); // title | race | questionnaire | loading | simulation | saves
+  const [phase, setPhase] = useState<Phase>('title');
   const [selectedRace, setSelectedRace] = useState<Race | null>(null);
   const [charName, setCharName] = useState('');
   const [qIndex, setQIndex] = useState(0);
@@ -123,8 +123,8 @@ export default function App() {
   const [newSkillIds, setNewSkillIds] = useState<Set<string>>(new Set()); // note 5
   const [saveIndex, setSaveIndex] = useState<SaveIndexEntry[]>([]);
   const [currentSlotId, setCurrentSlotId] = useState<string | null>(null);
-  const [savingStatus, setSavingStatus] = useState<'' | 'saving' | 'saved'>(''); // "", "saving", "saved"
-  const [mobileTab, setMobileTab] = useState<MobileTab>('World'); // "World" | "Codex" | "Map"
+  const [savingStatus, setSavingStatus] = useState<'' | 'saving' | 'saved'>('');
+  const [mobileTab, setMobileTab] = useState<MobileTab>('World');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // ── 1 useRef (legacy 803) ────────────────────────────────────────────────

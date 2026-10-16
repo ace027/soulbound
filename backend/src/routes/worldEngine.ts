@@ -228,10 +228,10 @@ const GROWTH_SHOWN = 10;
 /** Condition, attributes, place and growth lines; empty string when none are present. */
 function renderStatsBlock(gameState: WorldEngineRequestBody['gameState']): string {
   const lines: string[] = [];
-  const c = gameState.condition;
-  if (c) lines.push(`Condition: HP ${c.hp}/${c.max_hp}, MP ${c.mp}/${c.max_mp}, SP ${c.sp}/${c.max_sp}`);
-  const a = gameState.attributes;
-  if (a) lines.push(`Attributes: STR ${a.STR}, AGI ${a.AGI}, INT ${a.INT}, WIL ${a.WIL}`);
+  const condition = gameState.condition;
+  if (condition) lines.push(`Condition: HP ${condition.hp}/${condition.max_hp}, MP ${condition.mp}/${condition.max_mp}, SP ${condition.sp}/${condition.max_sp}`);
+  const attributes = gameState.attributes;
+  if (attributes) lines.push(`Attributes: STR ${attributes.STR}, AGI ${attributes.AGI}, INT ${attributes.INT}, WIL ${attributes.WIL}`);
 
   const places = gameState.places;
   if (places) {

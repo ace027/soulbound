@@ -157,7 +157,7 @@ export function writeSave(slotId: string, saveData: SaveSlot): boolean {
     localStorage.setItem(SAVE_PREFIX + slotId, JSON.stringify(stamped));
 
     const index = listSaves();
-    const existing = index.findIndex((s) => s.id === slotId);
+    const existingIndex = index.findIndex((s) => s.id === slotId);
     const meta: SaveIndexEntry = {
       id: slotId,
       name: saveData.gameState.character.name,
@@ -167,7 +167,7 @@ export function writeSave(slotId: string, saveData: SaveSlot): boolean {
       savedAt: Date.now(),
       uniqueSkill: saveData.gameState.skills.find((s) => s.tier === 'Unique')?.name || '',
     };
-    if (existing !== -1) index[existing] = meta;
+    if (existingIndex !== -1) index[existingIndex] = meta;
     else index.push(meta);
 
     localStorage.setItem(SAVE_INDEX_KEY, JSON.stringify(index));

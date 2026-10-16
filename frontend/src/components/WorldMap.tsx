@@ -187,7 +187,7 @@ function WorldMap({ places, currentPlaceId, location }: WorldMapProps) {
 
   const { width: rw, height: rh } = KINGDOM_REGION;
   const geo = useIsMobile() ? NARROW : WIDE;
-  const TRAY = geo.tray;
+  const tray = geo.tray;
   const { width: vw, height: vh } = geo.viewBox;
 
   return (
@@ -273,7 +273,7 @@ function WorldMap({ places, currentPlaceId, location }: WorldMapProps) {
           {/* Uncharted tray */}
           <g role="group" aria-label={`Uncharted, ${uncharted.length} ${uncharted.length === 1 ? 'place' : 'places'}`} data-kingdom="unknown">
             <rect
-              x={TRAY.x} y={TRAY.y} width={TRAY.width} height={TRAY.height} rx={6}
+              x={tray.x} y={tray.y} width={tray.width} height={tray.height} rx={6}
               fill={REGION_FILL}
               stroke={current?.kingdom === 'unknown' ? GOLD : REGION_STROKE}
               strokeWidth={current?.kingdom === 'unknown' ? 2 : 1}
@@ -281,7 +281,7 @@ function WorldMap({ places, currentPlaceId, location }: WorldMapProps) {
             />
             <text
               aria-hidden="true"
-              x={TRAY.x + 12} y={TRAY.y + 19}
+              x={tray.x + 12} y={tray.y + 19}
               fontSize={12} fontFamily="'Cinzel', serif" letterSpacing="0.12em"
               fill={MUTED}
               data-bg={REGION_FILL}
@@ -289,13 +289,13 @@ function WorldMap({ places, currentPlaceId, location }: WorldMapProps) {
               UNCHARTED
             </text>
             {uncharted.length === 0 && (
-              <text aria-hidden="true" x={TRAY.x + 12} y={TRAY.y + 40} fontSize={11} fill={MUTED} fontStyle="italic" data-bg={REGION_FILL}>
+              <text aria-hidden="true" x={tray.x + 12} y={tray.y + 40} fontSize={11} fill={MUTED} fontStyle="italic" data-bg={REGION_FILL}>
                 places of unknown kingdom gather here
               </text>
             )}
             {layoutPins(
               uncharted,
-              { x: TRAY.x + 8, y: TRAY.y + 30, width: TRAY.width - 16, height: TRAY.height - 36 },
+              { x: tray.x + 8, y: tray.y + 30, width: tray.width - 16, height: tray.height - 36 },
               geo.trayCols,
               LABEL_CAP_TRAY,
               geo,
